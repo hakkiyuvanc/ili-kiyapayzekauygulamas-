@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Share2, Download, Lock, TrendingUp, AlertTriangle, CheckCircle, Lightbulb } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
-import { InsightData } from './MainApp';
+import { InsightData } from '@/app/page';
 
 interface InsightsScreenProps {
   insight: InsightData;

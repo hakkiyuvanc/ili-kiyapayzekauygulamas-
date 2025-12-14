@@ -1,5 +1,5 @@
 import { Plus, TrendingUp, Shield, Zap, FileText, Calendar, ArrowRight } from 'lucide-react';
-import { InsightData } from './MainApp';
+import { InsightData } from '@/app/page';
 
 interface DashboardScreenProps {
   isPro: boolean;

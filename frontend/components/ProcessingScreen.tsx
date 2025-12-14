@@ -1,5 +1,5 @@
 import { Brain, Zap } from 'lucide-react';
-import { AnalysisType } from './MainApp';
+import { AnalysisType } from '@/app/page';
 
 interface ProcessingScreenProps {
   analysisType: AnalysisType;

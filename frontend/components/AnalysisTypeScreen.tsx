@@ -1,5 +1,5 @@
 import { ArrowLeft, MessageSquare, FolderOpen, Heart, Lock } from 'lucide-react';
-import { AnalysisType } from './MainApp';
+import { AnalysisType } from '@/app/page';
 
 interface AnalysisTypeScreenProps {
   onSelectType: (type: AnalysisType) => void;
