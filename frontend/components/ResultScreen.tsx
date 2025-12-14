@@ -1,16 +1,14 @@
 import { Heart, TrendingUp, AlertCircle, CheckCircle, RefreshCw, Share2 } from 'lucide-react';
-import { Answer } from './QuestionScreen';
-import { AnalysisResponse } from '@/lib/api';
+import { Answer } from '@/app/page';
 
 interface ResultScreenProps {
   answers: Answer[];
-  analysisResult: AnalysisResponse | null;
   onRestart: () => void;
 }
 
-export function ResultScreen({ answers, analysisResult, onRestart }: ResultScreenProps) {
-  // Basit bir skor hesaplama (anket yanıtları için)
-  const calculateQuestionScore = () => {
+export function ResultScreen({ answers, onRestart }: ResultScreenProps) {
+  // Basit bir skor hesaplama (gerçek uygulamada daha karmaşık olabilir)
+  const calculateScore = () => {
     let score = 0;
     answers.forEach(answer => {
       if (answer.answer.includes('Çok') || answer.answer.includes('Tamamen') || answer.answer.includes('Her')) {
@@ -26,7 +24,7 @@ export function ResultScreen({ answers, analysisResult, onRestart }: ResultScree
     return Math.round((score / (answers.length * 4)) * 100);
   };
 
-  const score = analysisResult ? Math.round(analysisResult.overall_score * 10) : calculateQuestionScore();
+  const score = calculateScore();
 
   const getScoreColor = () => {
     if (score >= 75) return 'from-green-500 to-emerald-600';
@@ -38,47 +36,6 @@ export function ResultScreen({ answers, analysisResult, onRestart }: ResultScree
     if (score >= 75) return 'Mükemmel';
     if (score >= 50) return 'İyi';
     return 'Geliştirilmeli';
-  };
-
-  // AI analiz sonuçlarından veya varsayılan değerlerden öneriler al
-  const getStrengths = () => {
-    if (analysisResult?.insights) {
-      return analysisResult.insights
-        .filter(i => i.category === 'Güçlü Yön')
-        .map(i => i.description)
-        .slice(0, 3);
-    }
-    return [
-      'İletişim becerileriniz gelişmiş',
-      'Birbirinize zaman ayırıyorsunuz',
-      'Duygusal bağınız güçlü'
-    ];
-  };
-
-  const getImprovements = () => {
-    if (analysisResult?.insights) {
-      return analysisResult.insights
-        .filter(i => i.category === 'Dikkat Noktası' || i.category === 'Gelişim Alanı')
-        .map(i => i.description)
-        .slice(0, 3);
-    }
-    return [
-      'Anlaşmazlık çözüm becerilerinizi geliştirin',
-      'Gelecek planlarınızı daha sık konuşun',
-      'Karşılıklı destek mekanizmalarını güçlendirin'
-    ];
-  };
-
-  const getRecommendations = () => {
-    if (analysisResult?.recommendations) {
-      return analysisResult.recommendations.map(r => r.description).slice(0, 4);
-    }
-    return [
-      'Haftada bir "ilişki check-in" yapın',
-      'Birlikte yeni aktiviteler deneyin',
-      'Minnet günlüğü tutmayı düşünün',
-      'Çift terapisi veya ilişki koçluğu faydalı olabilir'
-    ];
   };
 
   return (
@@ -129,23 +86,36 @@ export function ResultScreen({ answers, analysisResult, onRestart }: ResultScree
         <AnalysisSection
           icon={<CheckCircle className="w-5 h-5 text-green-600" />}
           title="Güçlü Yönler"
-          items={getStrengths()}
+          items={[
+            'İletişim becerileriniz gelişmiş',
+            'Birbirinize zaman ayırıyorsunuz',
+            'Duygusal bağınız güçlü'
+          ]}
           color="green"
         />
 
         <AnalysisSection
           icon={<AlertCircle className="w-5 h-5 text-orange-500" />}
           title="Geliştirilmesi Gerekenler"
-          items={getImprovements()}
+          items={[
+            'Anlaşmazlık çözüm becerilerinizi geliştirin',
+            'Gelecek planlarınızı daha sık konuşun',
+            'Karşılıklı destek mekanizmalarını güçlendirin'
+          ]}
           color="orange"
         />
 
         <AnalysisSection
           icon={<TrendingUp className="w-5 h-5 text-purple-600" />}
           title="AI Önerileri"
-          items={getRecommendations()}
-          color="purple"
-        />
+          items={[
+            'Haftada bir "ilişki check-in" yapın',hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+        >
+          <RefreshCw className="w-5 h-5" />
+          Yeni Analiz Yap
+        </button>
+        
+        <button className="w-full border-2 border-purple-200 text-purple-600 py-4 rounded-2xl
       </div>
 
       {/* Action Buttons */}
@@ -185,7 +155,7 @@ function AnalysisSection({ icon, title, items, color }: AnalysisSectionProps) {
     <div className={`${bgColor} p-4 rounded-2xl`}>
       <div className="flex items-center gap-2 mb-3">
         {icon}
-        <h3 className="text-lg font-bold text-gray-800">{title}</h3>
+        <h3 className="text-gray-800">{title}</h3>
       </div>
       <ul className="space-y-2">
         {items.map((item, index) => (

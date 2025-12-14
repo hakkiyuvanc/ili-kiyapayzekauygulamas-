@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface Answer {
   questionId: number;
-  question: string;
   answer: string;
 }
 
@@ -101,11 +100,34 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
   const handleAnswer = (answer: string) => {
     const newAnswers = [
       ...answers.filter(a => a.questionId !== questions[currentQuestion].id),
-      { 
-        questionId: questions[currentQuestion].id, 
-        question: questions[currentQuestion].question,
-        answer 
-      }
+      { questionId: questions[currentQuestion].id, answer }
+    ];
+    setAnswers(newAnswers);
+
+    if (currentQuestion < questions.length - 1) {
+      setTimeout(() => {
+        setCurrentQuestion(currentQuestion + 1);
+      }, 300);
+    } else {
+      setTimeout(() => {
+        onComplete(newAnswers);
+      }, 300);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+    }
+  };
+
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const currentAnswer = answers.find(a => a.questionId === questions[currentQuestion].id)?.answer;
+
+  const handleAnswer = (answer: string) => {
+    const newAnswers = [
+      ...answers.filter(a => a.questionId !== questions[currentQuestion].id),
+      { questionId: questions[currentQuestion].id, answer }
     ];
     setAnswers(newAnswers);
 
@@ -134,10 +156,10 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
       {/* Progress Bar */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-gray-500 font-medium">
+          <span className="text-sm text-gray-500">
             Soru {currentQuestion + 1}/{questions.length}
           </span>
-          <span className="text-sm text-purple-600 font-bold">
+          <span className="text-sm text-purple-600">
             %{Math.round(progress)}
           </span>
         </div>
@@ -149,20 +171,9 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
         </div>
       </div>
 
-      {/* Back Button */}
-      {currentQuestion > 0 && (
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          <span className="text-sm">Önceki Soru</span>
-        </button>
-      )}
-
       {/* Question */}
       <div className="flex-1 flex flex-col justify-center">
-        <h2 className="text-2xl font-bold mb-8 text-gray-800">
+        <h2 className="mb-8 text-gray-800">
           {questions[currentQuestion].question}
         </h2>
 
@@ -171,16 +182,45 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
             <button
               key={index}
               onClick={() => handleAnswer(option)}
-              className={`w-full p-4 rounded-xl text-left transition-all duration-200 ${
+              className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 ${
                 currentAnswer === option
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg scale-105'
-                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700 hover:shadow-md'
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
               }`}
             >
-              {option}
+              <span className="text-gray-700">{option}</span>
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Navigation */}
+      <div className="mt-6 flex justify-between">
+        <button
+          onClick={handleBack}
+          disabled={currentQuestion === 0}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl ${
+            currentQuestion === 0
+              ? 'text-gray-300 cursor-not-allowed'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          <ChevronLeft className="w-5 h-5" />
+          Geri
+        </button>
+
+        <div className="flex gap-1">
+          {questions.map((_, index) => (
+            <div
+              key={index}
+              className={`w-2 h-2 rounded-full ${
+                index <= currentQuestion ? 'bg-purple-500' : 'bg-gray-200'
+              }`}
+            />
+          ))}
+        </div>
+
+        <div className="w-20" />
       </div>
     </div>
   );

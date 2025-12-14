@@ -1,5 +1,4 @@
-import { Heart, Sparkles, TrendingUp, FileText } from 'lucide-react';
-import Link from 'next/link';
+import { Heart, Sparkles, TrendingUp } from 'lucide-react';
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -14,11 +13,11 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         </div>
       </div>
       
-      <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+      <h1 className="mb-3 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
         İlişki Analiz AI
       </h1>
       
-      <p className="text-gray-600 mb-8 text-lg">
+      <p className="text-gray-600 mb-8">
         Yapay zeka destekli ilişki analizimiz ile ilişkinizin güçlü ve geliştirilmesi gereken yönlerini keşfedin
       </p>
 
@@ -37,21 +36,12 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         />
       </div>
 
-      <div className="space-y-3">
-        <button
-          onClick={onStart}
-          className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-4 rounded-2xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 text-lg"
-        >
-          Hızlı Anket ile Başla
-        </button>
-
-        <Link href="/advanced">
-          <button className="w-full bg-white border-2 border-purple-200 text-purple-600 py-4 rounded-2xl font-semibold hover:bg-purple-50 transition-all duration-300 flex items-center justify-center gap-2">
-            <FileText className="w-5 h-5" />
-            Konuşma Metni ile Analiz
-          </button>
-        </Link>
-      </div>
+      <button
+        onClick={onStart}
+        className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-4 rounded-2xl hover:shadow-lg transition-all duration-300 hover:scale-105"
+      >
+        Analize Başla
+      </button>
 
       <p className="text-xs text-gray-400 mt-6">
         Yanıtlarınız gizli kalır ve analiz için kullanılır
@@ -62,9 +52,9 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
 
 function FeatureCard({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl hover:bg-gray-100 transition-colors">
+    <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
       <div className="flex-shrink-0">{icon}</div>
-      <span className="text-gray-700 font-medium">{text}</span>
+      <span className="text-gray-700">{text}</span>
     </div>
   );
 }

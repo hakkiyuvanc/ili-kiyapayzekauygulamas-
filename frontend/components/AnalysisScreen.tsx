@@ -10,11 +10,11 @@ export function AnalysisScreen() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold mb-4 text-center bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+      <h2 className="mb-4 text-center bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
         Analiz Ediliyor
       </h2>
 
-      <p className="text-gray-600 text-center mb-8 text-lg">
+      <p className="text-gray-600 text-center mb-8">
         Yapay zeka yanıtlarınızı analiz ediyor...
       </p>
 
@@ -36,11 +36,8 @@ export function AnalysisScreen() {
 function AnalysisStep({ icon, text, delay }: { icon: React.ReactNode; text: string; delay: number }) {
   return (
     <div 
-      className="flex items-center gap-3 opacity-0"
-      style={{ 
-        animation: 'fadeIn 0.5s ease-in forwards',
-        animationDelay: `${delay}ms`
-      }}
+      className="flex items-center gap-3 opacity-0 animate-fadeIn"
+      style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
     >
       <div className="flex-shrink-0 text-purple-600">{icon}</div>
       <span className="text-gray-700">{text}</span>
