@@ -1,5 +1,8 @@
 import { Plus, TrendingUp, Shield, Zap, FileText, Calendar, ArrowRight } from 'lucide-react';
 import { InsightData } from '@/app/page';
+import { useState, useEffect } from 'react';
+import { DashboardSkeleton } from '@/components/SkeletonLoader';
+import { DarkModeToggle } from '@/components/DarkModeToggle';
 
 interface DashboardScreenProps {
   isPro: boolean;
@@ -33,14 +36,26 @@ const recentAnalyses: InsightData[] = [
     timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
   }
 ];
+const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    // Simulate loading data
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  
 export function DashboardScreen({ isPro, onStartAnalysis, onViewInsight, onUpgrade }: DashboardScreenProps) {
   return (
-    <div className="bg-white rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto transition-colors duration-300">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-gray-900 mb-1">İlişki Analiz AI</h1>
+          <h1 className="text-gray-900 dark:text-gray-100 mb-1">İlişki Analiz AI</h1>
           {isPro && (
             <div className="flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -48,12 +63,14 @@ export function DashboardScreen({ isPro, onStartAnalysis, onViewInsight, onUpgra
             </div>
           )}
         </div>
-        {!isPro && (
-          <button
-            onClick={onUpgrade}
-            className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-xl text-sm hover:shadow-lg transition-all"
-          >
-            Pro'ya Geç
+        <div className="flex items-center gap-2">
+          <DarkModeToggle />
+          {!isPro && (
+            <button
+              onClick={onUpgrade}
+              className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-xl text-sm hover:shadow-lg transition-all"
+            >
+              Pro'ya Geç
           </button>
         )}
       </div>

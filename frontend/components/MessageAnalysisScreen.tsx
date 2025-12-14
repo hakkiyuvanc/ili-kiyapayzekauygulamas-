@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, Send, Clipboard } from 'lucide-react';
+import { CharacterCounter, Validator, ValidationMessage } from '@/lib/validation';
 
 interface MessageAnalysisScreenProps {
   onSubmit: () => void;
@@ -10,7 +11,8 @@ export function MessageAnalysisScreen({ onSubmit, onBack }: MessageAnalysisScree
   const [message, setMessage] = useState('');
   const [direction, setDirection] = useState<'received' | 'sending'>('received');
 
-  const canSubmit = message.trim().length > 5;
+  const validation = Validator.messageLength(message, 10, 1000);
+  const canSubmit = validation.isValid;
 
   const handlePaste = async () => {
     try {
@@ -86,15 +88,17 @@ export function MessageAnalysisScreen({ onSubmit, onBack }: MessageAnalysisScree
             direction === 'received' 
               ? 'Aldığın mesajı buraya yapıştır...' 
               : 'Göndermek istediğin mesajı yaz...'
-          }
-          className="w-full h-64 p-4 border-2 border-slate-200 rounded-2xl focus:border-blue-400 focus:outline-none resize-none transition-colors text-gray-700"
+          }{`w-full h-64 p-4 border-2 rounded-2xl focus:outline-none resize-none transition-colors text-gray-700 dark:bg-slate-700 dark:text-gray-100 ${
+            message.length > 0 && !validation.isValid 
+              ? 'border-red-300 focus:border-red-500' 
+              : 'border-slate-200 focus:border-blue-400 dark:border-slate-600'
+          }`}
         />
         
         {message.length > 0 && (
-          <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-            <span>{message.length} karakter</span>
-            <span className={canSubmit ? 'text-green-600' : 'text-gray-400'}>
-              {canSubmit ? '✓ Analiz için hazır' : 'Daha fazla karakter gerekli'}
+          <div className="mt-3 space-y-2">
+            <CharacterCounter current={message.length} max={1000} min={10} />
+            <ValidationMessage validation={validation} showSuccess={canSubmit} /Submit ? '✓ Analiz için hazır' : 'Daha fazla karakter gerekli'}
             </span>
           </div>
         )}

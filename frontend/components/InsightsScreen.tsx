@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { ArrowLeft, Share2, Download, Lock, TrendingUp, AlertTriangle, CheckCircle, Lightbulb } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Share2, Download, Lock, TrendingUp, AlertTriangle, CheckCircle, Lightbulb, Copy, Check } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 import { InsightData } from '@/app/page';
+import { InsightsSkeleton } from '@/components/SkeletonLoader';
 
 interface InsightsScreenProps {
   insight: InsightData;
@@ -10,7 +11,71 @@ interface InsightsScreenProps {
   onUpgrade: () => void;
 }
 
-export function InsightsScreen({ insight, isPro, onBack, onUpgrade }: InsightsScreenProps) {
+export function InsightsScreen({ insight, isPro, onBack, onUpgrade }: InsightsScr
+  const [isLoading, setIsLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleShare = async () => {
+    const shareText = `İlişki Analiz Skorum: ${insight.score}/100\nİletişim: ${insight.metrics.communication}\nDuygusal Bağ: ${insight.metrics.emotional}\n\n#İlişkiAnalizi`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: shareText });
+      } catch (err) {
+        console.log('Paylaşım iptal edildi');
+      }
+    } else {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleDownload = () => {
+    // PDF generation would go here
+    const content = `
+İlişki Analiz Raporu
+─────────────────────
+
+Genel Skor: ${insight.score}/100
+${getScoreLabel(insight.score)}
+
+Metrikler:
+• İletişim: ${insight.metrics.communication}/100
+• Duygusal Bağ: ${
+            onClick={handleShare}
+            className="p-2 hover:bg-gray-100 rounded-xl transition-colors relative"
+            title="Paylaş"
+          >
+            {copied ? <Check className="w-5 h-5 text-green-600" /> : <Share2 className="w-5 h-5 text-gray-600" />}
+• Çatışma Yönetimi: ${100 - insight.metrics.conflict}/100
+
+${insight.type === 'file' ? `
+Analiz Detayları:
+• Mesaj Sayısı: ${insight.messageCount}
+• Zaman Aralığı: ${insight.timeRange}
+` : ''}
+
+Oluşturulma: ${new Date().toLocaleDateString('tr-TR')}
+    `;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `iliski-analizi-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (isLoading) {
+    return <InsightsSkeleton />;
+  }eenProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'details'>('overview');
 
   const radarData = [
@@ -46,11 +111,19 @@ export function InsightsScreen({ insight, isPro, onBack, onUpgrade }: InsightsSc
         <h2 className="text-gray-900">Analiz Sonucu</h2>
         
         <div className="flex gap-2">
-          <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-            <Share2 className="w-5 h-5 text-gray-600" />
+          <button 
+            onClick={handleShare}
+            className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+            title="Paylaş"
+          >
+            {copied ? <Check className="w-5 h-5 text-green-600" /> : <Share2 className="w-5 h-5 text-gray-600" />}
           </button>
           {isPro && (
-            <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+            <button 
+              onClick={handleDownload}
+              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              title="İndir"
+            >
               <Download className="w-5 h-5 text-gray-600" />
             </button>
           )}

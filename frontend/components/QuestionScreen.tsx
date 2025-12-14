@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ProgressTracker } from '@/components/ProgressTracker';
 
 export interface Answer {
   questionId: number;
@@ -153,23 +154,13 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
 
   return (
     <div className="bg-white rounded-3xl shadow-2xl p-6 min-h-[600px] flex flex-col">
-      {/* Progress Bar */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-gray-500">
-            Soru {currentQuestion + 1}/{questions.length}
-          </span>
-          <span className="text-sm text-purple-600">
-            %{Math.round(progress)}
-          </span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="bg-gradient-to-r from-pink-500 to-purple-600 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
+      {/* Enhanced Progress Bar */}
+      <ProgressTracker
+        currentStep={currentQuestion + 1}
+        totalSteps={questions.length}
+        steps={questions.map((_, i) => `S${i + 1}`)}
+        compact
+      />
 
       {/* Question */}
       <div className="flex-1 flex flex-col justify-center">

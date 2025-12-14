@@ -11,6 +11,8 @@ import { RelationshipAssessmentScreen } from '@/components/RelationshipAssessmen
 import { ProcessingScreen } from '@/components/ProcessingScreen';
 import { InsightsScreen } from '@/components/InsightsScreen';
 import { SubscriptionScreen } from '@/components/SubscriptionScreen';
+import { ToastContainer } from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 
 export type ScreenType = 
   | 'dashboard' 
@@ -44,17 +46,27 @@ export interface InsightData {
 
 export default function Home() {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('dashboard');
-  const [analysisType, setAnalysisType] = useState<AnalysisType | null>(null);
+  const [analysisType, setAnalysisType] = us
+  const { toasts, success, error, info, warning, removeToast } = useToast();eState<AnalysisType | null>(null);
   const [currentInsight, setCurrentInsight] = useState<InsightData | null>(null);
   const [isPro, setIsPro] = useState(false);
 
   const handleStartAnalysis = (type: AnalysisType) => {
     setAnalysisType(type);
     if (type === 'message') {
-      setCurrentScreen('message-analysis');
+      info('Mesaj analizi için hazırsınız');
     } else if (type === 'file') {
+      if (!isPro) {
+        warning('Bu özellik Pro üyelere özeldir');
+        return;
+      }
       setCurrentScreen('file-upload');
-    } else {
+      info('Dosya yükleme hazır');
+    info('Analiz başlatılıyor...');
+    setCurrentScreen('processing');
+    
+    setTimeout(() => {
+      success('Analiz tamamlandı!');rme formu hazırlandı
       setCurrentScreen('relationship-assessment');
     }
   };
@@ -113,10 +125,13 @@ export default function Home() {
     } else {
       setCurrentScreen('analysis-type');
     }
+    success('Pro üyeliğiniz aktif! Tüm özelliklere erişiminiz var.');
   };
 
-  const handleUpgrade = () => {
-    setCurrentScreen('subscription');
+  con>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      setCurrentScreen('subscription');
   };
 
   const handleProActivate = () => {
@@ -175,8 +190,9 @@ export default function Home() {
         {currentScreen === 'insights' && currentInsight && (
           <InsightsScreen 
             insight={currentInsight}
-            isPro={isPro}
-            onBack={handleBack}
+        </div>
+      </div>
+    </   onBack={handleBack}
             onUpgrade={handleUpgrade}
           />
         )}
