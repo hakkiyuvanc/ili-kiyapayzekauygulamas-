@@ -1,0 +1,159 @@
+"""Database CRUD işlemleri"""
+
+from sqlalchemy.orm import Session
+from typing import List, Optional
+from datetime import datetime
+
+from backend.app.models.database import User, Analysis, Feedback
+from backend.app.schemas.analysis import AnalysisRequest
+
+
+class AnalysisCRUD:
+    """Analysis CRUD operations"""
+
+    @staticmethod
+    def create_analysis(
+        db: Session,
+        report: dict,
+        user_id: Optional[int] = None,
+        format_type: str = "auto",
+        privacy_mode: bool = True,
+    ) -> Analysis:
+        """Yeni analiz kaydı oluştur"""
+        
+        metrics = report.get("metrics", {})
+        conversation_stats = report.get("conversation_stats", {})
+        
+        analysis = Analysis(
+            user_id=user_id,
+            format_type=format_type,
+            privacy_mode=privacy_mode,
+            text_length=report.get("metadata", {}).get("text_length", 0),
+            overall_score=report.get("overall_score", 0.0),
+            sentiment_score=metrics.get("sentiment", {}).get("score", 0.0),
+            empathy_score=metrics.get("empathy", {}).get("score", 0.0),
+            conflict_score=metrics.get("conflict", {}).get("score", 0.0),
+            we_language_score=metrics.get("we_language", {}).get("score", 0.0),
+            balance_score=metrics.get("communication_balance", {}).get("score", 0.0),
+            full_report=report,
+            summary=report.get("summary", ""),
+            message_count=conversation_stats.get("total_messages", 0),
+            participant_count=conversation_stats.get("participant_count", 0),
+        )
+        
+        db.add(analysis)
+        db.commit()
+        db.refresh(analysis)
+        return analysis
+
+    @staticmethod
+    def get_analysis_by_id(db: Session, analysis_id: int) -> Optional[Analysis]:
+        """ID'ye göre analiz getir"""
+        return db.query(Analysis).filter(Analysis.id == analysis_id).first()
+
+    @staticmethod
+    def get_user_analyses(
+        db: Session,
+        user_id: int,
+        skip: int = 0,
+        limit: int = 10
+    ) -> List[Analysis]:
+        """Kullanıcının tüm analizlerini getir"""
+        return (
+            db.query(Analysis)
+            .filter(Analysis.user_id == user_id)
+            .order_by(Analysis.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    @staticmethod
+    def get_recent_analyses(
+        db: Session,
+        skip: int = 0,
+        limit: int = 10
+    ) -> List[Analysis]:
+        """Son analizleri getir (admin için)"""
+        return (
+            db.query(Analysis)
+            .order_by(Analysis.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    @staticmethod
+    def delete_analysis(db: Session, analysis_id: int) -> bool:
+        """Analizi sil"""
+        analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+        if analysis:
+            db.delete(analysis)
+            db.commit()
+            return True
+        return False
+
+
+class FeedbackCRUD:
+    """Feedback CRUD operations"""
+
+    @staticmethod
+    def create_feedback(
+        db: Session,
+        analysis_id: int,
+        rating: int,
+        is_accurate: Optional[bool] = None,
+        comment: Optional[str] = None,
+        user_id: Optional[int] = None,
+    ) -> Feedback:
+        """Yeni feedback oluştur"""
+        feedback = Feedback(
+            analysis_id=analysis_id,
+            user_id=user_id,
+            rating=rating,
+            is_accurate=is_accurate,
+            comment=comment,
+        )
+        db.add(feedback)
+        db.commit()
+        db.refresh(feedback)
+        return feedback
+
+    @staticmethod
+    def get_analysis_feedback(db: Session, analysis_id: int) -> List[Feedback]:
+        """Analiz için feedback'leri getir"""
+        return db.query(Feedback).filter(Feedback.analysis_id == analysis_id).all()
+
+
+class UserCRUD:
+    """User CRUD operations"""
+
+    @staticmethod
+    def create_user(
+        db: Session,
+        email: str,
+        hashed_password: str,
+        full_name: Optional[str] = None,
+        username: Optional[str] = None,
+    ) -> User:
+        """Yeni kullanıcı oluştur"""
+        user = User(
+            email=email,
+            hashed_password=hashed_password,
+            full_name=full_name,
+            username=username,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    @staticmethod
+    def get_user_by_email(db: Session, email: str) -> Optional[User]:
+        """Email'e göre kullanıcı getir"""
+        return db.query(User).filter(User.email == email).first()
+
+    @staticmethod
+    def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
+        """ID'ye göre kullanıcı getir"""
+        return db.query(User).filter(User.id == user_id).first()

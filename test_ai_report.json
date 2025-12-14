@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2025-12-11T13:38:01.325193",
+  "metadata": {
+    "text_length": 150,
+    "format": "simple"
+  },
+  "metrics": {
+    "sentiment": {
+      "score": 62.5,
+      "positive_words": 5,
+      "negative_words": 3,
+      "label": "Olumlu"
+    },
+    "empathy": {
+      "score": 100,
+      "count": 4,
+      "label": "Yüksek"
+    },
+    "conflict": {
+      "score": 0.0,
+      "indicators": 0,
+      "label": "Çok Düşük"
+    },
+    "we_language": {
+      "score": 20.0,
+      "we_words": 1,
+      "i_you_words": 4,
+      "label": "Zayıf Biz-dili"
+    },
+    "communication_balance": {
+      "score": 62.28,
+      "label": "İyi Denge"
+    }
+  },
+  "overall_score": 7.3,
+  "summary": "İletişiminiz genel olarak pozitif bir ton taşıyor. Empatik iletişim örnekleri mevcut. Çatışma seviyeleri düşük. 'Ben' ve 'Sen' dili ağırlıkta.",
+  "insights": [
+    {
+      "category": "Güçlü Yön",
+      "title": "Olumlu İletişim",
+      "description": "İletişiminiz genel olarak pozitif ve destekleyici bir ton taşıyor."
+    },
+    {
+      "category": "Güçlü Yön",
+      "title": "Yüksek Empati",
+      "description": "Karşınızdakinin duygularını anlamaya çalıştığınız açıkça görülüyor."
+    }
+  ],
+  "recommendations": [
+    {
+      "category": "Bağ Güçlendirme",
+      "title": "Biz-dili Kullanın",
+      "description": "'Biz', 'bizim' gibi kelimeler kullanarak ortak hedeflerinizi vurgulayın."
+    }
+  ],
+  "conversation_stats": {
+    "total_messages": 5,
+    "participant_count": 2
+  },
+  "summary_enhanced": "İletişiminiz genel olarak pozitif bir ton taşıyor. Empatik iletişim örnekleri mevcut. Çatışma seviyeleri düşük. 'Ben' ve 'Sen' dili ağırlıkta."
+}
