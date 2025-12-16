@@ -5,14 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ToastContainer } from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { authApi } from '@/lib/api';
-
-// --- Types ---
-interface User {
-    id: number;
-    email: string;
-    full_name: string;
-    is_pro: boolean;
-}
+import { User } from '@/types';
 
 interface AuthContextType {
     user: User | null;
@@ -35,15 +28,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const token = localStorage.getItem('token');
             const savedUser = localStorage.getItem('user');
 
-            if (token && savedUser) {
+            if (token) {
+                // Optimistik olarak local veriyi yükle
+                if (savedUser) {
+                    try {
+                        setUser(JSON.parse(savedUser));
+                    } catch (e) {
+                        console.error("Local user parse error", e);
+                    }
+                }
+
+                // Backend verification
                 try {
-                    // Verify token validity or just load local state
-                    // For now, load local state to be fast
-                    setUser(JSON.parse(savedUser));
-                } catch (e) {
+                    const response = await authApi.getProfile();
+                    // Backend UserResponse doesn't have is_pro, so we add it
+                    const freshUser: User = {
+                        ...response.data,
+                        is_pro: false // Default to false until backend supports it
+                    };
+                    setUser(freshUser);
+                    localStorage.setItem('user', JSON.stringify(freshUser));
+                } catch (error) {
+                    console.error("Token verification failed:", error);
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
+                    setUser(null);
                 }
+            } else {
+                localStorage.removeItem('user');
+                setUser(null);
             }
             setIsLoading(false);
         };
@@ -51,9 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const login = (token: string, userData: User) => {
+        // Ensure is_pro exists
+        const safeUser: User = { ...userData, is_pro: userData.is_pro || false };
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(safeUser));
+        setUser(safeUser);
         router.push('/dashboard');
     };
 

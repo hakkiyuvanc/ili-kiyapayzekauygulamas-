@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4o-mini"
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-3-5-sonnet-20241022"
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-pro"
     AI_ENABLED: bool = True  # AI özelliklerini aç/kapat
     AI_MAX_TOKENS_INSIGHTS: int = 1000
     AI_MAX_TOKENS_RECOMMENDATIONS: int = 800

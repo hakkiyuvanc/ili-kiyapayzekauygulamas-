@@ -36,7 +36,7 @@ export default function AuthPage() {
             // Interceptor reads localStorage.setItem is sync. It should work.
             const userProfile = await authApi.getProfile();
 
-            login(access_token, userProfile.data);
+            login(access_token, { ...userProfile.data, is_pro: false });
             success('Hoş geldiniz, ' + userProfile.data.full_name + '!');
         } catch (err: any) {
             const errorMessage = err.response?.data?.detail || 'Giriş başarısız';

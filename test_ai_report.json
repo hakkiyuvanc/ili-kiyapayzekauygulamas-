@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated_at": "2025-12-11T13:38:01.325193",
+  "generated_at": "2025-12-16T11:28:37.018755",
   "metadata": {
     "text_length": 150,
     "format": "simple"
@@ -39,12 +39,14 @@
     {
       "category": "Güçlü Yön",
       "title": "Olumlu İletişim",
-      "description": "İletişiminiz genel olarak pozitif ve destekleyici bir ton taşıyor."
+      "description": "İletişiminiz genel olarak pozitif ve destekleyici bir ton taşıyor.",
+      "icon": "✅"
     },
     {
       "category": "Güçlü Yön",
       "title": "Yüksek Empati",
-      "description": "Karşınızdakinin duygularını anlamaya çalıştığınız açıkça görülüyor."
+      "description": "Karşınızdakinin duygularını anlamaya çalıştığınız açıkça görülüyor.",
+      "icon": "💝"
     }
   ],
   "recommendations": [

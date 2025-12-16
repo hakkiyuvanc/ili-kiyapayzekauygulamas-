@@ -75,9 +75,9 @@ export interface Recommendation {
 
 // API functions
 export const analysisApi = {
-  analyze: (data: AnalysisRequest) => 
+  analyze: (data: AnalysisRequest) =>
     api.post<AnalysisResponse>('/api/analysis/analyze', data),
-  
+
   uploadAndAnalyze: (file: File, privacyMode = true) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -91,13 +91,13 @@ export const analysisApi = {
       }
     );
   },
-  
+
   getHistory: (skip = 0, limit = 10) =>
     api.get('/api/analysis/history', { params: { skip, limit } }),
-  
+
   getAnalysis: (id: number) =>
     api.get<AnalysisResponse>(`/api/analysis/history/${id}`),
-  
+
   deleteAnalysis: (id: number) =>
     api.delete(`/api/analysis/history/${id}`),
 };
@@ -105,14 +105,18 @@ export const analysisApi = {
 export const authApi = {
   register: (data: { email: string; password: string; full_name: string }) =>
     api.post('/api/auth/register', data),
-  
+
   login: (data: { username: string; password: string }) =>
     api.post('/api/auth/login', data, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     }),
-  
+
   getProfile: () =>
     api.get('/api/auth/me'),
+};
+
+export const systemApi = {
+  getStatus: () => api.get<{ ai_available: boolean; ai_provider: string }>('/api/system/status'),
 };

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardScreen } from '@/components/DashboardScreen';
-import { analysisApi } from '@/lib/api';
+import { analysisApi, systemApi } from '@/lib/api';
 import { useAuth, useToastContext } from '../providers';
 
 import { InsightData, AnalysisType } from '@/types';
@@ -13,6 +13,19 @@ export default function DashboardPage() {
     const { user, logout, isLoading: authLoading } = useAuth();
     const { info } = useToastContext();
     const [analysisHistory, setAnalysisHistory] = useState<InsightData[]>([]);
+    const [aiAvailable, setAiAvailable] = useState(true);
+
+    useEffect(() => {
+        const checkSystem = async () => {
+            try {
+                const res = await systemApi.getStatus();
+                setAiAvailable(res.data.ai_available);
+            } catch (e) {
+                console.error("System check failed", e);
+            }
+        };
+        checkSystem();
+    }, []);
 
     useEffect(() => {
         const loadAnalysisHistory = async () => {
@@ -79,6 +92,7 @@ export default function DashboardPage() {
                 <DashboardScreen
                     isPro={user?.is_pro || false}
                     user={user}
+                    aiAvailable={aiAvailable}
                     onStartAnalysis={handleStartAnalysis}
                     onViewInsight={handleViewInsight}
                     onUpgrade={handleUpgrade}

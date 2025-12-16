@@ -1,11 +1,24 @@
 """FastAPI Ana Uygulama"""
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.app.core.config import settings
+from backend.app.core.database import engine, Base
 from backend.app.api import analysis, auth, upload
+# Modelleri import et ki Base.metadata dolusun
+from backend.app.models import database as models
+from backend.app.services.ai_service import get_ai_service
+
+# Lifespan manager for startup events
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Tabloları oluştur
+    Base.metadata.create_all(bind=engine)
+    yield
+    # Shutdown logic here if needed
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -13,6 +26,7 @@ app = FastAPI(
     description="Yapay zeka destekli ilişki analizi API",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # CORS middleware
@@ -49,6 +63,19 @@ async def health_check():
             "version": settings.APP_VERSION,
         },
     )
+
+@app.get("/api/system/status", tags=["System"])
+async def system_status():
+    """Sistem durumunu kontrol et (AI, DB)"""
+    ai_service = get_ai_service()
+    
+    return {
+        "ai_enabled": settings.AI_ENABLED,
+        "ai_provider": settings.AI_PROVIDER,
+        "ai_available": ai_service._is_available(),  # True if keys are valid
+        "database": "connected", # SQLAlchemy lazy connect, assumes active if no error yet
+        "version": settings.APP_VERSION
+    }
 
 
 # API routers

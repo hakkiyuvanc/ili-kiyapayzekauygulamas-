@@ -1,21 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, TrendingUp, Shield, Zap, FileText, Calendar, ArrowRight, LogOut, User } from 'lucide-react';
-import { InsightData } from '@/types';
+import { Plus, TrendingUp, Shield, Zap, FileText, Calendar, ArrowRight, LogOut, User as UserIcon, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { InsightData, User } from '@/types';
 import { DashboardSkeleton } from '@/components/SkeletonLoader';
 import { DarkModeToggle } from '@/components/DarkModeToggle';
-
-interface UserData {
-  id: number;
-  email: string;
-  full_name: string;
-  is_pro: boolean;
-}
+import { TrendChart } from './charts/TrendChart';
+import { MetricRadarChart } from './charts/MetricRadarChart';
 
 interface DashboardScreenProps {
   isPro: boolean;
-  user: UserData | null;
+  user: User | null;
+  aiAvailable?: boolean;
   onStartAnalysis: () => void;
   onViewInsight: (insight: InsightData) => void;
   onUpgrade: () => void;
@@ -33,7 +30,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: typeof TrendingUp
   );
 }
 
-export function DashboardScreen({ isPro, user, onStartAnalysis, onViewInsight, onUpgrade, onLogout, analysisHistory }: DashboardScreenProps) {
+export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalysis, onViewInsight, onUpgrade, onLogout, analysisHistory }: DashboardScreenProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -50,7 +47,25 @@ export function DashboardScreen({ isPro, user, onStartAnalysis, onViewInsight, o
     : 0;
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto transition-colors duration-300">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto transition-colors duration-300"
+    >
+
+      {!aiAvailable && (
+        <div className="mb-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-xl p-3 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300">Demo Modu Aktif</h4>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+              AI API anahtarı girilmediği için analizler <strong>mock verilerle</strong> yapılıyor. Gerçek analiz için backend .env dosyasını düzenleyin.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -112,6 +127,31 @@ export function DashboardScreen({ isPro, user, onStartAnalysis, onViewInsight, o
         />
       </div>
 
+      {/* Grafikler Section */}
+      {analysisHistory.length > 0 && (
+        <div className="grid md:grid-cols-2 gap-4 mb-6">
+          {/* Trend Grafiği (Line) */}
+          <div className="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-gray-100 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Zamanla Değişim</h3>
+            </div>
+            <TrendChart data={analysisHistory} />
+          </div>
+
+          {/* Son Analiz Detayı (Radar) */}
+          <div className="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-gray-100 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Son Analiz Profili</h3>
+            </div>
+            {analysisHistory[0] && analysisHistory[0].metrics ? (
+              <MetricRadarChart metrics={analysisHistory[0].metrics} />
+            ) : (
+              <div className="h-64 flex items-center justify-center text-gray-400 text-sm">Veri yok</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* New Analysis CTA */}
       <button
         onClick={onStartAnalysis}
@@ -149,10 +189,10 @@ export function DashboardScreen({ isPro, user, onStartAnalysis, onViewInsight, o
                 className="w-full bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-xl p-4 flex items-center gap-4 transition-colors text-left"
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${analysis.score >= 75 ? 'bg-green-100 dark:bg-green-900' :
-                    analysis.score >= 50 ? 'bg-yellow-100 dark:bg-yellow-900' : 'bg-red-100 dark:bg-red-900'
+                  analysis.score >= 50 ? 'bg-yellow-100 dark:bg-yellow-900' : 'bg-red-100 dark:bg-red-900'
                   }`}>
                   <span className={`font-bold ${analysis.score >= 75 ? 'text-green-600 dark:text-green-400' :
-                      analysis.score >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'
+                    analysis.score >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'
                     }`}>{analysis.score}</span>
                 </div>
                 <div className="flex-1">
@@ -185,7 +225,7 @@ export function DashboardScreen({ isPro, user, onStartAnalysis, onViewInsight, o
           className="w-full mt-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 border border-purple-200 dark:border-purple-700 rounded-2xl p-4 flex items-center gap-3"
         >
           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-            <User className="w-5 h-5 text-white" />
+            <UserIcon className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 text-left">
             <p className="font-medium text-purple-800 dark:text-purple-300">Hesap Oluştur</p>
@@ -211,6 +251,6 @@ export function DashboardScreen({ isPro, user, onStartAnalysis, onViewInsight, o
           <ArrowRight className="w-5 h-5 text-amber-500" />
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }

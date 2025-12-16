@@ -7,13 +7,16 @@ from openai import OpenAI
 from anthropic import Anthropic
 
 
+import google.generativeai as genai
+
 class AIService:
-    """Yapay zeka servisi - OpenAI/Anthropic entegrasyonu"""
+    """Yapay zeka servisi - OpenAI/Anthropic/Gemini entegrasyonu"""
 
     def __init__(self):
         self.openai_client = None
         self.anthropic_client = None
-        self.provider = os.getenv("AI_PROVIDER", "openai")  # openai, anthropic
+        self.gemini_client = None
+        self.provider = os.getenv("AI_PROVIDER", "openai")  # openai, anthropic, gemini
         
         # API anahtarlarını kontrol et
         if self.provider == "openai":
@@ -24,6 +27,11 @@ class AIService:
             api_key = os.getenv("ANTHROPIC_API_KEY")
             if api_key:
                 self.anthropic_client = Anthropic(api_key=api_key)
+        elif self.provider == "gemini":
+            api_key = os.getenv("GEMINI_API_KEY")
+            if api_key:
+                genai.configure(api_key=api_key)
+                self.gemini_client = genai.GenerativeModel(os.getenv("GEMINI_MODEL", "gemini-pro"))
 
     def generate_insights(
         self,
@@ -194,6 +202,16 @@ Kısa (2-3 cümle), destekleyici ve yapıcı bir özet oluştur. Türkçe yaz.""
                 ]
             )
             return response.content[0].text.strip()
+            
+        elif self.provider == "gemini" and self.gemini_client:
+            response = self.gemini_client.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=max_tokens,
+                    temperature=0.7,
+                )
+            )
+            return response.text.strip()
         
         raise Exception("AI provider yapılandırılmamış")
 
@@ -228,7 +246,7 @@ Kısa (2-3 cümle), destekleyici ve yapıcı bir özet oluştur. Türkçe yaz.""
 
     def _is_available(self) -> bool:
         """AI servisi kullanılabilir mi?"""
-        return (self.openai_client is not None) or (self.anthropic_client is not None)
+        return (self.openai_client is not None) or (self.anthropic_client is not None) or (self.gemini_client is not None)
 
     def _fallback_insights(self, metrics: Dict[str, Any]) -> List[Dict[str, str]]:
         """AI yoksa fallback içgörüler"""

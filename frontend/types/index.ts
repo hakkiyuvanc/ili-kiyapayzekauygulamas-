@@ -26,3 +26,13 @@ export interface Answer {
     questionId: number;
     answer: string;
 }
+
+export interface User {
+    id: number;
+    email: string;
+    full_name: string;
+    username?: string;
+    is_active: boolean;
+    is_verified: boolean;
+    is_pro: boolean;
+}
