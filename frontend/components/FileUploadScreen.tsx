@@ -1,14 +1,17 @@
+'use client';
+
 import { useState } from 'react';
 import { ArrowLeft, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface FileUploadScreenProps {
-  onSubmit: () => void;
+  onSubmit: (file: File) => void;
   onBack: () => void;
 }
 
 export function FileUploadScreen({ onSubmit, onBack }: FileUploadScreenProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -125,16 +128,36 @@ export function FileUploadScreen({ onSubmit, onBack }: FileUploadScreenProps) {
 
       {/* Submit Button */}
       <button
-        onClick={onSubmit}
-        disabled={!uploadedFile}
+        onClick={async () => {
+          if (!uploadedFile || isSubmitting) return;
+          setIsSubmitting(true);
+          try {
+            await onSubmit(uploadedFile);
+          } finally {
+            setIsSubmitting(false);
+          }
+        }}
+        disabled={!uploadedFile || isSubmitting}
         className={`w-full py-4 rounded-2xl transition-all flex items-center justify-center gap-2 ${
-          uploadedFile
+          uploadedFile && !isSubmitting
             ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg hover:scale-[1.02]'
             : 'bg-slate-200 text-slate-400 cursor-not-allowed'
         }`}
       >
-        <FileText className="w-5 h-5" />
-        Dosyayı Analiz Et
+        {isSubmitting ? (
+          <>
+            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Analiz Ediliyor...
+          </>
+        ) : (
+          <>
+            <FileText className="w-5 h-5" />
+            Dosyayı Analiz Et
+          </>
+        )}
       </button>
 
       {/* Privacy Note */}

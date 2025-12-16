@@ -1,5 +1,5 @@
 import { ArrowLeft, MessageSquare, FolderOpen, Heart, Lock } from 'lucide-react';
-import { AnalysisType } from '@/app/page';
+import { AnalysisType } from '@/types';
 
 interface AnalysisTypeScreenProps {
   onSelectType: (type: AnalysisType) => void;
@@ -84,11 +84,10 @@ function TypeCard({ icon, title, description, features, onClick, gradient, free,
   return (
     <button
       onClick={free ? onClick : undefined}
-      className={`w-full p-5 rounded-2xl border-2 transition-all text-left ${
-        free 
-          ? 'border-slate-200 hover:border-slate-300 hover:shadow-lg bg-white' 
+      className={`w-full p-5 rounded-2xl border-2 transition-all text-left ${free
+          ? 'border-slate-200 hover:border-slate-300 hover:shadow-lg bg-white'
           : 'border-slate-200 bg-slate-50 opacity-75'
-      }`}
+        }`}
     >
       <div className="flex items-start justify-between mb-3">
         <div className={`p-3 rounded-xl bg-gradient-to-br ${gradient} bg-opacity-10`}>

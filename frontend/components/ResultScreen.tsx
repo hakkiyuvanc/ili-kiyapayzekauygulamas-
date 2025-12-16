@@ -1,5 +1,5 @@
 import { Heart, TrendingUp, AlertCircle, CheckCircle, RefreshCw, Share2 } from 'lucide-react';
-import { Answer } from '@/app/page';
+import { Answer } from '@/types';
 
 interface ResultScreenProps {
   answers: Answer[];
@@ -109,13 +109,10 @@ export function ResultScreen({ answers, onRestart }: ResultScreenProps) {
           icon={<TrendingUp className="w-5 h-5 text-purple-600" />}
           title="AI Önerileri"
           items={[
-            'Haftada bir "ilişki check-in" yapın',hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
-        >
-          <RefreshCw className="w-5 h-5" />
-          Yeni Analiz Yap
-        </button>
-        
-        <button className="w-full border-2 border-purple-200 text-purple-600 py-4 rounded-2xl
+            'Duygusal ihtiyaçlarınızı açıkça ifade edin'
+          ]}
+          color="purple"
+        />
       </div>
 
       {/* Action Buttons */}
@@ -127,7 +124,7 @@ export function ResultScreen({ answers, onRestart }: ResultScreenProps) {
           <RefreshCw className="w-5 h-5" />
           Yeni Analiz Yap
         </button>
-        
+
         <button className="w-full border-2 border-purple-200 text-purple-600 py-4 rounded-2xl font-semibold hover:bg-purple-50 transition-all duration-300 flex items-center justify-center gap-2">
           <Share2 className="w-5 h-5" />
           Sonuçları Paylaş
@@ -150,7 +147,7 @@ interface AnalysisSectionProps {
 
 function AnalysisSection({ icon, title, items, color }: AnalysisSectionProps) {
   const bgColor = color === 'green' ? 'bg-green-50' : color === 'orange' ? 'bg-orange-50' : 'bg-purple-50';
-  
+
   return (
     <div className={`${bgColor} p-4 rounded-2xl`}>
       <div className="flex items-center gap-2 mb-3">

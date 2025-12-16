@@ -1,8 +1,6 @@
 """Unit Tests for Relationship Metrics"""
 
 import unittest
-import sys
-sys.path.insert(0, '/Users/hakkiyuvanc/GİTHUB/ilişki yapay zeka/ili-kiyapayzekauygulamas-')
 
 from ml.features.relationship_metrics import RelationshipMetrics
 

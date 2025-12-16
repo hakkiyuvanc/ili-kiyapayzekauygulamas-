@@ -125,32 +125,7 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
   const progress = ((currentQuestion + 1) / questions.length) * 100;
   const currentAnswer = answers.find(a => a.questionId === questions[currentQuestion].id)?.answer;
 
-  const handleAnswer = (answer: string) => {
-    const newAnswers = [
-      ...answers.filter(a => a.questionId !== questions[currentQuestion].id),
-      { questionId: questions[currentQuestion].id, answer }
-    ];
-    setAnswers(newAnswers);
 
-    if (currentQuestion < questions.length - 1) {
-      setTimeout(() => {
-        setCurrentQuestion(currentQuestion + 1);
-      }, 300);
-    } else {
-      setTimeout(() => {
-        onComplete(newAnswers);
-      }, 300);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    }
-  };
-
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
-  const currentAnswer = answers.find(a => a.questionId === questions[currentQuestion].id)?.answer;
 
   return (
     <div className="bg-white rounded-3xl shadow-2xl p-6 min-h-[600px] flex flex-col">
@@ -173,11 +148,10 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
             <button
               key={index}
               onClick={() => handleAnswer(option)}
-              className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 ${
-                currentAnswer === option
-                  ? 'border-purple-500 bg-purple-50'
-                  : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
-              }`}
+              className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 ${currentAnswer === option
+                ? 'border-purple-500 bg-purple-50'
+                : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                }`}
             >
               <span className="text-gray-700">{option}</span>
             </button>
@@ -190,11 +164,10 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
         <button
           onClick={handleBack}
           disabled={currentQuestion === 0}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl ${
-            currentQuestion === 0
-              ? 'text-gray-300 cursor-not-allowed'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl ${currentQuestion === 0
+            ? 'text-gray-300 cursor-not-allowed'
+            : 'text-gray-600 hover:bg-gray-100'
+            }`}
         >
           <ChevronLeft className="w-5 h-5" />
           Geri
@@ -204,9 +177,8 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
           {questions.map((_, index) => (
             <div
               key={index}
-              className={`w-2 h-2 rounded-full ${
-                index <= currentQuestion ? 'bg-purple-500' : 'bg-gray-200'
-              }`}
+              className={`w-2 h-2 rounded-full ${index <= currentQuestion ? 'bg-purple-500' : 'bg-gray-200'
+                }`}
             />
           ))}
         </div>

@@ -1,8 +1,10 @@
+'use client';
+
 import { useState } from 'react';
 import { ArrowLeft, ChevronRight, ChevronLeft } from 'lucide-react';
 
 interface RelationshipAssessmentScreenProps {
-  onSubmit: () => void;
+  onSubmit: (answers: Record<string, string>) => void;
   onBack: () => void;
 }
 
@@ -42,16 +44,30 @@ const questions = [
 export function RelationshipAssessmentScreen({ onSubmit, onBack }: RelationshipAssessmentScreenProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAnswer = (answer: string) => {
     setAnswers({ ...answers, [currentQuestion]: answer });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
-      onSubmit();
+      // Convert numeric keys to category names
+      const namedAnswers: Record<string, string> = {};
+      questions.forEach((q, index) => {
+        if (answers[index]) {
+          namedAnswers[q.category] = answers[index];
+        }
+      });
+      
+      setIsSubmitting(true);
+      try {
+        await onSubmit(namedAnswers);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -156,15 +172,24 @@ export function RelationshipAssessmentScreen({ onSubmit, onBack }: RelationshipA
 
         <button
           onClick={handleNext}
-          disabled={!canProceed}
+          disabled={!canProceed || isSubmitting}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all ${
-            canProceed
+            canProceed && !isSubmitting
               ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-slate-200 text-slate-400 cursor-not-allowed'
           }`}
         >
-          <span>{currentQuestion === questions.length - 1 ? 'Tamamla' : 'İleri'}</span>
-          <ChevronRight className="w-5 h-5" />
+          {isSubmitting ? (
+            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : (
+            <>
+              <span>{currentQuestion === questions.length - 1 ? 'Tamamla' : 'İleri'}</span>
+              <ChevronRight className="w-5 h-5" />
+            </>
+          )}
         </button>
       </div>
     </div>

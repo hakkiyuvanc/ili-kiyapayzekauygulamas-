@@ -1,5 +1,5 @@
 import { Brain, Zap } from 'lucide-react';
-import { AnalysisType } from '@/app/page';
+import { AnalysisType } from '@/types';
 
 interface ProcessingScreenProps {
   analysisType: AnalysisType;
@@ -76,7 +76,7 @@ export function ProcessingScreen({ analysisType }: ProcessingScreenProps) {
 
 function ProcessingStep({ icon, text, delay }: { icon: string; text: string; delay: number }) {
   return (
-    <div 
+    <div
       className="flex items-center gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl opacity-0 animate-fadeIn"
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
     >

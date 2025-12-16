@@ -1,0 +1,93 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { InsightsScreen } from '@/components/InsightsScreen';
+import { analysisApi } from '@/lib/api';
+import { useAuth, useToastContext } from '../../../providers';
+// Use types from dashboard or a shared type file
+import { InsightData, AnalysisType } from '@/types';
+
+export default function AnalysisResultPage() {
+    const router = useRouter();
+    const params = useParams();
+    const { id } = params;
+
+    const { user } = useAuth();
+    const { error } = useToastContext();
+
+    const [insight, setInsight] = useState<InsightData | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (id) {
+            loadAnalysis(Number(id));
+        }
+    }, [id]);
+
+    const loadAnalysis = async (analysisId: number) => {
+        try {
+            const response = await analysisApi.getAnalysis(analysisId);
+            const result = response.data;
+
+            const mappedInsight: InsightData = {
+                type: 'message', // Default or need to map from result
+                score: result.overall_score,
+                metrics: {
+                    communication: result.metrics?.sentiment?.score || 70,
+                    emotional: result.metrics?.empathy?.score || 75,
+                    compatibility: result.metrics?.we_language?.score || 72,
+                    conflict: result.metrics?.conflict?.score || 40,
+                },
+                findings: result.insights?.map((i: { title: string }) => i.title) || [],
+                recommendations: result.recommendations?.map((r: { title: string }) => r.title) || [],
+                riskAreas: [],
+                strengths: [],
+                timestamp: new Date(), // result.created_at if available
+                analysisId: result.analysis_id,
+            };
+
+            setInsight(mappedInsight);
+        } catch (err) {
+            console.error('Failed to load analysis:', err);
+            // error('Analiz sonucu yüklenemedi'); 
+            // Do not spam toast on load effect usually, maybe show UI error state
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBack = () => {
+        router.push('/dashboard');
+    };
+
+    const handleUpgrade = () => {
+        router.push('/subscription');
+    };
+
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center">Sonuçlar Yükleniyor...</div>;
+    }
+
+    if (!insight) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center">
+                <div>Sonuç bulunamadı.</div>
+                <button onClick={handleBack} className="mt-4 text-blue-500">Geri Dön</button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4 transition-colors">
+            <div className="w-full max-w-md">
+                <InsightsScreen
+                    insight={insight}
+                    isPro={user?.is_pro || false}
+                    onBack={handleBack}
+                    onUpgrade={handleUpgrade}
+                />
+            </div>
+        </div>
+    );
+}

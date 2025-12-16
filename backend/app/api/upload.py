@@ -149,7 +149,11 @@ async def upload_and_analyze(
             result["analysis_id"] = db_analysis.id
             result["filename"] = file.filename
         except Exception as e:
-            result["db_save_error"] = str(e)
+            # Clean up analysis if it was created but DB failed? No, transaction rollback handles it usually
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Veritabanı kayıt hatası: {str(e)}"
+            )
     
     return result
 
