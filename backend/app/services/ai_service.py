@@ -8,6 +8,7 @@ from anthropic import Anthropic
 
 
 import google.generativeai as genai
+from backend.app.core.config import settings
 
 class AIService:
     """Yapay zeka servisi - OpenAI/Anthropic/Gemini entegrasyonu"""
@@ -16,22 +17,22 @@ class AIService:
         self.openai_client = None
         self.anthropic_client = None
         self.gemini_client = None
-        self.provider = os.getenv("AI_PROVIDER", "openai")  # openai, anthropic, gemini
+        self.provider = settings.AI_PROVIDER
         
         # API anahtarlarını kontrol et
         if self.provider == "openai":
-            api_key = os.getenv("OPENAI_API_KEY")
+            api_key = settings.OPENAI_API_KEY
             if api_key:
                 self.openai_client = OpenAI(api_key=api_key)
         elif self.provider == "anthropic":
-            api_key = os.getenv("ANTHROPIC_API_KEY")
+            api_key = settings.ANTHROPIC_API_KEY
             if api_key:
                 self.anthropic_client = Anthropic(api_key=api_key)
         elif self.provider == "gemini":
-            api_key = os.getenv("GEMINI_API_KEY")
+            api_key = settings.GEMINI_API_KEY
             if api_key:
                 genai.configure(api_key=api_key)
-                self.gemini_client = genai.GenerativeModel(os.getenv("GEMINI_MODEL", "gemini-pro"))
+                self.gemini_client = genai.GenerativeModel(settings.GEMINI_MODEL)
 
     def generate_insights(
         self,

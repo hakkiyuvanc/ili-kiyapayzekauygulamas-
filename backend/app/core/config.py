@@ -1,6 +1,7 @@
 """Uygulama Konfigürasyonu"""
 
 from typing import List
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -61,6 +62,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=True,
     )
+
 
 
 settings = Settings()
