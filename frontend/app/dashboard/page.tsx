@@ -66,7 +66,7 @@ export default function DashboardPage() {
     const handleViewInsight = (insight: InsightData) => {
         // Navigate to detailed view
         if (insight.analysisId) {
-            router.push(`/analysis/result/${insight.analysisId}`);
+            router.push(`/analysis/result?id=${insight.analysisId}`);
         } else {
             // Handle guest insights or those without ID (mock)
             console.warn("No ID for insight, cannot navigate");

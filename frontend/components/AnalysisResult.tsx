@@ -3,7 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { type AnalysisResponse } from '@/lib/api';
 import { Heart, Zap, AlertTriangle, Users, Scale } from 'lucide-react';
-import { RadialBarChart, RadialBar, Legend, ResponsiveContainer } from 'recharts';
+import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
+import OutcomeCharts from './OutcomeCharts';
 
 interface AnalysisResultProps {
   result: AnalysisResponse;
@@ -89,6 +90,12 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
         </CardContent>
       </Card>
 
+      {/* Outcome Charts (New) */}
+      <OutcomeCharts
+        stats={result.conversation_stats}
+        metrics={result.metrics as any}
+      />
+
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {Object.entries(result.metrics).map(([key, metric]) => (
@@ -105,13 +112,12 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                 <div
-                  className={`h-2 rounded-full ${
-                    metric.score >= 70
-                      ? 'bg-green-500'
-                      : metric.score >= 40
+                  className={`h-2 rounded-full ${metric.score >= 70
+                    ? 'bg-green-500'
+                    : metric.score >= 40
                       ? 'bg-yellow-500'
                       : 'bg-red-500'
-                  }`}
+                    }`}
                   style={{ width: `${metric.score}%` }}
                 />
               </div>
@@ -155,19 +161,18 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold">{rec.title}</h4>
                 <span
-                  className={`text-xs px-2 py-1 rounded ${
-                    rec.priority === 'high'
-                      ? 'bg-red-100 text-red-700'
-                      : rec.priority === 'medium'
+                  className={`text-xs px-2 py-1 rounded ${rec.priority === 'high'
+                    ? 'bg-red-100 text-red-700'
+                    : rec.priority === 'medium'
                       ? 'bg-yellow-100 text-yellow-700'
                       : 'bg-blue-100 text-blue-700'
-                  }`}
+                    }`}
                 >
                   {rec.priority === 'high'
                     ? 'Yüksek'
                     : rec.priority === 'medium'
-                    ? 'Orta'
-                    : 'Düşük'}
+                      ? 'Orta'
+                      : 'Düşük'}
                 </span>
               </div>
               <p className="text-sm text-gray-600 mb-2">{rec.description}</p>

@@ -2,32 +2,31 @@
 const nextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
-  
-  // Output standalone for Docker
-  output: 'standalone',
-  
-  // Optimize images
+
+  // Output static export for Capacitor
+  output: 'export',
+
+  // Optimize images (must be unoptimized for static export)
   images: {
-    formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 60,
+    unoptimized: true,
   },
-  
+
   // Force webpack (disable Turbopack)
   webpack: (config) => {
     return config;
   },
-  
+
   // Compression
   compress: true,
-  
+
   // Production source maps (disabled for smaller bundle)
   productionBrowserSourceMaps: false,
-  
+
   // Performance
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts'],
   },
-  
+
   // Headers for security
   async headers() {
     return [
@@ -46,4 +45,11 @@ const nextConfig = {
   }
 };
 
-module.exports = nextConfig;
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+});
+
+module.exports = withPWA(nextConfig);

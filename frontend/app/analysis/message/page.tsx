@@ -25,7 +25,7 @@ export default function MessageAnalysisPage() {
             // The API returns analysis_id if saved to DB.
             if (result.analysis_id) {
                 success('Analiz tamamlandı!');
-                router.push(`/analysis/result/${result.analysis_id}`);
+                router.push(`/analysis/result?id=${result.analysis_id}`);
             } else {
                 // If no ID (e.g. guest mode without DB save?), we might need to pass state via query params or context.
                 // For now assume ID is returned.

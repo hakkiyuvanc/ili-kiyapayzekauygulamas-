@@ -43,6 +43,7 @@ async def analyze_text(
     # Validasyon
     is_valid, error_msg = service.validate_text(request.text)
     if not is_valid:
+        print(f"VALIDATION ERROR: {error_msg}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=error_msg,

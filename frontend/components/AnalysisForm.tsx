@@ -18,8 +18,19 @@ export default function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) 
   const [mode, setMode] = useState<'text' | 'file'>('text');
 
   const handleTextAnalysis = async () => {
-    if (!text.trim()) {
+    const trimmedText = text.trim();
+    if (!trimmedText) {
       setError('Lütfen analiz edilecek metni girin');
+      return;
+    }
+
+    if (trimmedText.length < 10) {
+      setError('Metin çok kısa (minimum 10 karakter)');
+      return;
+    }
+
+    if (trimmedText.split(/\s+/).filter(w => w.length > 0).length < 3) {
+      setError('Anlamlı bir analiz için en az 3 kelime gerekli');
       return;
     }
 
@@ -66,19 +77,19 @@ export default function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) 
     if (selectedFile) {
       const validExtensions = ['.txt', '.json', '.log', '.zip'];
       const fileExt = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase();
-      
+
       if (!validExtensions.includes(fileExt)) {
         setError(`Geçersiz dosya formatı. İzin verilenler: ${validExtensions.join(', ')}`);
         e.target.value = '';
         return;
       }
-      
+
       if (selectedFile.size > 10 * 1024 * 1024) {
         setError('Dosya boyutu 10MB\'dan küçük olmalıdır');
         e.target.value = '';
         return;
       }
-      
+
       setFile(selectedFile);
       setError('');
     }

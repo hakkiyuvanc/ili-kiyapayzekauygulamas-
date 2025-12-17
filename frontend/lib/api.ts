@@ -51,6 +51,19 @@ export interface AnalysisResponse {
   insights: Insight[];
   recommendations: Recommendation[];
   analysis_id?: number;
+  conversation_stats?: {
+    total_messages: number;
+    participant_count: number;
+    participants: string[];
+    message_distribution: Record<string, {
+      count: number;
+      percentage: number;
+      avg_length: number;
+      total_words: number;
+    }>;
+    avg_message_length: number;
+    total_words: number;
+  };
 }
 
 export interface MetricData {

@@ -98,6 +98,40 @@ class FeedbackCRUD:
     """Feedback CRUD operations"""
 
     @staticmethod
+    def create_feedback(db: Session, feedback_data: dict, user_id: Optional[int] = None) -> Feedback:
+        """Feedback oluştur"""
+        feedback = Feedback(
+            analysis_id=feedback_data.get("analysis_id"),
+            user_id=user_id,
+            rating=feedback_data.get("rating"),
+            is_accurate=feedback_data.get("is_accurate"),
+            comment=feedback_data.get("comment"),
+        )
+        db.add(feedback)
+        db.commit()
+        db.refresh(feedback)
+        return feedback
+
+
+class UserCRUD:
+    """User CRUD operations"""
+
+    @staticmethod
+    def get_user_by_email(db: Session, email: str) -> Optional[User]:
+        return db.query(User).filter(User.email == email).first()
+
+    @staticmethod
+    def create_user(db: Session, email: str, hashed_password: str, full_name: Optional[str] = None) -> User:
+        db_user = User(
+            email=email,
+            hashed_password=hashed_password,
+            full_name=full_name,
+            username=email.split("@")[0] # Simple default username
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
     def create_feedback(
         db: Session,
         analysis_id: int,

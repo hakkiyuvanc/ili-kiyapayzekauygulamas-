@@ -28,7 +28,7 @@ export default function AssessmentPage() {
 
             if (result.analysis_id) {
                 success('Değerlendirme tamamlandı!');
-                router.push(`/analysis/result/${result.analysis_id}`);
+                router.push(`/analysis/result?id=${result.analysis_id}`);
             } else {
                 error('Analiz ID alınamadı');
             }

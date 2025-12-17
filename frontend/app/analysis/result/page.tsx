@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { InsightsScreen } from '@/components/InsightsScreen';
 import { analysisApi } from '@/lib/api';
-import { useAuth, useToastContext } from '../../../providers';
+import { useAuth, useToastContext } from '../../providers';
 // Use types from dashboard or a shared type file
 import { InsightData, AnalysisType } from '@/types';
 
-export default function AnalysisResultPage() {
+function AnalysisResultContent() {
     const router = useRouter();
-    const params = useParams();
-    const { id } = params;
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id');
 
     const { user } = useAuth();
     const { error } = useToastContext();
@@ -50,8 +50,6 @@ export default function AnalysisResultPage() {
             setInsight(mappedInsight);
         } catch (err) {
             console.error('Failed to load analysis:', err);
-            // error('Analiz sonucu yüklenemedi'); 
-            // Do not spam toast on load effect usually, maybe show UI error state
         } finally {
             setLoading(false);
         }
@@ -89,5 +87,13 @@ export default function AnalysisResultPage() {
                 />
             </div>
         </div>
+    );
+}
+
+export default function AnalysisResultPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Yükleniyor...</div>}>
+            <AnalysisResultContent />
+        </Suspense>
     );
 }

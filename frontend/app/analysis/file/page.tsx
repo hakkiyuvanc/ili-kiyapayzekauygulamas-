@@ -18,7 +18,7 @@ export default function FileAnalysisPage() {
 
             if (result.analysis_id) {
                 success('Dosya analizi tamamlandı!');
-                router.push(`/analysis/result/${result.analysis_id}`);
+                router.push(`/analysis/result?id=${result.analysis_id}`);
             } else {
                 error('Analiz ID alınamadı');
             }

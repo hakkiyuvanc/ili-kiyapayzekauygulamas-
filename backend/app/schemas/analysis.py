@@ -25,9 +25,11 @@ class AnalysisResponse(BaseModel):
     overall_score: float = Field(..., ge=0, le=100, description="Genel skor")
     summary: str = Field(..., description="Analiz özeti")
     metrics: Dict[str, Any] = Field(..., description="Metrikler")
+    conversation_stats: Optional[Dict[str, Any]] = Field(default=None, description="Konuşma istatistikleri")
     insights: List[Dict[str, str]] = Field(..., description="İçgörüler")
     recommendations: List[Dict[str, str]] = Field(..., description="Öneriler")
     generated_at: str = Field(..., description="Oluşturulma zamanı")
+    analysis_id: Optional[int] = Field(default=None, description="Veritabanı ID")
 
 
 class QuickScoreRequest(BaseModel):
