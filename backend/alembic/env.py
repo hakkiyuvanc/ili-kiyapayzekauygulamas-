@@ -7,7 +7,7 @@ from alembic import context
 
 # Import Base and models
 from backend.app.core.database import Base
-from backend.app.models.database import User, Analysis, AnalysisHistory, Feedback, APIKey
+from backend.app.models.database import User, Analysis, AnalysisHistory, Feedback, APIKey, ChatSession, ChatMessage, DailyPulse
 from backend.app.core.config import settings
 
 # Alembic Config object

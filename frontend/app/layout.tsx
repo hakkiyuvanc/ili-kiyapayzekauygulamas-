@@ -7,7 +7,7 @@ import { MobileNav } from '@/components/MobileNav';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'İlişki Analiz AI',
+  title: 'AMOR - İlişki Koçu',
   description: 'Yapay zeka destekli ilişki analizi',
   manifest: '/manifest.json',
   themeColor: '#ffffff',
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'İlişkiAI',
+    title: 'AMOR',
   },
   icons: {
     icon: '/icons/icon-192x192.png',

@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     """Uygulama ayarları"""
 
     # Application
-    APP_NAME: str = "İlişki Analiz AI"
+    APP_NAME: str = "AMOR"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = True
     ENVIRONMENT: str = "development"
@@ -19,7 +19,20 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # Database
+    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_DB: str = "iliski_analiz"
+    # Default to SQLite for local development if not overridden by env var (e.g. Docker)
     DATABASE_URL: str = "sqlite:///./iliski_analiz.db"
+
+    @property
+    def SQLALCHEMY_DATABASE_URI(self) -> str:
+        # If DATABASE_URL is explicitly set (by env var or default), use it
+        if self.DATABASE_URL:
+            return self.DATABASE_URL
+        # Fallback to constructing Postgres URL (unused if default is set above)
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
 
     # Security
     SECRET_KEY: str = "change-this-secret-key-in-production-min-32-chars"
@@ -56,6 +69,11 @@ class Settings(BaseSettings):
     AI_ENABLED: bool = True  # AI özelliklerini aç/kapat
     AI_MAX_TOKENS_INSIGHTS: int = 1000
     AI_MAX_TOKENS_RECOMMENDATIONS: int = 800
+
+    # Stripe Settings
+    STRIPE_API_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    FRONTEND_URL: str = "http://localhost:3000"
 
     model_config = SettingsConfigDict(
         env_file=".env",

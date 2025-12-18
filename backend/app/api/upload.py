@@ -111,6 +111,13 @@ async def upload_and_analyze(
     # Detect format
     is_whatsapp = WhatsAppFileParser.detect_whatsapp_format(text)
     format_detected = "whatsapp" if is_whatsapp else "auto"
+
+    # Pro Feature: WhatsApp Analysis
+    if is_whatsapp and current_user and not current_user.is_pro:
+         raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="WhatsApp geçmişi yükleme özelliği sadece Pro üyeler içindir."
+        )
     
     # Clean WhatsApp metadata
     if is_whatsapp:

@@ -1,66 +1,111 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
 from typing import Optional
-from pydantic import BaseModel
 
 from backend.app.core.database import get_db
-from backend.app.services.crud import UserCRUD
 from backend.app.api.auth import get_current_user
 from backend.app.models.database import User
+from backend.app.services.payment import StripeService
+from backend.app.core.config import settings
 
-router = APIRouter(prefix="/subscription", tags=["Subscription"])
+router = APIRouter()
 
-class UpgradeRequest(BaseModel):
-    """Mock upgrade request"""
-    plan_type: str = "monthly"  # monthly, yearly
-    payment_method_id: str = "mock_pm_123"
+# Pro Price ID (Should be in env or config, but hardcoded for MVP if needed)
+# For now, we assume it's passed or configured. Let's use a dummy or config.
+PRO_PRICE_ID = "price_H5ggYJDqNyV7kU" # Example, replace with real one later or env var
 
-class SubscriptionStatusResponse(BaseModel):
-    is_pro: bool
-    end_date: Optional[datetime]
-    plan: Optional[str]
-
-@router.post("/upgrade", response_model=SubscriptionStatusResponse)
-async def upgrade_subscription(
-    request: UpgradeRequest,
+@router.post("/create-checkout-session")
+def create_checkout_session(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Mock subscription upgrade.
-    In a real app, verify payment with Stripe/Iyzico here.
-    """
-    
-    # Simulate payment processing
-    if not request.payment_method_id:
-         raise HTTPException(status_code=400, detail="Invalid payment method")
+    try:
+        # Create user in Stripe if not exists
+        if not current_user.stripe_customer_id:
+            customer = StripeService.create_customer(email=current_user.email, name=current_user.full_name)
+            current_user.stripe_customer_id = customer.id
+            db.commit()
+            
+        checkout_session = StripeService.create_checkout_session(
+            customer_id=current_user.stripe_customer_id,
+            success_url=f"{settings.FRONTEND_URL}/dashboard?checkout_success=true",
+            cancel_url=f"{settings.FRONTEND_URL}/subscription?checkout_canceled=true",
+            price_id=PRO_PRICE_ID
+        )
+        return {"url": checkout_session.url}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    # Set duration based on plan
-    duration = 30 if request.plan_type == "monthly" else 365
-    end_date = datetime.now() + timedelta(days=duration)
-    
-    # Upgrade user
-    updated_user = UserCRUD.update_user_pro_status(
-        db, 
-        current_user.id, 
-        is_pro=True, 
-        end_date=end_date
-    )
-    
-    return {
-        "is_pro": updated_user.is_pro,
-        "end_date": updated_user.subscription_end_date,
-        "plan": request.plan_type
-    }
-
-@router.get("/status", response_model=SubscriptionStatusResponse)
-async def get_subscription_status(
-    current_user: User = Depends(get_current_user)
+@router.post("/portal")
+def customer_portal(
+    current_user: User = Depends(get_current_user),
 ):
-    """Check subscription status"""
-    return {
-        "is_pro": current_user.is_pro,
-        "end_date": current_user.subscription_end_date,
-        "plan": "premium" if current_user.is_pro else "free"
-    }
+    if not current_user.stripe_customer_id:
+         raise HTTPException(status_code=404, detail="No billing account found")
+
+    try:
+        session = StripeService.create_portal_session(
+            customer_id=current_user.stripe_customer_id,
+            return_url=f"{settings.FRONTEND_URL}/dashboard"
+        )
+        return {"url": session.url}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/webhook")
+async def webhook(request: Request, stripe_signature: str = Header(None), db: Session = Depends(get_db)):
+    payload = await request.body()
+    try:
+        event = StripeService.construct_event(
+            payload=payload,
+            sig_header=stripe_signature,
+            webhook_secret=settings.STRIPE_WEBHOOK_SECRET
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Handle the event
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        # Fulfill the purchase...
+        handle_checkout_completed(session, db)
+    elif event['type'] == 'customer.subscription.updated':
+        subscription = event['data']['object']
+        handle_subscription_updated(subscription, db)
+    elif event['type'] == 'customer.subscription.deleted':
+        subscription = event['data']['object']
+        handle_subscription_deleted(subscription, db)
+
+    return {"status": "success"}
+
+def handle_checkout_completed(session, db: Session):
+    customer_id = session.get("customer")
+    subscription_id = session.get("subscription")
+    
+    user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
+    if user:
+        user.is_pro = True
+        user.stripe_subscription_id = subscription_id
+        db.commit()
+
+def handle_subscription_updated(subscription, db: Session):
+    customer_id = subscription.get("customer")
+    status = subscription.get("status")
+    
+    user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
+    if user:
+        if status in ['active', 'trialing']:
+            user.is_pro = True
+        else:
+            user.is_pro = False
+        db.commit()
+
+def handle_subscription_deleted(subscription, db: Session):
+    customer_id = subscription.get("customer")
+    
+    user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
+    if user:
+        user.is_pro = False
+        user.stripe_subscription_id = None
+        db.commit()

@@ -50,22 +50,33 @@ def create_session(
     current_user: User = Depends(get_current_user)
 ):
     """Start a new chat session"""
+    # Free tier limit check
     if not current_user.is_pro:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Bu özellik sadece Pro üyeler içindir."
-        )
+        today = datetime.utcnow().date()
+        # Count sessions created today
+        # Note: created_at is datetime, so we need to filter
+        daily_count = db.query(ChatSession).filter(
+            ChatSession.user_id == current_user.id,
+            func.date(ChatSession.created_at) == today
+        ).count()
+        
+        if daily_count >= 1:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Ücretsiz planda günlük sohbet limiti 1 adettir. Devam etmek için Pro'ya yükseltin."
+            )
 
     # Verify analysis existence if provided
     if session_in.analysis_id:
         analysis = db.query(Analysis).filter(
-            Analysis.id == session_in.analysis_id,
-            # Allow using own analysis or anonymous if logic permits? 
-            # Ideally user should own analysis or we just check existence.
-            # Analysis.user_id == current_user.id # Simplified check for now
+            Analysis.id == session_in.analysis_id
         ).first()
         if not analysis:
             raise HTTPException(status_code=404, detail="Analiz bulunamadı")
+        
+        # Verify analysis ownership or permission if needed
+        # if analysis.user_id and analysis.user_id != current_user.id:
+        #     raise HTTPException(status_code=403, detail="Erişim reddedildi")
 
     new_session = ChatSession(
         user_id=current_user.id,

@@ -141,3 +141,8 @@ export const authApi = {
 export const systemApi = {
   getStatus: () => api.get<{ ai_available: boolean; ai_provider: string }>('/api/system/status'),
 };
+
+export const subscriptionApi = {
+  createCheckoutSession: () => api.post<{ url: string }>('/api/subscription/create-checkout-session'),
+  createPortalSession: () => api.post<{ url: string }>('/api/subscription/portal'),
+};

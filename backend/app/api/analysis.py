@@ -43,6 +43,24 @@ async def analyze_text(
     """
     service = get_analysis_service()
     
+    # Feature Gating: Daily Limit for Free Users
+    from datetime import datetime
+    from sqlalchemy import func
+    from backend.app.models.database import Analysis
+
+    if current_user and not current_user.is_pro:
+        today = datetime.utcnow().date()
+        daily_count = db.query(Analysis).filter(
+            Analysis.user_id == current_user.id,
+            func.date(Analysis.created_at) == today
+        ).count()
+        
+        if daily_count >= 1:
+             raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Ücretsiz planda günlük analiz limiti 1 adettir. Sınırsız analiz için Pro'ya yükseltin."
+            )
+
     # Validasyon
     is_valid, error_msg = service.validate_text(request.text)
     if not is_valid:

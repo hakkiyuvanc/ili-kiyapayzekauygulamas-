@@ -73,7 +73,7 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-              {user ? `Merhaba, ${user.full_name.split(' ')[0]}!` : 'İlişki Analiz AI'}
+              {user ? `Merhaba, ${user.full_name.split(' ')[0]}!` : 'AMOR'}
             </h1>
             {isPro && (
               <div className="flex items-center gap-1.5">
