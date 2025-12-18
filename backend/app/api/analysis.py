@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from backend.app.schemas.analysis import (
     AnalysisRequest,
@@ -14,6 +14,8 @@ from backend.app.schemas.analysis import (
 from backend.app.services.analysis_service import get_analysis_service
 from backend.app.services.crud import AnalysisCRUD
 from backend.app.core.database import get_db
+from backend.app.api.auth import get_optional_current_user
+from backend.app.models.database import User
 
 router = APIRouter()
 
@@ -29,6 +31,7 @@ async def analyze_text(
     request: AnalysisRequest,
     db: Session = Depends(get_db),
     save_to_db: bool = True,
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """
     İlişki analizi endpoint'i
@@ -62,6 +65,16 @@ async def analyze_text(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=result.get("message", "Analiz başarısız"),
         )
+
+    # FEATURE GATING: PRO ONLY FEATURES
+    if not current_user or not current_user.is_pro:
+        # Remove Pro-only features from response
+        if "reply_suggestions" in result:
+            del result["reply_suggestions"]
+            
+        # Optional: Limit explicit recommendations to 2 items
+        if isinstance(result.get("recommendations"), list) and len(result["recommendations"]) > 2:
+            result["recommendations"] = result["recommendations"][:2]
     
     # Veritabanına kaydet
     if save_to_db:
@@ -69,13 +82,14 @@ async def analyze_text(
             db_analysis = AnalysisCRUD.create_analysis(
                 db=db,
                 report=result,
-                user_id=None,  # TODO: Auth sonrası user_id eklenecek
+                user_id=current_user.id if current_user else None,
                 format_type=request.format_type,
                 privacy_mode=request.privacy_mode,
             )
             result["analysis_id"] = db_analysis.id
         except Exception as e:
             # Kaydetme hatası analizi etkilemesin
+            print(f"DB Save Error: {e}")
             result["db_save_error"] = str(e)
     
     return result

@@ -183,6 +183,27 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
           ))}
         </CardContent>
       </Card>
+      {/* AI Coach CTA */}
+      <Card className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-none">
+        <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-bold mb-1 flex items-center">
+              <Zap className="w-5 h-5 mr-2" />
+              AI İlişki Koçuna Danış
+            </h3>
+            <p className="text-indigo-100 text-sm">
+              Bu analiz hakkında detaylı sorular sor ve kişisel tavsiyeler al.
+            </p>
+          </div>
+          <a
+            href={`/chat?analysis_id=${result.analysis_id || ''}`}
+            className="bg-white text-indigo-600 hover:bg-indigo-50 px-6 py-2 rounded-full font-semibold transition-colors shadow-lg"
+          >
+            Koç ile Konuş
+          </a>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }

@@ -8,6 +8,10 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserVerify(BaseModel):
+    email: EmailStr
+    code: str
+
 class UserLogin(BaseModel):
     username: str # OAuth2PasswordRequestForm uses username
     password: str
@@ -15,6 +19,9 @@ class UserLogin(BaseModel):
 class UserResponse(UserBase):
     id: int
     is_active: bool
+    is_pro: bool = False
+    is_verified: bool = False
+    subscription_end_date: Optional[str] = None
 
     class Config:
         from_attributes = True

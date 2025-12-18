@@ -45,6 +45,7 @@ function AnalysisResultContent() {
                 strengths: [],
                 timestamp: new Date(), // result.created_at if available
                 analysisId: result.analysis_id,
+                replySuggestions: result.reply_suggestions || [],
             };
 
             setInsight(mappedInsight);
@@ -61,6 +62,12 @@ function AnalysisResultContent() {
 
     const handleUpgrade = () => {
         router.push('/subscription');
+    };
+
+    const handleChat = () => {
+        if (insight?.analysisId) {
+            router.push(`/chat?analysis_id=${insight.analysisId}`);
+        }
     };
 
     if (loading) {
@@ -84,6 +91,7 @@ function AnalysisResultContent() {
                     isPro={user?.is_pro || false}
                     onBack={handleBack}
                     onUpgrade={handleUpgrade}
+                    onChat={handleChat}
                 />
             </div>
         </div>

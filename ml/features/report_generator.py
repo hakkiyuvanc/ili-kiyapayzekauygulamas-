@@ -299,6 +299,17 @@ class ReportGenerator:
                         report["summary_enhanced"] = enhanced_summary
                 except Exception as e:
                     print(f"AI summary enhancement hatası: {e}")
+
+        # Cevap önerileri (AI destekli)
+        reply_suggestions = []
+        if self.ai_enabled:
+             ai_service = self._get_ai_service()
+             if ai_service:
+                 try:
+                    reply_suggestions = ai_service.generate_reply_suggestions(metrics, report["summary"])
+                 except Exception as e:
+                     print(f"Cevap önerisi hatası: {e}")
+        report["reply_suggestions"] = reply_suggestions
         
         return report
 

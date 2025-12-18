@@ -50,6 +50,7 @@ export interface AnalysisResponse {
   summary: string;
   insights: Insight[];
   recommendations: Recommendation[];
+  reply_suggestions?: string[];
   analysis_id?: number;
   conversation_stats?: {
     total_messages: number;
@@ -119,15 +120,22 @@ export const authApi = {
   register: (data: { email: string; password: string; full_name: string }) =>
     api.post('/api/auth/register', data),
 
-  login: (data: { username: string; password: string }) =>
-    api.post('/api/auth/login', data, {
+  login: (data: { username: string; password: string }) => {
+    const params = new URLSearchParams();
+    params.append('username', data.username);
+    params.append('password', data.password);
+    return api.post('/api/auth/login', params, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-    }),
+    });
+  },
 
   getProfile: () =>
     api.get('/api/auth/me'),
+
+  verify: (data: { email: string; code: string }) =>
+    api.post('/api/auth/verify', data),
 };
 
 export const systemApi = {

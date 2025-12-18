@@ -10,6 +10,10 @@ from backend.app.services.analysis_service import get_analysis_service
 from backend.app.services.crud import AnalysisCRUD
 from backend.app.core.database import get_db
 
+from typing import Optional
+from backend.app.models.database import User
+from backend.app.api.auth import get_optional_current_user
+
 router = APIRouter()
 
 
@@ -80,6 +84,7 @@ async def upload_and_analyze(
     privacy_mode: bool = True,
     save_to_db: bool = True,
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """
     Dosya yükle ve direkt analiz et
@@ -139,10 +144,11 @@ async def upload_and_analyze(
     # Save to database
     if save_to_db:
         try:
+            user_id = current_user.id if current_user else None
             db_analysis = AnalysisCRUD.create_analysis(
                 db=db,
                 report=result,
-                user_id=None,  # TODO: Add user_id when authenticated
+                user_id=user_id,
                 format_type=format_detected,
                 privacy_mode=privacy_mode,
             )

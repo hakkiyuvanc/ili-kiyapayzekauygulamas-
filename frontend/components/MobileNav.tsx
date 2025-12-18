@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, FileText, User, Menu } from 'lucide-react';
+import { Home, FileText, User, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/app/providers';
 
 export function MobileNav() {
@@ -25,6 +25,11 @@ export function MobileNav() {
             label: 'Yeni Analiz',
             href: '/analysis/new', // Assumes this route exists or we use dashboard? For now, point to dashboard/action
             icon: FileText,
+        },
+        {
+            label: 'Koç',
+            href: '/chat',
+            icon: MessageCircle,
         },
         {
             label: 'Profil',

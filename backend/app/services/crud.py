@@ -132,6 +132,16 @@ class UserCRUD:
         db.commit()
         db.refresh(db_user)
         return db_user
+
+    @staticmethod
+    def update_user_pro_status(db: Session, user_id: int, is_pro: bool, end_date: Optional[datetime] = None) -> User:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            user.is_pro = is_pro
+            user.subscription_end_date = end_date
+            db.commit()
+            db.refresh(user)
+        return user
     def create_feedback(
         db: Session,
         analysis_id: int,

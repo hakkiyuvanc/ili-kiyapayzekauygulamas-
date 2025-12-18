@@ -94,6 +94,58 @@ class AIService:
             print(f"AI hatası: {e}")
             return self._fallback_recommendations(metrics)
 
+    def chat_with_coach(
+        self,
+        message: str,
+        history: List[Dict[str, str]],
+        context: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """
+        AI İlişki Koçu ile sohbet et
+        """
+        if not self._is_available():
+            return "Üzgünüm, şu anda AI servislerine erişemiyorum. Lütfen daha sonra tekrar deneyin."
+
+        system_prompt = """Sen profesyonel, empatik ve çözüm odaklı bir İlişki Koçusun. 
+        Kullanıcıların ilişki sorunlarını dinler, yargılamadan analiz eder ve yapıcı tavsiyeler verirsin.
+        Eğer bir analiz raporu bağlamı varsa, cevaplarını bu rapora dayandır.
+        Kısa, net ve samimi cevaplar ver. Emoji kullanabilirsin."""
+
+        if context:
+            system_prompt += f"\n\nBAĞLAM (Analiz Raporu):\n{json.dumps(context, ensure_ascii=False)}"
+
+        messages = [{"role": "system", "content": system_prompt}]
+        
+        # History format: [{'role': 'user', 'content': '...'}, ...]
+        # Limit history to last 10 messages to save tokens
+        for msg in history[-10:]:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+            
+        messages.append({"role": "user", "content": message})
+
+        try:
+            if self.provider == "openai" and self.openai_client:
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-4o",  # or gpt-3.5-turbo
+                    messages=messages,
+                    max_tokens=500,
+                    temperature=0.7
+                )
+                return response.choices[0].message.content
+                
+            elif self.provider == "gemini" and self.gemini_client:
+                # Gemini chat session adaptasyonu gerekebilir
+                chat = self.gemini_client.start_chat(history=[]) # Basit implementasyon
+                response = chat.send_message(message)
+                return response.text
+                
+            # Default fallback
+            return "AI sağlayıcı yapılandırması eksik."
+            
+        except Exception as e:
+            print(f"Chat error: {e}")
+            return "Üzgünüm, bir hata oluştu."
+
     def enhance_summary(
         self,
         basic_summary: str,
@@ -244,6 +296,78 @@ Kısa (2-3 cümle), destekleyici ve yapıcı bir özet oluştur. Türkçe yaz.""
             print(f"Parse hatası: {e}")
         
         return []
+
+    
+    def generate_reply_suggestions(
+        self,
+        metrics: Dict[str, Any],
+        conversation_summary: str,
+        max_tokens: int = 500
+    ) -> List[str]:
+        """
+        AI ile cevap önerileri oluştur
+        
+        Args:
+            metrics: Hesaplanmış metrikler
+            conversation_summary: Konuşma özeti
+            max_tokens: Maksimum token sayısı
+            
+        Returns:
+            Cevap önerileri listesi
+        """
+        if not self._is_available():
+            return self._fallback_reply_suggestions()
+
+        prompt = self._build_reply_suggestions_prompt(metrics, conversation_summary)
+        
+        try:
+            response = self._call_llm(prompt, max_tokens)
+            suggestions = self._parse_reply_suggestions_response(response)
+            return suggestions
+        except Exception as e:
+            print(f"AI cevap önerisi hatası: {e}")
+            return self._fallback_reply_suggestions()
+
+    def _fallback_reply_suggestions(self) -> List[str]:
+        """AI kullanılamadığında varsayılan cevap önerileri"""
+        return [
+            "Anlıyorum, bu konuya farklı bir açıdan bakabiliriz.",
+            "Duygularını paylaştığın için teşekkür ederim, seni daha iyi anlamak istiyorum.",
+            "Bu durum beni de düşündürüyor, ortak bir çözüm bulalım."
+        ]
+
+    def _build_reply_suggestions_prompt(self, metrics: Dict[str, Any], summary: str) -> str:
+        """Cevap önerileri için prompt oluştur"""
+        return f"""
+        Aşağıdaki ilişki analizine dayanarak, kullanıcının karşı tarafa yazabileceği 3 farklı cevap seçeneği öner.
+        
+        Analiz Özeti: {summary}
+        Duygu Durumu: {metrics.get('sentiment', {}).get('score', 50)}/100
+        Empati Seviyesi: {metrics.get('empathy', {}).get('score', 50)}/100
+        
+        Lütfen şu 3 farklı tonda cevap önerisi sun:
+        1. Yapıcı ve Çözüm Odaklı
+        2. Empatik ve Duygusal
+        3. Net ve Sınır Koyucu
+        
+        Format: Sadece 3 madde halinde cevap metinlerini yaz. Başka açıklama ekleme.
+        """
+
+    def _parse_reply_suggestions_response(self, response: str) -> List[str]:
+        """AI yanıtından cevap önerilerini ayıkla"""
+        try:
+            # Satır satır ayır ve temizle
+            lines = [line.strip() for line in response.strip().split('\n') if line.strip()]
+            suggestions = []
+            for line in lines:
+                # Numaralandırmayı temizle (1. , - vb.)
+                cleaned = line.lstrip('1234567890.-*• ')
+                if cleaned:
+                    suggestions.append(cleaned)
+            
+            return suggestions[:3]  # En fazla 3 öneri
+        except Exception:
+            return self._fallback_reply_suggestions()
 
     def _is_available(self) -> bool:
         """AI servisi kullanılabilir mi?"""

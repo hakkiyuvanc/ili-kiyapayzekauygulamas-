@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Share2, Download, Lock, TrendingUp, AlertTriangle, CheckCircle, Lightbulb, Check } from 'lucide-react';
+import { ArrowLeft, Share2, Download, Lock, TrendingUp, AlertTriangle, CheckCircle, Lightbulb, Check, Bot } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 import { InsightData } from '@/types';
 import { InsightsSkeleton } from '@/components/SkeletonLoader';
@@ -9,9 +9,10 @@ interface InsightsScreenProps {
   isPro: boolean;
   onBack: () => void;
   onUpgrade: () => void;
+  onChat: () => void;
 }
 
-export function InsightsScreen({ insight, isPro, onBack, onUpgrade }: InsightsScreenProps) {
+export function InsightsScreen({ insight, isPro, onBack, onUpgrade, onChat }: InsightsScreenProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'details'>('overview');
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -106,6 +107,16 @@ Oluşturulma: ${new Date().toLocaleDateString('tr-TR')}
         <h2 className="text-gray-900 dark:text-white font-semibold">Analiz Sonucu</h2>
 
         <div className="flex gap-2">
+          {isPro && (
+            <button
+              onClick={onChat}
+              className="px-3 py-2 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/40 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium mr-1"
+              title="Koç ile Konuş"
+            >
+              <Bot className="w-5 h-5" />
+              <span className="hidden sm:inline">Konuş</span>
+            </button>
+          )}
           <button
             onClick={handleShare}
             className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
@@ -296,6 +307,36 @@ Oluşturulma: ${new Date().toLocaleDateString('tr-TR')}
               </div>
             )}
           </div>
+
+          {/* Reply Suggestions */}
+          {insight.replySuggestions && insight.replySuggestions.length > 0 && (
+            <div className="bg-purple-50 dark:bg-purple-900/30 rounded-xl p-4 mt-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Lightbulb className="w-5 h-5 text-purple-600" />
+                <h4 className="font-medium text-purple-800 dark:text-purple-300">Örnek Cevaplar</h4>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                Bu duruma verebileceğin bazı yapıcı cevaplar:
+              </p>
+              <div className="space-y-3">
+                {insight.replySuggestions.map((suggestion, i) => (
+                  <div key={i} className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-purple-100 dark:border-purple-800/50 shadow-sm relative group">
+                    <p className="text-sm text-gray-800 dark:text-gray-200 pr-8">"{suggestion}"</p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(suggestion);
+                        // Optional: Show copied toast
+                      }}
+                      className="absolute right-2 top-2 p-1.5 text-gray-400 hover:text-purple-600 dark:text-gray-500 dark:hover:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Kopyala"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
 

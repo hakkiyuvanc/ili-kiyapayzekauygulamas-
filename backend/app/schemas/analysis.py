@@ -28,6 +28,7 @@ class AnalysisResponse(BaseModel):
     conversation_stats: Optional[Dict[str, Any]] = Field(default=None, description="Konuşma istatistikleri")
     insights: List[Dict[str, str]] = Field(..., description="İçgörüler")
     recommendations: List[Dict[str, str]] = Field(..., description="Öneriler")
+    reply_suggestions: Optional[List[str]] = Field(default=[], description="AI tarafından önerilen cevap seçenekleri")
     generated_at: str = Field(..., description="Oluşturulma zamanı")
     analysis_id: Optional[int] = Field(default=None, description="Veritabanı ID")
 

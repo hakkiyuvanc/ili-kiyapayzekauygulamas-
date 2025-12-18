@@ -77,6 +77,10 @@ export default function DashboardPage() {
         router.push('/subscription');
     };
 
+    const handleStartChat = () => {
+        router.push('/chat');
+    };
+
     const handleLogout = () => {
         logout();
         info('Çıkış yapıldı');
@@ -97,6 +101,7 @@ export default function DashboardPage() {
                     onViewInsight={handleViewInsight}
                     onUpgrade={handleUpgrade}
                     onLogout={handleLogout}
+                    onStartChat={handleStartChat}
                     analysisHistory={analysisHistory}
                 />
             </div>

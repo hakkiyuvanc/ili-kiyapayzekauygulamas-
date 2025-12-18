@@ -17,9 +17,10 @@ export interface InsightData {
     riskAreas: string[];
     strengths: string[];
     timestamp: Date;
-    messageCount?: number;
     timeRange?: string;
     analysisId?: number;
+    messageCount?: number;
+    replySuggestions?: string[];
 }
 
 export interface Answer {
