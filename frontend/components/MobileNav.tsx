@@ -11,7 +11,7 @@ export function MobileNav() {
 
     // Only show on mobile and if user is logged in
     // Don't show on login/register pages
-    if (!user || pathname === '/login' || pathname === '/register') {
+    if (!user || pathname === '/auth') {
         return null;
     }
 

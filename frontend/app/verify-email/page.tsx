@@ -29,7 +29,7 @@ function VerifyForm() {
             await authApi.verify({ email, code });
             setIsSuccess(true);
             setTimeout(() => {
-                router.push('/login?verified=true');
+                router.push('/auth?verified=true');
             }, 2000);
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Doğrulama başarısız oldu.');
