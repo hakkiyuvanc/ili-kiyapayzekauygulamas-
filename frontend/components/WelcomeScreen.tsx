@@ -12,25 +12,25 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           <Heart className="w-16 h-16 text-white fill-white" />
         </div>
       </div>
-      
-      <h1 className="mb-3 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-        İlişki Analiz AI
+
+      <h1 className="mb-3 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent text-4xl font-bold tracking-tight">
+        AMOR
       </h1>
-      
-      <p className="text-gray-600 mb-8">
-        Yapay zeka destekli ilişki analizimiz ile ilişkinizin güçlü ve geliştirilmesi gereken yönlerini keşfedin
+
+      <p className="text-gray-600 mb-8 font-medium">
+        Aşkın matematiğini keşfet ve ilişkini güçlendir
       </p>
 
       <div className="space-y-4 mb-8">
-        <FeatureCard 
+        <FeatureCard
           icon={<Sparkles className="w-5 h-5 text-purple-600" />}
           text="AI Destekli Analiz"
         />
-        <FeatureCard 
+        <FeatureCard
           icon={<TrendingUp className="w-5 h-5 text-pink-600" />}
           text="Kişiselleştirilmiş Öneriler"
         />
-        <FeatureCard 
+        <FeatureCard
           icon={<Heart className="w-5 h-5 text-red-500" />}
           text="İlişki Sağlığı Skoru"
         />
@@ -40,7 +40,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         onClick={onStart}
         className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-4 rounded-2xl hover:shadow-lg transition-all duration-300 hover:scale-105"
       >
-        Analize Başla
+        Analize Başla - Giriş Yap / Kayıt Ol
       </button>
 
       <p className="text-xs text-gray-400 mt-6">

@@ -3,6 +3,8 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from fastapi import Request
+from backend.app.core.limiter import limiter
 
 from backend.app.schemas.analysis import (
     AnalysisRequest,
@@ -27,8 +29,10 @@ router = APIRouter()
     summary="İlişki Analizi Yap",
     description="Metin veya konuşma verisi üzerinde ilişki analizi yapar ve veritabanına kaydeder",
 )
+@limiter.limit("5/minute")
 async def analyze_text(
-    request: AnalysisRequest,
+    request: Request,
+    analysis_request: AnalysisRequest,
     db: Session = Depends(get_db),
     save_to_db: bool = True,
     current_user: Optional[User] = Depends(get_optional_current_user)
@@ -62,7 +66,7 @@ async def analyze_text(
             )
 
     # Validasyon
-    is_valid, error_msg = service.validate_text(request.text)
+    is_valid, error_msg = service.validate_text(analysis_request.text)
     if not is_valid:
         print(f"VALIDATION ERROR: {error_msg}")
         raise HTTPException(
@@ -72,9 +76,9 @@ async def analyze_text(
     
     # Analiz yap
     result = service.analyze_text(
-        text=request.text,
-        format_type=request.format_type,
-        privacy_mode=request.privacy_mode,
+        text=analysis_request.text,
+        format_type=analysis_request.format_type,
+        privacy_mode=analysis_request.privacy_mode,
     )
     
     # Hata kontrolü
@@ -101,8 +105,8 @@ async def analyze_text(
                 db=db,
                 report=result,
                 user_id=current_user.id if current_user else None,
-                format_type=request.format_type,
-                privacy_mode=request.privacy_mode,
+                format_type=analysis_request.format_type,
+                privacy_mode=analysis_request.privacy_mode,
             )
             result["analysis_id"] = db_analysis.id
         except Exception as e:
@@ -231,6 +235,62 @@ async def get_analysis_detail(
         "full_report": analysis.full_report,
         "created_at": analysis.created_at.isoformat() if analysis.created_at else None,
     }
+
+
+@router.get(
+    "/history/{analysis_id}/pdf",
+    summary="PDF Rapor İndir",
+    description="Analiz sonucunu PDF olarak indir (Sadece Pro)",
+)
+async def export_pdf(
+    analysis_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_optional_current_user),
+):
+    """Analizi PDF olarak indir"""
+    
+    # 1. Yetki Kontrolü
+    if not current_user or not current_user.is_pro:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="PDF rapor indirme özelliği sadece Pro üyeler içindir."
+        )
+
+    # 2. Analizi Getir
+    analysis = AnalysisCRUD.get_analysis_by_id(db, analysis_id)
+    if not analysis:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Analiz bulunamadı",
+        )
+    
+    # 3. PDF Oluştur
+    from backend.app.services.report_service import get_report_service
+    from fastapi.responses import StreamingResponse
+    import io
+
+    report_service = get_report_service()
+    
+    # Veriyi hazırla
+    analysis_data = {
+        "score": analysis.overall_score,
+        "metrics": {
+            "sentiment": {"score": analysis.sentiment_score},
+            "empathy": {"score": analysis.empathy_score},
+            "we_language": {"score": analysis.we_language_score},
+        },
+        "insights": analysis.full_report.get("insights", []) if analysis.full_report else [],
+        "recommendations": analysis.full_report.get("recommendations", []) if analysis.full_report else [],
+    }
+    
+    pdf_bytes = report_service.generate_pdf_report(analysis_data, user_name=current_user.full_name)
+    
+    # 4. Dosyayı Döndür
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=AMOR_Report_{analysis_id}.pdf"}
+    )
 
 
 @router.delete(

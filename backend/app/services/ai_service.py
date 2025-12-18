@@ -33,6 +33,8 @@ class AIService:
             if api_key:
                 genai.configure(api_key=api_key)
                 self.gemini_client = genai.GenerativeModel(settings.GEMINI_MODEL)
+        
+        print(f"[{'SUCCESS' if self._is_available() else 'WARNING'}] AI Service initialized with provider: {self.provider}")
 
     def generate_insights(
         self,
@@ -134,9 +136,22 @@ class AIService:
                 return response.choices[0].message.content
                 
             elif self.provider == "gemini" and self.gemini_client:
-                # Gemini chat session adaptasyonu gerekebilir
-                chat = self.gemini_client.start_chat(history=[]) # Basit implementasyon
-                response = chat.send_message(message)
+                # Convert history to Gemini format
+                gemini_history = []
+                for msg in history[-10:]:
+                    role = "user" if msg["role"] == "user" else "model"
+                    gemini_history.append({"role": role, "parts": [msg["content"]]})
+                
+                # Add system prompt as the first message or configure it in model?
+                # Gemini doesn't strictly have system message in chat history the same way.
+                # We can prepend it to the first user message or use system_instruction if available in newer lib.
+                # For compatibility, let's prepend system prompt context to the current message or start of history.
+                
+                # Simple approach: Prepend system prompt to the last message call for this turn
+                full_message = f"{system_prompt}\n\nUSER MESSAGE: {message}"
+                
+                chat = self.gemini_client.start_chat(history=gemini_history)
+                response = chat.send_message(full_message)
                 return response.text
                 
             # Default fallback

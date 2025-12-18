@@ -77,53 +77,81 @@ async def upload_file(
     "/upload-and-analyze",
     response_model=AnalysisResponse,
     summary="Dosya Yükle ve Analiz Et",
-    description="Dosya yükle ve direkt analiz yap"
+    description="Dosya yükle (Metin veya Ses) ve direkt analiz yap"
 )
 async def upload_and_analyze(
-    file: UploadFile = File(..., description="Analiz edilecek dosya"),
+    file: UploadFile = File(..., description="Analiz edilecek dosya (txt, pdf, mp3, ogg, wap)"),
     privacy_mode: bool = True,
     save_to_db: bool = True,
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """
-    Dosya yükle ve direkt analiz et
-    
-    - **file**: WhatsApp export veya konuşma dosyası
-    - **privacy_mode**: Kişisel bilgileri maskele
-    - **save_to_db**: Veritabanına kaydet
+    Dosya yükle ve direkt analiz et.
+    Ses dosyalarını otomatik olarak metne çevirir (Sadece Pro).
     """
-    # Validate file
-    is_valid, error_msg = FileValidator.validate_file(file)
-    if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_msg
-        )
     
-    # Read content
-    if file.filename.endswith('.zip'):
-        content_bytes = await file.read()
-        text = FileValidator.extract_from_zip(content_bytes)
-    else:
-        text = await FileValidator.read_file_content(file)
-    
-    # Detect format
-    is_whatsapp = WhatsAppFileParser.detect_whatsapp_format(text)
-    format_detected = "whatsapp" if is_whatsapp else "auto"
+    # 1. Ses Dosyası Kontrolü
+    AUDIO_EXTENSIONS = {'.mp3', '.ogg', '.wav', '.m4a'}
+    filename = file.filename.lower()
+    is_audio = any(filename.endswith(ext) for ext in AUDIO_EXTENSIONS)
 
-    # Pro Feature: WhatsApp Analysis
-    if is_whatsapp and current_user and not current_user.is_pro:
-         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="WhatsApp geçmişi yükleme özelliği sadece Pro üyeler içindir."
-        )
-    
-    # Clean WhatsApp metadata
-    if is_whatsapp:
-        text = WhatsAppFileParser.clean_whatsapp_metadata(text)
-    
-    # Analyze
+    if is_audio:
+        # Pro Feature Check
+        if not current_user or not current_user.is_pro:
+             raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Ses dosyası analizi sadece Pro üyeler içindir."
+            )
+        
+        # Audio Transcription
+        from backend.app.services.audio_service import get_audio_service
+        audio_service = get_audio_service()
+        
+        # Dosyayı belleğe oku (OpenAI API için)
+        file_obj = file.file 
+        transcript = audio_service.transcribe_audio(file_obj, file.filename)
+        
+        if not transcript:
+             raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Ses dosyası metne çevrilemedi. Lütfen dosya formatını kontrol edin."
+            )
+        
+        text = transcript
+        format_detected = "audio_transcript"
+        
+    else:
+        # Mevcut Text/Zip İşleme
+        is_valid, error_msg = FileValidator.validate_file(file)
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_msg
+            )
+        
+        if file.filename.endswith('.zip'):
+            content_bytes = await file.read()
+            text = FileValidator.extract_from_zip(content_bytes)
+        else:
+            text = await FileValidator.read_file_content(file)
+            
+        # Detect format
+        is_whatsapp = WhatsAppFileParser.detect_whatsapp_format(text)
+        format_detected = "whatsapp" if is_whatsapp else "auto"
+
+        # Pro Feature Check (WhatsApp History)
+        if is_whatsapp and current_user and not current_user.is_pro:
+             raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="WhatsApp geçmişi yükleme özelliği sadece Pro üyeler içindir."
+            )
+        
+        # Clean WhatsApp metadata
+        if is_whatsapp:
+            text = WhatsAppFileParser.clean_whatsapp_metadata(text)
+
+    # 2. Analiz İşlemi (Ortak)
     service = get_analysis_service()
     
     # Validate text
@@ -137,7 +165,7 @@ async def upload_and_analyze(
     # Perform analysis
     result = service.analyze_text(
         text=text,
-        format_type=format_detected,
+        format_type="simple" if format_detected == "audio_transcript" else format_detected, # Ses analizi basit metin gibidir
         privacy_mode=privacy_mode,
     )
     
@@ -162,7 +190,6 @@ async def upload_and_analyze(
             result["analysis_id"] = db_analysis.id
             result["filename"] = file.filename
         except Exception as e:
-            # Clean up analysis if it was created but DB failed? No, transaction rollback handles it usually
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Veritabanı kayıt hatası: {str(e)}"
@@ -186,16 +213,10 @@ async def get_supported_file_formats():
                 "max_size_mb": FileValidator.MAX_SIZE_MB,
             },
             {
-                "extension": ".json",
-                "name": "JSON File",
-                "description": "JSON formatında konuşma verisi",
-                "max_size_mb": FileValidator.MAX_SIZE_MB,
-            },
-            {
-                "extension": ".log",
-                "name": "Log File",
-                "description": "Konuşma log dosyası",
-                "max_size_mb": FileValidator.MAX_SIZE_MB,
+                "extension": ".mp3, .ogg, .wav, .m4a",
+                "name": "Ses Dosyası (Pro)",
+                "description": "WhatsApp sesli mesaj veya kayıt",
+                "max_size_mb": 25, 
             },
             {
                 "extension": ".zip",
@@ -207,7 +228,6 @@ async def get_supported_file_formats():
         "max_size_mb": FileValidator.MAX_SIZE_MB,
         "notes": [
             "Dosyalar UTF-8 encoding ile yüklenmelidir",
-            "ZIP dosyaları içinde .txt veya .log dosyası bulunmalıdır",
-            "WhatsApp export formatı otomatik olarak tanınır",
+            "Ses analizi sadece Pro üyeler içindir",
         ]
     }

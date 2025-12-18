@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Annotated, Optional
 import random
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,7 @@ from backend.app.schemas.user import UserCreate, UserResponse, Token, TokenData,
 from backend.app.models.database import User
 from backend.app.core.config import settings
 from backend.app.services.email_service import email_service
+from backend.app.core.limiter import limiter
 
 router = APIRouter()
 
@@ -74,7 +75,8 @@ def verify_email(verify_data: UserVerify, db: Session = Depends(get_db)):
     return {"message": "Email başarıyla doğrulandı"}
 
 @router.post("/login", response_model=Token)
-def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
     # OAuth2PasswordRequestForm uses 'username' field, but we treat it as email
     user = UserCRUD.get_user_by_email(db, email=form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):

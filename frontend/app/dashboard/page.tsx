@@ -31,7 +31,10 @@ export default function DashboardPage() {
         const loadAnalysisHistory = async () => {
             try {
                 const response = await analysisApi.getHistory(0, 10);
-                const history = response.data.map((item: any) => ({
+                // API returns { total: 5, analyses: [...] }
+                // So we need to map response.data.analyses
+                const historyData = response.data.analyses || [];
+                const history = historyData.map((item: any) => ({
                     type: (item.format_type === 'whatsapp' ? 'file' : 'message') as AnalysisType,
                     score: item.overall_score,
                     metrics: { communication: 70, emotional: 75, compatibility: 72, conflict: 40 }, // API might not return full metrics in list view
