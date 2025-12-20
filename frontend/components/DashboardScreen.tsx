@@ -9,6 +9,17 @@ import { DarkModeToggle } from '@/components/DarkModeToggle';
 import { TrendChart } from './charts/TrendChart';
 import { MetricRadarChart } from './charts/MetricRadarChart';
 import { DailyPulse } from '@/components/DailyPulse';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { ToneEditor } from '@/components/ToneEditor';
+import { WeeklyScoreCard } from './WeeklyScoreCard';
+import { CoachingWidget } from '@/components/CoachingWidget';
+import { DateIdeasWidget } from '@/components/DateIdeasWidget';
+import { GoalsWidget } from '@/components/GoalsWidget';
+import { ConversationStartersWidget } from '@/components/ConversationStartersWidget';
+import { CheckupWidget } from '@/components/CheckupWidget';
+import { LoveLanguageWidget } from '@/components/LoveLanguageWidget';
+import { ConflictResolutionWidget } from '@/components/ConflictResolutionWidget';
+
 
 interface DashboardScreenProps {
   isPro: boolean;
@@ -56,6 +67,10 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
         transition={{ duration: 0.5 }}
         className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto transition-colors duration-300"
       >
+
+        {user && user.onboarding_completed === false && (
+          <OnboardingWizard />
+        )}
 
         {!aiAvailable && (
           <div className="mb-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-xl p-3 flex items-start gap-3">
@@ -123,9 +138,11 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
           </div>
           <div className="md:col-span-2 space-y-4">
             {/* Start Analysis Button */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={onStartAnalysis}
-              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl p-6 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 transform transition-all hover:scale-[1.02] active:scale-[0.98] group"
+              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl p-6 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 group"
             >
               <div className="flex items-center justify-between">
                 <div className="text-left">
@@ -136,13 +153,28 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
                   <Plus className="w-8 h-8" />
                 </div>
               </div>
-            </button>
+            </motion.button>
+            {/* Checkup Banner */}
+            <CheckupWidget lastAnalysis={analysisHistory[0] || null} onStart={onStartAnalysis} />
+            <ConflictResolutionWidget />
+
+            <div className="h-full space-y-4">
+              <WeeklyScoreCard />
+              <GoalsWidget initialGoals={user?.goals || []} />
+              <LoveLanguageWidget />
+              <CoachingWidget latestAnalysis={analysisHistory[0] || null} />
+              <ConversationStartersWidget />
+              <DateIdeasWidget />
+              <ToneEditor />
+            </div>
 
             {/* AI Coach Card */}
             {isPro ? (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={onStartChat}
-                className="w-full bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white rounded-2xl p-6 shadow-lg shadow-fuchsia-200 dark:shadow-fuchsia-900/20 transform transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                className="w-full bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white rounded-2xl p-6 shadow-lg shadow-fuchsia-200 dark:shadow-fuchsia-900/20 group"
               >
                 <div className="flex items-center justify-between">
                   <div className="text-left">
@@ -153,7 +185,7 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
                     <Bot className="w-8 h-8" />
                   </div>
                 </div>
-              </button>
+              </motion.button>
             ) : (
               <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-slate-800 dark:to-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 flex items-center justify-between opacity-75">
                 <div className="flex items-center gap-3">

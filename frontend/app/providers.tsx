@@ -25,8 +25,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const initAuth = async () => {
+            console.log("Auth: Init starting...");
             const token = localStorage.getItem('token');
             const savedUser = localStorage.getItem('user');
+            console.log("Auth: Token exists?", !!token);
 
             if (token) {
                 // Optimistik olarak local veriyi yükle
@@ -40,7 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 // Backend verification
                 try {
+                    console.log("Auth: Verifying with backend...");
                     const response = await authApi.getProfile();
+                    console.log("Auth: Backend verified", response.data);
                     // Backend UserResponse doesn't have is_pro, so we add it
                     const freshUser: User = {
                         ...response.data,
@@ -48,16 +52,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     };
                     setUser(freshUser);
                     localStorage.setItem('user', JSON.stringify(freshUser));
-                } catch (error) {
+                } catch (error: any) {
                     console.error("Token verification failed:", error);
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    setUser(null);
+                    // Only clear session if it's explicitly an Auth error
+                    if (error.response?.status === 401 || error.response?.status === 403) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        setUser(null);
+                    } else {
+                        // Network error or server error? 
+                        // Keep the local user data (optimistic) but maybe show error toast?
+                        // For now, assume optimistic user is fine to show Dashboard in offline mode if needed.
+                        // Or we can set `isLoading` false and let the app decide.
+                        console.warn("Retaining optimistic session despite verification failure (non-401)");
+                    }
                 }
             } else {
                 localStorage.removeItem('user');
                 setUser(null);
             }
+            console.log("Auth: Loading complete");
             setIsLoading(false);
         };
         initAuth();
@@ -69,14 +83,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(safeUser));
         setUser(safeUser);
-        router.push('/dashboard');
+        // Force hard navigation to ensure clean state
+        window.location.href = '/dashboard';
     };
 
     const logout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
-        router.push('/auth');
+        window.location.href = '/auth';
     };
 
     const updateUser = (userData: User) => {

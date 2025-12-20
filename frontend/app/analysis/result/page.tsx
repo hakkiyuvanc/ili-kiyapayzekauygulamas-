@@ -30,6 +30,9 @@ function AnalysisResultContent() {
             const response = await analysisApi.getAnalysis(analysisId);
             const result = response.data;
 
+            // Handle nested full_report structure from history endpoint
+            const sourceData = result.full_report || result;
+
             const mappedInsight: InsightData = {
                 type: 'message', // Default or need to map from result
                 score: result.overall_score,
@@ -39,13 +42,15 @@ function AnalysisResultContent() {
                     compatibility: result.metrics?.we_language?.score || 72,
                     conflict: result.metrics?.conflict?.score || 40,
                 },
-                findings: result.insights?.map((i: { title: string }) => i.title) || [],
-                recommendations: result.recommendations?.map((r: { title: string }) => r.title) || [],
-                riskAreas: [],
-                strengths: [],
-                timestamp: new Date(), // result.created_at if available
-                analysisId: result.analysis_id,
-                replySuggestions: result.reply_suggestions || [],
+                findings: sourceData.insights?.map((i: { title: string }) => i.title) || [],
+                recommendations: sourceData.recommendations?.map((r: { title: string }) => r.title) || [],
+                riskAreas: [], // Derived or from insights?
+                strengths: sourceData.insights?.filter((i: any) => i.category === 'Güçlü Yön').map((i: any) => i.title) || [],
+                timestamp: new Date(result.created_at || new Date()),
+                analysisId: result.id || result.analysis_id, // Handle both id formats
+                replySuggestions: sourceData.reply_suggestions || [],
+                messageCount: sourceData.conversation_stats?.total_messages || 0,
+                timeRange: 'Son 30 gün' // Placeholder or calculate from stats
             };
 
             setInsight(mappedInsight);

@@ -58,3 +58,15 @@ class ErrorResponse(BaseModel):
     status: str = Field(default="error")
     message: str = Field(...)
     detail: Optional[str] = None
+
+class RewriteRequest(BaseModel):
+    """Yeniden yazma isteği"""
+    text: str = Field(..., min_length=1, max_length=1000, description="Dönüştürülecek metin")
+    target_tone: str = Field(..., description="Hedef ton: polite, professional, romantic, assertive")
+
+
+class RewriteResponse(BaseModel):
+    """Yeniden yazma yanıtı"""
+    original_text: str = Field(...)
+    rewritten_text: str = Field(...)
+    tone: str = Field(...)

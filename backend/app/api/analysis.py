@@ -11,7 +11,10 @@ from backend.app.schemas.analysis import (
     AnalysisResponse,
     QuickScoreRequest,
     QuickScoreResponse,
+    QuickScoreResponse,
     ErrorResponse,
+    RewriteRequest,
+    RewriteResponse,
 )
 from backend.app.services.analysis_service import get_analysis_service
 from backend.app.services.crud import AnalysisCRUD
@@ -312,3 +315,56 @@ async def delete_analysis(
         )
     
     return {"message": "Analiz başarıyla silindi", "id": analysis_id}
+
+
+@router.post(
+    "/rewrite",
+    response_model=RewriteResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Mesajı Yeniden Yaz",
+    description="Verilen mesajı belirtilen tonda yeniden yazar (Mock/Rule-based for MVP)",
+)
+async def rewrite_message(
+    request: RewriteRequest,
+    current_user: Optional[User] = Depends(get_optional_current_user)
+):
+    """
+    Mesaj tonu değiştirme endpoint'i.
+    Şimdilik basit kural tabanlı veya mock yanıt döner.
+    İleride LLM entegrasyonu yapılabilir.
+    """
+    
+    # Simple Mock Logic for MVP
+    text = request.text
+    tone = request.target_tone
+    rewritten = text
+
+    if tone == "polite":
+        rewritten = f"Rica etsem, {text.lower()} olabilir mi?"
+        if "yap" in text.lower(): rewritten = text.replace("yap", "yapabilir misin lütfen")
+        elif "gel" in text.lower(): rewritten = text.replace("gel", "gelirsen çok sevinirim")
+        
+    elif tone == "professional":
+        rewritten = f"Sayın ilgili, {text} hususunda geri dönüşünüzü rica ederim."
+        
+    elif tone == "romantic":
+        rewritten = f"Canım, {text.lower()} ❤️"
+        
+    elif tone == "assertive":
+        rewritten = f"Şunu netleştirelim: {text}."
+
+    # Fallback if text is long/complex, just append prefix for demo
+    if rewritten == text:
+        prefixes = {
+            "polite": "Çok nazikçe ifade etmek gerekirse: ",
+            "professional": "Profesyonel bir dille: ",
+            "romantic": "Aşkım, ",
+            "assertive": "Net bir şekilde: "
+        }
+        rewritten = prefixes.get(tone, "") + text
+
+    return RewriteResponse(
+        original_text=text,
+        rewritten_text=rewritten,
+        tone=tone
+    )

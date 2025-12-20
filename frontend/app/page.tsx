@@ -9,13 +9,27 @@ export default function Home() {
   const { user, isLoading } = useAuth();
 
   useEffect(() => {
+    console.log("Home: Checking auth state", { isLoading, user });
+
+    // Safety timeout: If still loading after 2s, force auth
+    const timer = setTimeout(() => {
+      if (isLoading) {
+        console.warn("Home: Loading timed out, forcing auth");
+        router.push('/auth');
+      }
+    }, 2000);
+
     if (!isLoading) {
       if (user) {
-        router.replace('/dashboard');
+        console.log("Home: Redirecting to dashboard");
+        router.push('/dashboard');
       } else {
-        router.replace('/auth');
+        console.log("Home: Redirecting to auth");
+        router.push('/auth');
       }
     }
+
+    return () => clearTimeout(timer);
   }, [user, isLoading, router]);
 
   return (

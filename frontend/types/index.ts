@@ -36,4 +36,16 @@ export interface User {
     is_active: boolean;
     is_verified: boolean;
     is_pro: boolean;
+    onboarding_completed?: boolean;
+    goals?: string[];
+}
+
+export interface AnalysisResult extends InsightData {
+    overall_score: number;
+}
+
+export interface Stats {
+    total_analyses: number;
+    weekly_score: number;
+    streak: number;
 }

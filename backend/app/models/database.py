@@ -25,6 +25,11 @@ class User(Base):
     subscription_end_date = Column(DateTime(timezone=True), nullable=True)
     stripe_customer_id = Column(String(255), nullable=True, index=True)
     stripe_subscription_id = Column(String(255), nullable=True)
+    
+    # Onboarding fields
+    onboarding_completed = Column(Boolean, default=False)
+    goals = Column(JSON, nullable=True) # List of goal strings
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

@@ -21,10 +21,17 @@ class UserResponse(UserBase):
     is_active: bool
     is_pro: bool = False
     is_verified: bool = False
+    onboarding_completed: bool = False
+    goals: Optional[list[str]] = None
     subscription_end_date: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+class UserOnboardingUpdate(BaseModel):
+    full_name: Optional[str] = None
+    goals: list[str]
+    onboarding_completed: bool = True
 
 class Token(BaseModel):
     access_token: str

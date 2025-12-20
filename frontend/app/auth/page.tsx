@@ -19,30 +19,49 @@ export default function AuthPage() {
         setAuthError('');
 
         try {
+            // 1. Login
             const response = await authApi.login({ username: email, password });
             const { access_token } = response.data;
 
-            const profileResponse = await authApi.getProfile();
-            // Need to supply the token manually to getProfile if it relies on localStorage which might not be set yet?
-            // Actually api.ts interceptor reads from localStorage.
-            // So we should set token first. But `login` in context does that.
-            // We can manually set it here temporarily or update api.ts to take token.
-            // Easiest is to set localStorage here first before calling getProfile.
-
+            // Save token temporarily
             localStorage.setItem('token', access_token);
 
-            // Use a separate api call or assume interceptor picks it up
-            // Ideally we pass token to getProfile or interceptor works.
-            // Interceptor reads localStorage.setItem is sync. It should work.
-            const userProfile = await authApi.getProfile();
+            // 2. Immediate verification (Get Profile)
+            try {
+                const profileResponse = await authApi.getProfile();
+                const user = profileResponse.data;
+                // Save user data
+                localStorage.setItem('user', JSON.stringify({ ...user, is_pro: user.is_pro || false }));
 
-            login(access_token, { ...userProfile.data, is_pro: false });
-            success('Hoş geldiniz, ' + userProfile.data.full_name + '!');
+                success('Giriş başarılı, yönlendiriliyorsunuz...');
+
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 500);
+
+            } catch (profileErr: any) {
+                console.error("Profile fetch failed immediately:", profileErr);
+                console.error("Profile error details:", profileErr.response?.data);
+                // Check specific error
+                if (profileErr.response?.status === 401) {
+                    setAuthError('Oturum açılamadı (Token reddedildi). Lütfen tekrar deneyin.');
+                } else {
+                    setAuthError('Giriş yapıldı fakat profil alınamadı. Bağlantınızı kontrol edin.');
+                }
+                // localStorage.removeItem('token'); // Keep token for debugging
+            }
+
         } catch (err: any) {
             const errorMessage = err.response?.data?.detail || 'Giriş başarısız';
+
+            if (err.response?.status === 403 && errorMessage.includes('doğrulamanız')) {
+                info('Lütfen önce email adresinizi doğrulayın.');
+                router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+                return;
+            }
+
             setAuthError(errorMessage);
             showError(errorMessage);
-            // Clean up if failed
             localStorage.removeItem('token');
         } finally {
             setIsLoading(false);
@@ -55,8 +74,8 @@ export default function AuthPage() {
 
         try {
             await authApi.register({ email, password, full_name: fullName });
-            success('Kayıt başarılı! Giriş yapılıyor...');
-            await handleLogin(email, password);
+            success('Kayıt başarılı! Lütfen emailinizi doğrulayın.');
+            router.push(`/verify-email?email=${encodeURIComponent(email)}`);
         } catch (err: any) {
             const errorMessage = err.response?.data?.detail || 'Kayıt başarısız';
             setAuthError(errorMessage);

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from backend.app.core.config import settings
 from backend.app.core.database import engine, Base
-from backend.app.api import analysis, auth, upload, system, subscription, chat, daily
+from backend.app.api import analysis, auth, upload, system, subscription, chat, daily, users, stats
 # Modelleri import et ki Base.metadata dolusun
 from backend.app.models import database as models
 from backend.app.services.ai_service import get_ai_service
@@ -92,10 +92,12 @@ async def system_status():
 app.include_router(system.router, prefix="/api/system", tags=["System"])
 app.include_router(subscription.router, prefix="/api/subscription", tags=["Subscription"])
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
+app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(analysis.router, prefix="/api/analysis", tags=["Analysis"])
 app.include_router(upload.router, prefix="/api/upload", tags=["File Upload"])
 app.include_router(chat.router, prefix="/api/chat", tags=["AI Coach"])
 app.include_router(daily.router, prefix="/api/daily", tags=["Daily Pulse"])
+app.include_router(stats.router, prefix="/api/stats", tags=["User Stats"])
 
 
 if __name__ == "__main__":

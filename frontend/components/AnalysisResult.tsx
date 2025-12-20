@@ -2,15 +2,30 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { type AnalysisResponse } from '@/lib/api';
-import { Heart, Zap, AlertTriangle, Users, Scale } from 'lucide-react';
+import { Heart, Zap, AlertTriangle, Users, Scale, Download } from 'lucide-react';
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
 import OutcomeCharts from './OutcomeCharts';
+import { generatePDF } from '@/lib/pdfGenerator';
+import { useState } from 'react';
 
 interface AnalysisResultProps {
   result: AnalysisResponse;
 }
 
 export default function AnalysisResult({ result }: AnalysisResultProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await generatePDF(result);
+    } catch (error) {
+      console.error('PDF generation failed', error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 7) return 'text-green-600';
     if (score >= 5) return 'text-yellow-600';
@@ -57,8 +72,16 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
     <div className="space-y-6">
       {/* Overall Score */}
       <Card>
-        <CardHeader>
+        <CardHeader className="relative">
           <CardTitle className="text-center">Genel İlişki Skoru</CardTitle>
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="absolute right-6 top-6 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors disabled:opacity-50"
+            title="Raporu İndir (PDF)"
+          >
+            <Download className={`w-5 h-5 text-gray-600 ${isDownloading ? 'animate-pulse' : ''}`} />
+          </button>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center">

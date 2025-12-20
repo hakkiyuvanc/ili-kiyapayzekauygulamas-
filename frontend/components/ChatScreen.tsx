@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, Plus, MessageSquare } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, chatApi } from '@/lib/api';
 import { useAuth } from '../app/providers';
 import { useRouter } from 'next/navigation';
 
@@ -45,7 +45,7 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
 
     const loadSessions = async () => {
         try {
-            const res = await api.get('/api/chat/sessions');
+            const res = await chatApi.getSessions();
             setSessions(res.data);
         } catch (err) {
             console.error('Failed to load sessions', err);
@@ -54,7 +54,7 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
 
     const loadMessages = async (sid: number) => {
         try {
-            const res = await api.get(`/api/chat/sessions/${sid}`);
+            const res = await chatApi.getSession(sid);
             setMessages(res.data.messages || []);
             setSessionId(sid);
         } catch (err) {
@@ -64,7 +64,7 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
 
     const startNewSession = async (analysisId?: number) => {
         try {
-            const res = await api.post('/api/chat/sessions', {
+            const res = await chatApi.createSession({
                 title: 'Yeni Sohbet',
                 analysis_id: analysisId
             });
@@ -78,50 +78,29 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
 
     const sendMessage = async () => {
         if (!input.trim()) return;
-        if (!sessionId) {
-            // Should have created session by now, but safety check
-            // await startNewSession(); // Removed as per instruction
-        }
 
         // Optimistic UI
         const tempMsg: Message = { id: Date.now(), role: 'user', content: input };
         setMessages(prev => [...prev, tempMsg]);
+        const currentInput = input;
         setInput('');
         setIsLoading(true);
 
         try {
-            // Use state sessionId directly, hoping it's set.
-            // If we just called startNewSession, state usage inside async might be stale due to closure.
-            // Better to rely on a ref or updated state, but for now we assume session existing usually.
-            // A robust fix would return the id from startNewSession and pass it here.
-            // Let's assume user selects session first or effect handles creation.
-            // If sessionId is null, we can't send.
-
             let currentSessionId = sessionId;
             if (!currentSessionId) {
-                // Fallback if stale
-                const res = await api.post('/api/chat/sessions', { title: 'Yeni Sohbet' });
+                const res = await chatApi.createSession({ title: 'Yeni Sohbet' });
                 currentSessionId = res.data.id;
                 setSessionId(currentSessionId);
             }
 
             if (!currentSessionId) return;
 
-            const res = await api.post(`/api/chat/sessions/${currentSessionId}/messages`, {
-                role: 'user',
-                content: tempMsg.content
-            });
-
-            // API returns the AI response message? No, wait.
-            // Let's check API: returns `ai_msg`.
-            // The user message is saved but response returns AI message.
-            // We should probably re-fetch or just append the AI response.
-
+            const res = await chatApi.sendMessage(currentSessionId, currentInput);
             const aiMsg = res.data;
             setMessages(prev => [...prev, aiMsg]);
         } catch (err) {
             console.error('Failed to send message', err);
-            // Simplify error handling
             setMessages(prev => [...prev, { id: Date.now(), role: 'assistant', content: 'Üzgünüm, bir hata oluştu.' }]);
         } finally {
             setIsLoading(false);

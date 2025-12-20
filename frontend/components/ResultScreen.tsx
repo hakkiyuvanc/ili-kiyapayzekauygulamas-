@@ -1,4 +1,4 @@
-import { Heart, TrendingUp, AlertCircle, CheckCircle, RefreshCw, Share2 } from 'lucide-react';
+import { TrendingUp, AlertCircle, CheckCircle, RefreshCw, Share2 } from 'lucide-react';
 import { Answer } from '@/types';
 
 interface ResultScreenProps {
@@ -26,11 +26,7 @@ export function ResultScreen({ answers, onRestart }: ResultScreenProps) {
 
   const score = calculateScore();
 
-  const getScoreColor = () => {
-    if (score >= 75) return 'from-green-500 to-emerald-600';
-    if (score >= 50) return 'from-yellow-500 to-orange-500';
-    return 'from-red-500 to-pink-600';
-  };
+
 
   const getScoreText = () => {
     if (score >= 75) return 'Mükemmel';
