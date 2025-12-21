@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heart, Info } from 'lucide-react';
+import { Heart } from 'lucide-react';
+import { userApi } from '@/lib/api';
 
 const LOVE_LANGUAGES = [
     { id: 'words', label: 'Onay Sözleri', emoji: '🗣️', tip: 'Seni takdir ettiğini sık sık duymak istersin.' },
@@ -12,8 +13,27 @@ const LOVE_LANGUAGES = [
     { id: 'touch', label: 'Fiziksel Temas', emoji: '🤗', tip: 'El ele tutuşmak ve sarılmak sana güven verir.' }
 ];
 
-export function LoveLanguageWidget() {
-    const [selected, setSelected] = useState<string | null>(null);
+interface LoveLanguageWidgetProps {
+    currentLanguage?: string;
+}
+
+export function LoveLanguageWidget({ currentLanguage }: LoveLanguageWidgetProps) {
+    const [selected, setSelected] = useState<string | null>(currentLanguage || null);
+
+    useEffect(() => {
+        if (currentLanguage) setSelected(currentLanguage);
+    }, [currentLanguage]);
+
+    const handleSelect = async (id: string | null) => {
+        setSelected(id);
+        if (id) {
+            try {
+                await userApi.updateProfile({ love_language: id });
+            } catch (err) {
+                console.error("Failed to update love language", err);
+            }
+        }
+    };
 
     return (
         <Card className="h-full bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 border-pink-100 dark:border-pink-800">
@@ -38,7 +58,7 @@ export function LoveLanguageWidget() {
                             </p>
                         </div>
                         <button
-                            onClick={() => setSelected(null)}
+                            onClick={() => handleSelect(null)}
                             className="text-xs text-pink-500 underline hover:text-pink-700 dark:hover:text-pink-300"
                         >
                             Değiştir
@@ -51,7 +71,7 @@ export function LoveLanguageWidget() {
                             {LOVE_LANGUAGES.map(lang => (
                                 <button
                                     key={lang.id}
-                                    onClick={() => setSelected(lang.id)}
+                                    onClick={() => handleSelect(lang.id)}
                                     className="flex items-center gap-3 p-2 bg-white/60 dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/20 rounded-lg transition-colors text-left"
                                 >
                                     <span className="text-xl">{lang.emoji}</span>

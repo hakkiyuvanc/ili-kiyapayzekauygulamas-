@@ -163,11 +163,20 @@ export const subscriptionApi = {
 };
 
 export const userApi = {
-  updateOnboarding: (data: { full_name?: string; goals: string[]; onboarding_completed: boolean }) =>
+  updateOnboarding: (data: { full_name?: string; goals?: string[]; love_language?: string; conflict_resolution_style?: string; onboarding_completed?: boolean }) =>
     api.patch<User>('/api/users/me/onboarding', data),
 
   updateGoals: (goals: string[]) =>
-    api.patch<User>('/api/users/me/onboarding', { goals, onboarding_completed: true }),
+    api.patch<User>('/api/users/me/onboarding', { goals }),
+
+  updateProfile: (data: Partial<User>) =>
+    api.patch<User>('/api/users/me/onboarding', data),
+};
+
+export const coachingApi = {
+  getStatus: () => api.get<{ current_focus_area: string; completed_tasks: string[] }>('/api/coaching/status'),
+  updateStatus: (data: { current_focus_area?: string; completed_tasks?: string[] }) =>
+    api.patch<{ current_focus_area: string; completed_tasks: string[] }>('/api/coaching/status', data),
 };
 
 export const chatApi = {

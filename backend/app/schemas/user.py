@@ -23,6 +23,8 @@ class UserResponse(UserBase):
     is_verified: bool = False
     onboarding_completed: bool = False
     goals: Optional[list[str]] = None
+    love_language: Optional[str] = None
+    conflict_resolution_style: Optional[str] = None
     subscription_end_date: Optional[str] = None
 
     class Config:
@@ -30,8 +32,10 @@ class UserResponse(UserBase):
 
 class UserOnboardingUpdate(BaseModel):
     full_name: Optional[str] = None
-    goals: list[str]
-    onboarding_completed: bool = True
+    goals: Optional[list[str]] = None
+    love_language: Optional[str] = None
+    conflict_resolution_style: Optional[str] = None
+    onboarding_completed: Optional[bool] = None
 
 class Token(BaseModel):
     access_token: str

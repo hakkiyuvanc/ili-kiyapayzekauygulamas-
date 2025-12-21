@@ -161,7 +161,7 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
             <div className="h-full space-y-4">
               <WeeklyScoreCard />
               <GoalsWidget initialGoals={user?.goals || []} />
-              <LoveLanguageWidget />
+              <LoveLanguageWidget currentLanguage={user?.love_language} />
               <CoachingWidget latestAnalysis={analysisHistory[0] || null} />
               <ConversationStartersWidget />
               <DateIdeasWidget />

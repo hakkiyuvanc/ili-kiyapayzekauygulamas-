@@ -29,12 +29,31 @@ class User(Base):
     # Onboarding fields
     onboarding_completed = Column(Boolean, default=False)
     goals = Column(JSON, nullable=True) # List of goal strings
+    love_language = Column(String(50), nullable=True)
+    conflict_resolution_style = Column(String(50), nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # İlişkiler
     analyses = relationship("Analysis", back_populates="user", cascade="all, delete-orphan")
+    coaching_status = relationship("CoachingStatus", back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+
+class CoachingStatus(Base):
+    """Kullanıcının haftalık koçluk durumu"""
+    __tablename__ = "coaching_status"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    
+    current_focus_area = Column(String(100), nullable=True) # e.g. "Empathy"
+    week_start_date = Column(DateTime(timezone=True), default=func.now())
+    completed_tasks = Column(JSON, default=list) # List of task IDs ["task1", "task3"]
+    
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    user = relationship("User", back_populates="coaching_status")
 
 
 class Analysis(Base):

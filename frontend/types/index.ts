@@ -38,6 +38,8 @@ export interface User {
     is_pro: boolean;
     onboarding_completed?: boolean;
     goals?: string[];
+    love_language?: string;
+    conflict_resolution_style?: string;
 }
 
 export interface AnalysisResult extends InsightData {

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from backend.app.core.config import settings
 from backend.app.core.database import engine, Base
-from backend.app.api import analysis, auth, upload, system, subscription, chat, daily, users, stats
+from backend.app.api import analysis, auth, upload, system, subscription, chat, daily, users, stats, coaching
 # Modelleri import et ki Base.metadata dolusun
 from backend.app.models import database as models
 from backend.app.services.ai_service import get_ai_service
@@ -98,6 +98,7 @@ app.include_router(upload.router, prefix="/api/upload", tags=["File Upload"])
 app.include_router(chat.router, prefix="/api/chat", tags=["AI Coach"])
 app.include_router(daily.router, prefix="/api/daily", tags=["Daily Pulse"])
 app.include_router(stats.router, prefix="/api/stats", tags=["User Stats"])
+app.include_router(coaching.router, prefix="/api/coaching", tags=["Coaching"])
 
 
 if __name__ == "__main__":
