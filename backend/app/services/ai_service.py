@@ -2,17 +2,26 @@
 
 import os
 import json
+import logging
+import hashlib
+import time
 from typing import Dict, Any, Optional, List
+from datetime import datetime
 from openai import OpenAI
 from anthropic import Anthropic
 
-
 import google.generativeai as genai
-from backend.app.core.config import settings
+from app.core.config import settings
+from app.services.cache_service import cache_service
+from app.services.knowledge_base import get_relevant_knowledge, format_knowledge_context
+
+logger = logging.getLogger(__name__)
 
 class AIService:
     """Yapay zeka servisi - OpenAI/Anthropic/Gemini entegrasyonu"""
-
+    
+    PROMPT_VERSION = "v2.1"  # Prompt versioning
+    
     def __init__(self):
         self.openai_client = None
         self.anthropic_client = None
@@ -34,7 +43,18 @@ class AIService:
                 genai.configure(api_key=api_key)
                 self.gemini_client = genai.GenerativeModel(settings.GEMINI_MODEL)
         
-        print(f"[{'SUCCESS' if self._is_available() else 'WARNING'}] AI Service initialized with provider: {self.provider}")
+        # Structured logging
+        if self._is_available():
+            logger.info("AI Service initialized", extra={
+                "provider": self.provider,
+                "prompt_version": self.PROMPT_VERSION,
+                "status": "available"
+            })
+        else:
+            logger.warning("AI Service initialized without provider", extra={
+                "provider": self.provider,
+                "status": "fallback_mode"
+            })
 
     def generate_insights(
         self,
@@ -43,7 +63,7 @@ class AIService:
         max_tokens: int = 1000
     ) -> List[Dict[str, str]]:
         """
-        AI ile derinlemesine içgörüler oluştur
+        AI ile derinlemesine içgörüler oluştur (with caching & monitoring)
         
         Args:
             metrics: Hesaplanmış metrikler
@@ -53,18 +73,67 @@ class AIService:
         Returns:
             İçgörü listesi
         """
+        start_time = time.time()
+        
+        # Check cache first
+        cache_key = self._get_cache_key("insights", metrics, conversation_summary)
+        cached = cache_service.get(cache_key)
+        
+        if cached:
+            logger.info("AI insights cache hit", extra={
+                "cache_key": cache_key[:20],
+                "latency_ms": (time.time() - start_time) * 1000
+            })
+            return cached
+        
         if not self._is_available():
-            return self._fallback_insights(metrics)
-
-        prompt = self._build_insights_prompt(metrics, conversation_summary)
+            fallback = self._fallback_insights(metrics)
+            cache_service.set(cache_key, fallback, ttl_seconds=3600)
+            return fallback
         
         try:
+            # First attempt with enhanced prompt
+            prompt = self._build_insights_prompt(metrics, conversation_summary)
             response = self._call_llm(prompt, max_tokens)
             insights = self._parse_insights_response(response)
-            return insights
+            
+            if insights:
+                # Cache successful response
+                cache_service.set(cache_key, insights, ttl_seconds=3600)  # 1 hour
+                
+                # Log success with metrics
+                logger.info("AI insights generated successfully", extra={
+                    "provider": self.provider,
+                    "insights_count": len(insights),
+                    "latency_ms": (time.time() - start_time) * 1000,
+                    "cache_miss": True,
+                    "prompt_version": self.PROMPT_VERSION
+                })
+                return insights
+            
+            # Retry with simplified prompt on parsing failure
+            logger.warning("Retrying with simplified prompt", extra={"reason": "parsing_failure"})
+            simple_prompt = self._build_simple_insights_prompt(metrics)
+            response = self._call_llm(simple_prompt, max_tokens)
+            insights = self._parse_insights_response(response)
+            
+            if insights:
+                cache_service.set(cache_key, insights, ttl_seconds=1800)  # 30 min (lower quality)
+            
+            result = insights if insights else self._fallback_insights(metrics)
+            cache_service.set(cache_key, result, ttl_seconds=3600)
+            return result
+            
         except Exception as e:
-            print(f"AI hatası: {e}")
-            return self._fallback_insights(metrics)
+            logger.error("AI insights generation failed", extra={
+                "error": str(e),
+                "provider": self.provider,
+                "latency_ms": (time.time() - start_time) * 1000
+            }, exc_info=True)
+            
+            fallback = self._fallback_insights(metrics)
+            cache_service.set(cache_key, fallback, ttl_seconds=3600)
+            return fallback
 
     def generate_recommendations(
         self,
@@ -73,28 +142,52 @@ class AIService:
         max_tokens: int = 800
     ) -> List[Dict[str, str]]:
         """
-        AI ile kişiselleştirilmiş öneriler oluştur
-        
-        Args:
-            metrics: Hesaplanmış metrikler
-            insights: Oluşturulan içgörüler
-            max_tokens: Maksimum token sayısı
-            
-        Returns:
-            Öneri listesi
+        AI ile kişiselleştirilmiş öneriler oluştur (with caching)
         """
+        start_time = time.time()
+        
+        # Check cache
+        cache_key = self._get_cache_key("recommendations", metrics, str(insights))
+        cached = cache_service.get(cache_key)
+        
+        if cached:
+            logger.info("AI recommendations cache hit", extra={
+                "latency_ms": (time.time() - start_time) * 1000
+            })
+            return cached
+        
         if not self._is_available():
-            return self._fallback_recommendations(metrics)
-
-        prompt = self._build_recommendations_prompt(metrics, insights)
+            fallback = self._fallback_recommendations(metrics)
+            cache_service.set(cache_key, fallback, ttl_seconds=3600)
+            return fallback
         
         try:
+            prompt = self._build_recommendations_prompt(metrics, insights)
             response = self._call_llm(prompt, max_tokens)
             recommendations = self._parse_recommendations_response(response)
+            
+            # Cache and log
+            cache_service.set(cache_key, recommendations, ttl_seconds=3600)
+            
+            logger.info("AI recommendations generated", extra={
+                "provider": self.provider,
+                "recommendations_count": len(recommendations),
+                "latency_ms": (time.time() - start_time) * 1000,
+                "prompt_version": self.PROMPT_VERSION
+            })
+            
             return recommendations
+            
         except Exception as e:
-            print(f"AI hatası: {e}")
-            return self._fallback_recommendations(metrics)
+            logger.error("AI recommendations generation failed", extra={
+                "error": str(e),
+                "provider": self.provider,
+                "latency_ms": (time.time() - start_time) * 1000
+            }, exc_info=True)
+            
+            fallback = self._fallback_recommendations(metrics)
+            cache_service.set(cache_key, fallback, ttl_seconds=3600)
+            return fallback
 
     def chat_with_coach(
         self,
@@ -158,8 +251,12 @@ class AIService:
             return "AI sağlayıcı yapılandırması eksik."
             
         except Exception as e:
-            print(f"Chat error: {e}")
-            return "Üzgünüm, bir hata oluştu."
+            logger.error("AI chat failed", extra={
+                "error": str(e),
+                "provider": self.provider,
+                "message_length": len(message)
+            }, exc_info=True)
+            return "Üzgünüm, şu anda bir sorun yaşıyorum. Lütfen daha sonra tekrar deneyin."
 
     def enhance_summary(
         self,
@@ -189,62 +286,141 @@ class AIService:
             return basic_summary
 
     def _build_insights_prompt(self, metrics: Dict[str, Any], summary: str) -> str:
-        """İçgörü promptu oluştur"""
-        return f"""Sen bir ilişki psikoloğusun. Aşağıdaki konuşma analiz metriklerine göre derinlemesine içgörüler üret.
+        """İçgörü promptu oluştur (improved with few-shot & chain-of-thought & knowledge)"""
+        
+        # Context optimization: Extract top metrics only
+        top_metrics = {
+            "sentiment": metrics.get("sentiment", {}),
+            "empathy": metrics.get("empathy", {}),
+            "conflict": metrics.get("conflict", {}),
+            "we_language": metrics.get("we_language", {})
+        }
+        
+        # RAG Quick Win: Get relevant knowledge snippets
+        knowledge = get_relevant_knowledge(metrics)
+        knowledge_context = format_knowledge_context(knowledge)
+        
+        return f"""
+{knowledge_context}
+Sen bir ilişki psikoloğusun. Aşağıdaki görevi adım adım yap:
 
-METRIKLER:
-{json.dumps(metrics, ensure_ascii=False, indent=2)}
+1. ADIM: Metrikleri incele
+{json.dumps(top_metrics, indent=2, ensure_ascii=False)}
 
-KONUŞMA ÖZETI:
+2. ADIM: Konuşma özetini oku
 {summary}
 
-Lütfen 4-6 adet içgörü üret. Her içgörü şu formatta olmalı:
-- category: "Güçlü Yön", "Gelişim Alanı", veya "Dikkat Noktası"
-- title: Kısa başlık (max 50 karakter)
-- description: Detaylı açıklama (100-150 karakter)
+3. ADIM: Yukarıdaki psikoloji bilgilerini referans alarak metriklere göre içgörüler üret
 
-Çıktını JSON array formatında ver:
+ÖRNEK ÇIKTILAR (Referans için):
 [
-  {{"category": "Güçlü Yön", "title": "...", "description": "..."}},
-  {{"category": "Gelişim Alanı", "title": "...", "description": "..."}}
+  {{
+    "category": "Güçlü Yön",
+    "title": "Yüksek Empati Seviyesi",
+    "description": "İletişimde karşınızı anlamaya yönelik güçlü çaba var. Bu, ilişkide güven ve yakınlık oluşturmanın temel taşıdır."
+  }},
+  {{
+    "category": "Gelişim Alanı",
+    "title": "Biz-dili Kullanımı Zayıf",
+    "description": "Bireysel ifadeler ağırlıkta. 'Biz', 'birlikte' gibi kelimeler kullanarak ortaklık hissini güçlendirebilirsiniz."
+  }},
+  {{
+    "category": "Dikkat Noktası",
+    "title": "Çatışma Yönetimi",
+    "description": "Anlaşmazlıklarda savunma moduna geçme eğilimi var. Açık ve sakin iletişim önemli."
+  }}
+]
+
+4. ADIM: Yukarıdaki metriklere ve psikoloji bilgilerine göre 4-6 adet benzeri içgörü üret
+
+FORMAT KURALLARI:
+- category: sadece "Güçlü Yön", "Gelişim Alanı", veya "Dikkat Noktası"
+- title: max 50 karakter, Türkçe
+- description: 100-150 karakter, empatik ve destekleyici ton
+
+Çıktını JSON array formatında ver (Markdown yok):
+[
+  {"category": "Güçlü Yön", "title": "...", "description": "..."},
+  {"category": "Gelişim Alanı", "title": "...", "description": "..."}
 ]"""
 
     def _build_recommendations_prompt(self, metrics: Dict[str, Any], insights: List[Dict]) -> str:
-        """Öneri promptu oluştur"""
-        insights_text = json.dumps(insights, ensure_ascii=False, indent=2)
+        """Öneri promptu oluştur (improved with few-shot)"""
         
-        return f"""Sen bir ilişki koçusun. Aşağıdaki metriklere ve içgörülere göre uygulanabilir öneriler üret.
+        # Context optimization: Top insights only
+        top_insights = insights[:4] if len(insights) > 4 else insights
+        
+        return f"""
+Sen bir ilişki koçusun. Aşağıdaki görevi adım adım yap:
 
-METRIKLER:
-{json.dumps(metrics, ensure_ascii=False, indent=2)}
+1. ADIM: İçgörüleri oku
+{json.dumps(top_insights, indent=2, ensure_ascii=False)}
 
-İÇGÖRÜLER:
-{insights_text}
+2. ADIM: Metriklerdeki zayıf alanları tespit et
+- Empati skoru: {metrics.get('empathy', {}).get('score', 'N/A')}
+- Çatışma skoru: {metrics.get('conflict', {}).get('score', 'N/A')}
+- Biz-dili skoru: {metrics.get('we_language', {}).get('score', 'N/A')}
 
-Lütfen 4-5 adet somut, uygulanabilir öneri üret. Her öneri şu formatta olmalı:
+3. ADIM: Somut, uygulanabilir öneriler oluştur
+
+ÖRNEK ÇIKTILAR (Referans için):
+[
+  {{
+    "category": "Bağ Güçlendirme",
+    "title": "Ortak Hedefler Belirleyin",
+    "description": "'Bizim için ne iyi?' sorusunu sorun. Haftalık bir 'biz' planı yapın ve birlikte karar alın."
+  }},
+  {{
+    "category": "İletişim",
+    "title": "Günlük Check-in Rutini",
+    "description": "Her gün 10 dakika telefonlar kapalı konuşun. Sadece dinleyin ve 'Anlıyorum' deyin."
+  }},
+  {{
+    "category": "Empati",
+    "title": "Duygu Yansıtma Pratiği",
+    "description": "Karşınızın söylediklerini kendi cümlelerinizle tekrarlayın. 'Senin için bu zor olmalı' gibi."
+  }}
+]
+
+4. ADIM: Yukarıdaki içgörülere göre 4-5 adet benzeri öneri üret
+
+FORMAT KURALLARI:
 - category: "İletişim", "Empati", "Çatışma Yönetimi", veya "Bağ Güçlendirme"
-- title: Kısa başlık (max 50 karakter)
-- description: Detaylı, uygulanabilir öneri (100-150 karakter)
+- title: max 50 karakter, eyleme yönelik
+- description: 100-150 karakter, somut adımlar içermeli
 
 Çıktını JSON array formatında ver:
-[
-  {{"category": "İletişim", "title": "...", "description": "..."}},
-  {{"category": "Empati", "title": "...", "description": "..."}}
-]"""
+"""
 
     def _build_summary_prompt(self, basic_summary: str, metrics: Dict[str, Any]) -> str:
         """Özet geliştirme promptu"""
-        return f"""Aşağıdaki ilişki analizi özetini daha anlaşılır ve empatik hale getir:
+        return f"""
+Aşağıdaki ilişki analizi özetini daha anlaşılır ve empatik hale getir:
 
 MEVCUT ÖZET:
 {basic_summary}
 
 METRIKLER:
-- Duygu Skoru: {metrics.get('sentiment', {}).get('score', 0)}
-- Empati Skoru: {metrics.get('empathy', {}).get('score', 0)}
-- Çatışma Skoru: {metrics.get('conflict', {}).get('score', 0)}
+- Duygu Skoru: {metrics.get('sentiment', {}).get('score', 'N/A')}
+- Empati Skoru: {metrics.get('empathy', {}).get('score', 'N/A')}
+- Çatışma Skoru: {metrics.get('conflict', {}).get('score', 'N/A')}
 
-Kısa (2-3 cümle), destekleyici ve yapıcı bir özet oluştur. Türkçe yaz."""
+Kısa (2-3 cümle), destekleyici ve yapıcı bir özet oluştur. Türkçe kullan.
+"""
+
+    def _build_simple_insights_prompt(self, metrics: Dict[str, Any]) -> str:
+        """Simplified prompt for retry (error recovery)"""
+        return f"""
+İletişim analizi için içgörüler üret:
+
+Metrikler:
+- Duygu: {metrics.get('sentiment', {}).get('score', 'N/A')}
+- Empati: {metrics.get('empathy', {}).get('score', 'N/A')}
+- Çatışma: {metrics.get('conflict', {}).get('score', 'N/A')}
+
+3-4 kısa içgörü JSON formatında ver:
+[{{"category": "Güçlü Yön", "title": "...", "description": "..."}}]
+"""
 
     def _call_llm(self, prompt: str, max_tokens: int) -> str:
         """LLM çağrısı yap"""
@@ -340,7 +516,10 @@ Kısa (2-3 cümle), destekleyici ve yapıcı bir özet oluştur. Türkçe yaz.""
             suggestions = self._parse_reply_suggestions_response(response)
             return suggestions
         except Exception as e:
-            print(f"AI cevap önerisi hatası: {e}")
+            logger.error("AI reply suggestions failed", extra={
+                "error": str(e),
+                "provider": self.provider
+            }, exc_info=True)
             return self._fallback_reply_suggestions()
 
     def _fallback_reply_suggestions(self) -> List[str]:
@@ -384,6 +563,19 @@ Kısa (2-3 cümle), destekleyici ve yapıcı bir özet oluştur. Türkçe yaz.""
         except Exception:
             return self._fallback_reply_suggestions()
 
+    
+    def _get_cache_key(self, operation: str, metrics: Dict, context: str = "") -> str:
+        """Generate cache key for AI responses"""
+        data = {
+            "operation": operation,
+            "metrics": {k: v.get("score") if isinstance(v, dict) else v for k, v in metrics.items()},
+            "context": context[:100] if context else "",  # First 100 chars only
+            "version": self.PROMPT_VERSION
+        }
+        data_str = json.dumps(data, sort_keys=True)
+        hash_key = hashlib.md5(data_str.encode()).hexdigest()
+        return f"ai_{operation}:{hash_key}"
+    
     def _is_available(self) -> bool:
         """AI servisi kullanılabilir mi?"""
         return (self.openai_client is not None) or (self.anthropic_client is not None) or (self.gemini_client is not None)
