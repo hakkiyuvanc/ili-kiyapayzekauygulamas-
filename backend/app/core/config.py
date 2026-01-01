@@ -2,6 +2,7 @@
 
 from typing import List
 import os
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -76,16 +77,55 @@ class Settings(BaseSettings):
     AI_MAX_TOKENS_INSIGHTS: int = 1000
     AI_MAX_TOKENS_RECOMMENDATIONS: int = 800
 
+    # Email Settings
+    EMAIL_ENABLED: bool = False  # Email servisi aktif mi?
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@iliskianaliz.ai"
+    SMTP_FROM_NAME: str = "İlişki Analiz AI"
+    SMTP_USE_TLS: bool = True
+
     # Stripe Settings
     STRIPE_API_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
     FRONTEND_URL: str = "http://localhost:3000"
+    
+    # Redis Cache (Optional - falls back to in-memory if not configured)
+    REDIS_URL: str = ""  # e.g., "redis://localhost:6379/0"
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
     )
+
+    @model_validator(mode='after')
+    def validate_critical_settings(self):
+        """Validate critical production settings"""
+        # Production'da SECRET_KEY zorunlu ve güvenli olmalı
+        if self.ENVIRONMENT == 'production':
+            if 'change-this' in self.SECRET_KEY.lower():
+                raise ValueError(
+                    "❌ CRITICAL: SECRET_KEY must be changed in production! "
+                    "Set a secure SECRET_KEY in your .env file (minimum 32 characters)."
+                )
+            if len(self.SECRET_KEY) < 32:
+                raise ValueError(
+                    "❌ CRITICAL: SECRET_KEY must be at least 32 characters long! "
+                    f"Current length: {len(self.SECRET_KEY)}"
+                )
+        
+        # Email servisi aktifse SMTP ayarları kontrolü
+        if self.EMAIL_ENABLED:
+            if not all([self.SMTP_HOST, self.SMTP_USER, self.SMTP_PASSWORD]):
+                raise ValueError(
+                    "❌ Email is enabled but SMTP settings are incomplete! "
+                    "Please set SMTP_HOST, SMTP_USER, and SMTP_PASSWORD in your .env file."
+                )
+        
+        return self
 
 
 

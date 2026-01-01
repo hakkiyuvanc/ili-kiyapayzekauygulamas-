@@ -5,9 +5,11 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 
-# Import Base and models
+# Import Base and ensure all models are loaded
 from backend.app.core.database import Base
-from backend.app.models.database import User, Analysis, AnalysisHistory, Feedback, APIKey, ChatSession, ChatMessage, DailyPulse
+# Import models module to ensure all models are registered with Base
+import backend.app.models.database  # noqa: F401 - needed for model registration
+
 from backend.app.core.config import settings
 
 # Alembic Config object
@@ -20,7 +22,7 @@ config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Target metadata
+# Target metadata - auto-discovered from all models that inherit from Base
 target_metadata = Base.metadata
 
 

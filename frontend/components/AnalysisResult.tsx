@@ -116,7 +116,13 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
       {/* Outcome Charts (New) */}
       <OutcomeCharts
         stats={result.conversation_stats}
-        metrics={result.metrics as any}
+        metrics={{
+          sentiment: result.metrics.sentiment,
+          empathy: result.metrics.empathy,
+          conflict: result.metrics.conflict,
+          we_language: result.metrics.we_language,
+          communication_balance: result.metrics.communication_balance,
+        }}
       />
 
       {/* Metrics Grid */}

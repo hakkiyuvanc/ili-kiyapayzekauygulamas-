@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime
 
-from backend.app.core.database import get_db
-from backend.app.services.ai_service import AIService
-from backend.app.models.database import ChatSession, ChatMessage, User, Analysis
-from backend.app.api.auth import get_current_user
-from backend.app.services.analysis_service import get_analysis_service
+from app.core.database import get_db
+from app.services.ai_service import AIService
+from app.models.database import ChatSession, ChatMessage, User, Analysis
+from app.api.auth import get_current_user
+from app.services.analysis_service import get_analysis_service
 
 router = APIRouter()
 

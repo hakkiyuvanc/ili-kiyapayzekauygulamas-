@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { MobileNav } from '@/components/MobileNav';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -35,10 +36,12 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <body className={inter.className}>
-        <Providers>
-          {children}
-          <MobileNav />
-        </Providers>
+        <ErrorBoundary>
+          <Providers>
+            {children}
+            <MobileNav />
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   );

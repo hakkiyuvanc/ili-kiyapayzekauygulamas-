@@ -3,16 +3,16 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 
-from backend.app.schemas.file import FileUploadResponse
-from backend.app.schemas.analysis import AnalysisResponse
-from backend.app.core.file_utils import FileValidator, WhatsAppFileParser
-from backend.app.services.analysis_service import get_analysis_service
-from backend.app.services.crud import AnalysisCRUD
-from backend.app.core.database import get_db
+from app.schemas.file import FileUploadResponse
+from app.schemas.analysis import AnalysisResponse
+from app.core.file_utils import FileValidator, WhatsAppFileParser
+from app.services.analysis_service import get_analysis_service
+from app.services.crud import AnalysisCRUD
+from app.core.database import get_db
 
 from typing import Optional
-from backend.app.models.database import User
-from backend.app.api.auth import get_optional_current_user
+from app.models.database import User
+from app.api.auth import get_optional_current_user
 
 router = APIRouter()
 
@@ -105,7 +105,7 @@ async def upload_and_analyze(
             )
         
         # Audio Transcription
-        from backend.app.services.audio_service import get_audio_service
+        from app.services.audio_service import get_audio_service
         audio_service = get_audio_service()
         
         # Dosyayı belleğe oku (OpenAI API için)

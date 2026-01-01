@@ -17,11 +17,15 @@ class TurkishPreprocessor:
         """
         try:
             self.nlp = spacy.load(model_name)
+            print(f"✅ Loaded spaCy Turkish model: {model_name}")
         except OSError:
-            print(f"Model {model_name} bulunamadı. Yükleniyor...")
-            import subprocess
-            subprocess.run(["python", "-m", "spacy", "download", model_name])
-            self.nlp = spacy.load(model_name)
+            print(f"⚠️ Turkish model '{model_name}' not found. Using blank Turkish model (limited features)")
+            print("💡 To install full model: python -m spacy download tr_core_news_lg")
+            self.nlp = spacy.blank("tr")
+            # Add basic sentence segmentation
+            if "sentencizer" not in self.nlp.pipe_names:
+                self.nlp.add_pipe("sentencizer")
+            print("✅ Created blank Turkish spaCy model with sentencizer")
 
         # Türkçe stopwords
         self.stopwords = self._load_turkish_stopwords()

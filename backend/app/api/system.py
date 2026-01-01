@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from backend.app.core.config import settings
-# from backend.app.services.ai_service import get_ai_service # Circular import risk?
+from app.core.config import settings
+# from app.services.ai_service import get_ai_service # Circular import risk?
 # ai_service import is safe if inside function or if services don't import api
 
 router = APIRouter()
@@ -9,7 +9,7 @@ router = APIRouter()
 async def system_status():
     """Sistem durumunu kontrol et (AI, DB)"""
     # Import inside to avoid potential circular deps if any
-    from backend.app.services.ai_service import get_ai_service
+    from app.services.ai_service import get_ai_service
     ai_service = get_ai_service()
     
     return {

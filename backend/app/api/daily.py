@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from pydantic import BaseModel
 
-from backend.app.core.database import get_db
-from backend.app.models.database import DailyPulse, User
-from backend.app.api.auth import get_current_user
+from app.core.database import get_db
+from app.models.database import DailyPulse, User
+from app.api.auth import get_current_user
 
 router = APIRouter()
 

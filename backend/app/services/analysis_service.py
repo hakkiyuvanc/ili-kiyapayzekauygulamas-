@@ -1,6 +1,14 @@
 """Analiz Servisi - Business Logic"""
 
 from typing import Dict, Any
+import sys
+import os
+
+# ml modülü backend dizininin bir üstündeki ml/ klasöründe
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from ml.analyzer import get_analyzer
 
 

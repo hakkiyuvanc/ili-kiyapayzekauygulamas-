@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 import { StepWelcome } from './steps/StepWelcome';
 import { StepProfile } from './steps/StepProfile';
 import { StepGoals } from './steps/StepGoals';
@@ -10,14 +9,12 @@ import { useAuth, useToastContext } from '@/app/providers';
 
 export function OnboardingWizard() {
     const { success, error } = useToastContext();
-    const router = useRouter();
-    const { user } = useAuth(); // mutateUser needed to update local user state
+    const { user } = useAuth();
     const [step, setStep] = useState(0);
     const [data, setData] = useState({
         fullName: user?.full_name || '',
         goals: [] as string[]
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const totalSteps = 3;
 
@@ -36,7 +33,6 @@ export function OnboardingWizard() {
     };
 
     const handleComplete = async (finalData: typeof data) => {
-        setIsSubmitting(true);
         try {
             const token = localStorage.getItem('token');
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me/onboarding`, {
@@ -64,8 +60,6 @@ export function OnboardingWizard() {
         } catch (err) {
             console.error("Error saving onboarding:", err);
             error("Bir bağlantı hatası oluştu.");
-        } finally {
-            setIsSubmitting(false);
         }
     };
 

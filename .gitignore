@@ -46,6 +46,8 @@ env/
 *.db
 *.sqlite
 *.sqlite3
+# Keep backup files for safety (remove manually after 30 days)
+!*_backup_*.db
 
 # Logs
 logs/

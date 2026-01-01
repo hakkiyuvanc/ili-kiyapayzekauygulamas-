@@ -6,7 +6,7 @@ import json
 import hashlib
 from typing import Any, Optional
 import redis
-from backend.app.core.config import settings
+from app.core.config import settings
 
 # Initialize Redis client (optional - falls back to memory cache if Redis not available)
 try:

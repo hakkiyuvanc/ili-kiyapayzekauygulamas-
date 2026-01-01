@@ -4,24 +4,26 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from fastapi import Request
-from backend.app.core.limiter import limiter
+from app.core.limiter import limiter
 
-from backend.app.schemas.analysis import (
+from app.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
     QuickScoreRequest,
-    QuickScoreResponse,
     QuickScoreResponse,
     ErrorResponse,
     RewriteRequest,
     RewriteResponse,
 )
-from backend.app.services.analysis_service import get_analysis_service
-from backend.app.services.crud import AnalysisCRUD
-from backend.app.core.database import get_db
-from backend.app.api.auth import get_optional_current_user
-from backend.app.models.database import User
+import logging
+from app.services.analysis_service import get_analysis_service
+from app.services.crud import AnalysisCRUD
+from app.core.database import get_db
+from app.api.auth import get_optional_current_user
+from app.models.database import User
+from app.core.features import FREE_TIER_DAILY_ANALYSIS_LIMIT, PRO_ONLY_FEATURES
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -53,25 +55,44 @@ async def analyze_text(
     # Feature Gating: Daily Limit for Free Users
     from datetime import datetime
     from sqlalchemy import func
-    from backend.app.models.database import Analysis
+    from app.models.database import Analysis
+    from app.services.cache_service import cache_service
 
     if current_user and not current_user.is_pro:
         today = datetime.utcnow().date()
-        daily_count = db.query(Analysis).filter(
-            Analysis.user_id == current_user.id,
-            func.date(Analysis.created_at) == today
-        ).count()
         
-        if daily_count >= 1:
+        # Cache key for daily count (per user, per day)
+        cache_key = f"daily_analysis_count:{current_user.id}:{today.isoformat()}"
+        
+        # Try to get from cache first
+        daily_count = cache_service.get(cache_key)
+        
+        if daily_count is None:
+            # Cache miss - query database
+            daily_count = db.query(Analysis).filter(
+                Analysis.user_id == current_user.id,
+                func.date(Analysis.created_at) == today
+            ).count()
+            
+            # Cache for 5 minutes (300 seconds)
+            cache_service.set(cache_key, daily_count, ttl_seconds=300)
+            logger.debug(f"Cached daily count for user {current_user.id}: {daily_count}")
+        else:
+            logger.debug(f"Retrieved daily count from cache for user {current_user.id}: {daily_count}")
+        
+        if daily_count >= FREE_TIER_DAILY_ANALYSIS_LIMIT:
              raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Ücretsiz planda günlük analiz limiti 1 adettir. Sınırsız analiz için Pro'ya yükseltin."
+                detail=f"Ücretsiz planda günlük analiz limiti {FREE_TIER_DAILY_ANALYSIS_LIMIT} adettir. Sınırsız analiz için Pro'ya yükseltin."
             )
 
     # Validasyon
     is_valid, error_msg = service.validate_text(analysis_request.text)
     if not is_valid:
-        print(f"VALIDATION ERROR: {error_msg}")
+        logger.warning(f"Validation failed for analysis request: {error_msg}", extra={
+            "user_id": current_user.id if current_user else None,
+            "text_length": len(analysis_request.text)
+        })
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=error_msg,
@@ -92,14 +113,25 @@ async def analyze_text(
         )
 
     # FEATURE GATING: PRO ONLY FEATURES
-    if not current_user or not current_user.is_pro:
-        # Remove Pro-only features from response
-        if "reply_suggestions" in result:
-            del result["reply_suggestions"]
+    # Use centralized feature list from features.py
+    
+    def filter_pro_features(result: dict, is_pro: bool) -> dict:
+        """Remove Pro-only features from result if user is not Pro"""
+        if not is_pro:
+            for feature in PRO_ONLY_FEATURES:
+                result.pop(feature, None)
             
-        # Optional: Limit explicit recommendations to 2 items
-        if isinstance(result.get("recommendations"), list) and len(result["recommendations"]) > 2:
-            result["recommendations"] = result["recommendations"][:2]
+            # Limit recommendations for free users (first 2 only)
+            if isinstance(result.get("recommendations"), list):
+                if len(result["recommendations"]) > 2:
+                    result["recommendations"] = result["recommendations"][:2]
+                    logger.debug(f"Limited recommendations to 2 for free user")
+        return result
+    
+    # Apply feature gating
+    if not current_user or not current_user.is_pro:
+        result = filter_pro_features(result, is_pro=False)
+        logger.debug(f"Applied feature gating for {'guest' if not current_user else 'free'} user")
     
     # Veritabanına kaydet
     if save_to_db:
@@ -114,7 +146,10 @@ async def analyze_text(
             result["analysis_id"] = db_analysis.id
         except Exception as e:
             # Kaydetme hatası analizi etkilemesin
-            print(f"DB Save Error: {e}")
+            logger.error(f"Failed to save analysis to database: {str(e)}", exc_info=True, extra={
+                "user_id": current_user.id if current_user else None,
+                "analysis_summary": result.get("summary", "")[:100]
+            })
             result["db_save_error"] = str(e)
     
     return result
@@ -268,7 +303,7 @@ async def export_pdf(
         )
     
     # 3. PDF Oluştur
-    from backend.app.services.report_service import get_report_service
+    from app.services.report_service import get_report_service
     from fastapi.responses import StreamingResponse
     import io
 

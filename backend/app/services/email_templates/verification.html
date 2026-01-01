@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hesap Doğrulama - {{app_name}}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .email-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .email-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h1 {
+            color: #1a1a1a;
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        p {
+            color: #4a5568;
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+        .code-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .code {
+            font-size: 42px;
+            font-weight: bold;
+            color: white;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        .info-box {
+            background-color: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .footer {
+            text-align: center;
+            color: #a0aec0;
+            font-size: 12px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="header">
+                <div class="logo">💝 {{app_name}}</div>
+            </div>
+            
+            <h1>Hesap Doğrulama</h1>
+            
+            <p>Merhaba!</p>
+            
+            <p>Hesabınızı doğrulamak ve {{app_name}} platformunu kullanmaya başlamak için aşağıdaki doğrulama kodunu girin:</p>
+            
+            <div class="code-container">
+                <div class="code">{{code}}</div>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>⏱ Önemli:</strong> Bu kod 10 dakika geçerlidir.</p>
+                <p><strong>🔒 Güvenlik:</strong> Bu kodu kimseyle paylaşmayın.</p>
+            </div>
+            
+            <p>Eğer bu hesabı siz oluşturmadıysanız, bu e-postayı görmezden gelebilirsiniz.</p>
+            
+            <div class="footer">
+                <p>© 2024 {{app_name}}. Tüm hakları saklıdır.</p>
+                <p>
+                    <a href="{{frontend_url}}/privacy-policy">Gizlilik Politikası</a> • 
+                    <a href="{{frontend_url}}">Web Sitesi</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 
-from backend.app.models.database import User, Analysis, Feedback
-from backend.app.schemas.analysis import AnalysisRequest
+from app.models.database import User, Analysis, Feedback
+from app.schemas.analysis import AnalysisRequest
 
 
 class AnalysisCRUD:

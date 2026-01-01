@@ -5,25 +5,29 @@ interface ProcessingScreenProps {
   analysisType: AnalysisType;
 }
 
+// Animation timing constant (in milliseconds)
+const ANIMATION_DELAY_MS = 700;
+const ANIMATION_DELAY_STEP_MS = 700; // Delay between each step
+
 const processingSteps = {
   message: [
     { icon: '🎯', text: 'Duygu analizi yapılıyor', delay: 0 },
-    { icon: '💭', text: 'Niyet tespit ediliyor', delay: 800 },
-    { icon: '⚠️', text: 'Risk faktörleri değerlendiriliyor', delay: 1600 },
-    { icon: '💬', text: 'Cevap önerisi oluşturuluyor', delay: 2400 }
+    { icon: '💭', text: 'Niyet tespit ediliyor', delay: ANIMATION_DELAY_STEP_MS },
+    { icon: '⚠️', text: 'Risk faktörleri değerlendiriliyor', delay: ANIMATION_DELAY_STEP_MS * 2 },
+    { icon: '💬', text: 'Cevap önerisi oluşturuluyor', delay: ANIMATION_DELAY_STEP_MS * 3 }
   ],
   file: [
     { icon: '📊', text: 'Mesajlar işleniyor', delay: 0 },
-    { icon: '📈', text: 'İletişim kalıpları analiz ediliyor', delay: 700 },
-    { icon: '🔍', text: 'Trend ve paternler belirleniyor', delay: 1400 },
-    { icon: '📋', text: 'Detaylı rapor hazırlanıyor', delay: 2100 },
-    { icon: '💡', text: 'İçgörüler oluşturuluyor', delay: 2800 }
+    { icon: '📈', text: 'İletişim kalıpları analiz ediliyor', delay: ANIMATION_DELAY_MS },
+    { icon: '🔍', text: 'Trend ve paternler belirleniyor', delay: ANIMATION_DELAY_MS * 2 },
+    { icon: '📋', text: 'Detaylı rapor hazırlanıyor', delay: ANIMATION_DELAY_MS * 3 },
+    { icon: '💡', text: 'İçgörüler oluşturuluyor', delay: ANIMATION_DELAY_MS * 4 }
   ],
   relationship: [
     { icon: '❤️', text: 'Yanıtlar değerlendiriliyor', delay: 0 },
-    { icon: '🔍', text: 'İlişki dinamikleri analiz ediliyor', delay: 700 },
-    { icon: '📊', text: 'Uyumluluk skoru hesaplanıyor', delay: 1400 },
-    { icon: '💡', text: 'Öneriler hazırlanıyor', delay: 2100 }
+    { icon: '🔍', text: 'İlişki dinamikleri analiz ediliyor', delay: ANIMATION_DELAY_MS },
+    { icon: '📊', text: 'Uyumluluk skoru hesaplanıyor', delay: ANIMATION_DELAY_MS * 2 },
+    { icon: '💡', text: 'Öneriler hazırlanıyor', delay: ANIMATION_DELAY_MS * 3 }
   ]
 };
 

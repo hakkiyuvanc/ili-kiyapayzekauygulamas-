@@ -5,12 +5,13 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from datetime import datetime
 
-from backend.app.core.database import Base
+from app.core.database import Base
 
 
 class User(Base):
     """Kullanıcı modeli"""
     __tablename__ = "users"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
@@ -43,6 +44,7 @@ class User(Base):
 class CoachingStatus(Base):
     """Kullanıcının haftalık koçluk durumu"""
     __tablename__ = "coaching_status"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
@@ -59,6 +61,7 @@ class CoachingStatus(Base):
 class Analysis(Base):
     """Analiz kayıtları"""
     __tablename__ = "analyses"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Anonim kullanım için nullable
@@ -94,6 +97,7 @@ class Analysis(Base):
 class AnalysisHistory(Base):
     """Kullanıcı analiz geçmişi - trend tracking için"""
     __tablename__ = "analysis_history"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -110,6 +114,7 @@ class AnalysisHistory(Base):
 class Feedback(Base):
     """Kullanıcı geri bildirimleri"""
     __tablename__ = "feedbacks"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     analysis_id = Column(Integer, ForeignKey("analyses.id"), nullable=True)
@@ -119,6 +124,7 @@ class Feedback(Base):
     rating = Column(Integer)  # 1-5 yıldız
     is_accurate = Column(Boolean, nullable=True)  # Analiz doğru muydu?
     comment = Column(Text, nullable=True)
+    category = Column(String(50), default="general")  # bug, feature, general, other
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -126,6 +132,7 @@ class Feedback(Base):
 class ChatSession(Base):
     """AI Koç ile sohbet oturumları"""
     __tablename__ = "chat_sessions"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -142,6 +149,7 @@ class ChatSession(Base):
 class ChatMessage(Base):
     """Sohbet mesajları"""
     __tablename__ = "chat_messages"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=False)
@@ -157,6 +165,7 @@ class ChatMessage(Base):
 class DailyPulse(Base):
     """Günlük ilişki nabzı/check-in"""
     __tablename__ = "daily_pulses"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -174,6 +183,7 @@ class DailyPulse(Base):
 class APIKey(Base):
     """API Key yönetimi (gelecek için)"""
     __tablename__ = "api_keys"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

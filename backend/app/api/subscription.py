@@ -3,11 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from backend.app.core.database import get_db
-from backend.app.api.auth import get_current_user
-from backend.app.models.database import User
-from backend.app.services.payment import StripeService
-from backend.app.core.config import settings
+from app.core.database import get_db
+from app.api.auth import get_current_user
+from app.models.database import User
+from app.services.payment import StripeService
+from app.core.config import settings
 
 router = APIRouter()
 

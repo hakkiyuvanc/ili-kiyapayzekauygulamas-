@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Share2, Download, Lock, TrendingUp, AlertTriangle, CheckCircle, Lightbulb, Check, Bot } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 import { InsightData } from '@/types';
@@ -16,10 +16,23 @@ export function InsightsScreen({ insight, isPro, onBack, onUpgrade, onChat }: In
   const [activeTab, setActiveTab] = useState<'overview' | 'details'>('overview');
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 600);
-    return () => clearTimeout(timer);
+    // Component mounted
+    isMountedRef.current = true;
+
+    const timer = setTimeout(() => {
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
+    }, 600);
+
+    return () => {
+      // Component unmounting
+      isMountedRef.current = false;
+      clearTimeout(timer);
+    };
   }, []);
 
   const radarData = [
@@ -323,9 +336,20 @@ Oluşturulma: ${new Date().toLocaleDateString('tr-TR')}
                   <div key={i} className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-purple-100 dark:border-purple-800/50 shadow-sm relative group">
                     <p className="text-sm text-gray-800 dark:text-gray-200 pr-8">"{suggestion}"</p>
                     <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(suggestion);
-                        // Optional: Show copied toast
+                      onClick={async (e) => {
+                        try {
+                          await navigator.clipboard.writeText(suggestion);
+                          // Show success feedback
+                          const button = e.currentTarget as HTMLButtonElement;
+                          const originalContent = button.innerHTML;
+                          button.innerHTML = '<svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                          setTimeout(() => {
+                            button.innerHTML = originalContent;
+                          }, 2000);
+                        } catch (err) {
+                          console.error('Failed to copy to clipboard:', err);
+                          // Could show error toast here
+                        }
                       }}
                       className="absolute right-2 top-2 p-1.5 text-gray-400 hover:text-purple-600 dark:text-gray-500 dark:hover:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Kopyala"

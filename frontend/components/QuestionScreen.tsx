@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ProgressTracker } from '@/components/ProgressTracker';
-
-export interface Answer {
-  questionId: number;
-  answer: string;
-}
+import { Answer } from '@/types';
 
 interface QuestionScreenProps {
   onComplete: (answers: Answer[]) => void;
