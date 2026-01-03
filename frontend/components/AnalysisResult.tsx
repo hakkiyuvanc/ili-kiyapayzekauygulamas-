@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { type AnalysisResponse } from '@/lib/api';
-import { Heart, Zap, AlertTriangle, Users, Scale, Download } from 'lucide-react';
+import { Heart, AlertTriangle, Users, Scale, Download, Sparkles, MessageCircleHeart } from 'lucide-react';
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
 import OutcomeCharts from './OutcomeCharts';
 import { generatePDF } from '@/lib/pdfGenerator';
@@ -27,9 +27,9 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 7) return 'text-green-600';
-    if (score >= 5) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 7) return 'text-[#22C55E]'; // Green for high
+    if (score >= 5) return 'text-[#FF7F7F]'; // Coral for medium
+    return 'text-[#B76E79]'; // Rose gold for needs work
   };
 
   const getMetricIcon = (metricName: string) => {
@@ -41,7 +41,7 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
       case 'conflict':
         return <AlertTriangle className="w-5 h-5" />;
       case 'we_language':
-        return <Zap className="w-5 h-5" />;
+        return <Sparkles className="w-5 h-5" />;
       case 'communication_balance':
         return <Scale className="w-5 h-5" />;
       default:
@@ -51,11 +51,11 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
 
   const getMetricTitle = (metricName: string) => {
     const titles: Record<string, string> = {
-      sentiment: 'Duygu Durumu',
-      empathy: 'Empati',
-      conflict: 'Çatışma',
-      we_language: 'Biz-dili',
-      communication_balance: 'İletişim Dengesi',
+      sentiment: 'Duygu Durumu 💕',
+      empathy: 'Empati 🤗',
+      conflict: 'Çatışma ⚡',
+      we_language: 'Biz-dili 💬',
+      communication_balance: 'İletişim Dengesi ⚖️',
     };
     return titles[metricName] || metricName;
   };
@@ -64,26 +64,32 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
     {
       name: 'Genel Skor',
       score: result.overall_score * 10,
-      fill: result.overall_score >= 7 ? '#22c55e' : result.overall_score >= 5 ? '#eab308' : '#ef4444',
+      fill: result.overall_score >= 7 ? '#22c55e' : result.overall_score >= 5 ? '#FF7F7F' : '#B76E79',
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 safe-bottom px-4 bg-romantic-gradient-soft min-h-screen py-8">
+      {/* AMOR AI Header */}
+      <div className="text-center mb-6 animate-fadeIn">
+        <h1 className="amor-logo text-2xl mb-1">AMOR AI</h1>
+        <p className="text-[#6B3F3F] text-sm">İlişki Analiz Raporu</p>
+      </div>
+
       {/* Overall Score */}
-      <Card>
-        <CardHeader className="relative">
-          <CardTitle className="text-center">Genel İlişki Skoru</CardTitle>
-          <button
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className="absolute right-6 top-6 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors disabled:opacity-50"
-            title="Raporu İndir (PDF)"
-          >
-            <Download className={`w-5 h-5 text-gray-600 ${isDownloading ? 'animate-pulse' : ''}`} />
-          </button>
-        </CardHeader>
-        <CardContent>
+      <div className="ios-card-elevated animate-slideUp">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-[#331A1A]">Genel İlişki Skoru 💗</h2>
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className="p-2 bg-[#FFF0F5] hover:bg-[#FFB6C1]/30 rounded-xl transition-colors disabled:opacity-50 active:scale-95"
+              title="Raporu İndir (PDF)"
+            >
+              <Download className={`w-5 h-5 text-[#B76E79] ${isDownloading ? 'animate-pulse' : ''}`} />
+            </button>
+          </div>
           <div className="flex flex-col items-center">
             <ResponsiveContainer width="100%" height={200}>
               <RadialBarChart
@@ -103,136 +109,147 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
               </RadialBarChart>
             </ResponsiveContainer>
             <div className="text-center -mt-12">
-              <div className={`text-5xl font-bold ${getScoreColor(result.overall_score)}`}>
+              <div className={`text-6xl font-bold ${getScoreColor(result.overall_score)}`}>
                 {result.overall_score.toFixed(1)}
               </div>
-              <div className="text-gray-500 text-sm">/ 10</div>
+              <div className="text-[#6B3F3F] text-sm mt-1">/ 10</div>
             </div>
           </div>
-          <p className="text-center text-gray-600 mt-4">{result.summary}</p>
-        </CardContent>
-      </Card>
+          <p className="text-center text-[#331A1A] mt-6 leading-relaxed">{result.summary}</p>
+        </div>
+      </div>
 
-      {/* Outcome Charts (New) */}
-      <OutcomeCharts
-        stats={result.conversation_stats}
-        metrics={{
-          sentiment: result.metrics.sentiment,
-          empathy: result.metrics.empathy,
-          conflict: result.metrics.conflict,
-          we_language: result.metrics.we_language,
-          communication_balance: result.metrics.communication_balance,
-        }}
-      />
+      {/* Outcome Charts */}
+      <div className="animate-fadeIn" style={{ animationDelay: '0.1s' }}>
+        <OutcomeCharts
+          stats={result.conversation_stats}
+          metrics={{
+            sentiment: result.metrics.sentiment,
+            empathy: result.metrics.empathy,
+            conflict: result.metrics.conflict,
+            we_language: result.metrics.we_language,
+            communication_balance: result.metrics.communication_balance,
+          }}
+        />
+      </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Object.entries(result.metrics).map(([key, metric]) => (
-          <Card key={key}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                    {getMetricIcon(key)}
-                  </div>
-                  <span className="font-semibold">{getMetricTitle(key)}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn" style={{ animationDelay: '0.2s' }}>
+        {Object.entries(result.metrics).map(([key, metric], index) => (
+          <div key={key} className="ios-card p-4 animate-slideUp" style={{ animationDelay: `${0.3 + index * 0.05}s` }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-[#FFF0F5] rounded-xl text-[#B76E79]">
+                  {getMetricIcon(key)}
                 </div>
-                <span className="text-lg font-bold">{metric.score.toFixed(0)}</span>
+                <span className="font-semibold text-[#331A1A]">{getMetricTitle(key)}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                <div
-                  className={`h-2 rounded-full ${metric.score >= 70
-                    ? 'bg-green-500'
+              <span className="text-xl font-bold text-[#B76E79]">{metric.score.toFixed(0)}</span>
+            </div>
+            <div className="w-full bg-[#FFF0F5] rounded-full h-2.5 mb-2">
+              <div
+                className={`h-2.5 rounded-full transition-all duration-500 ${metric.score >= 70
+                    ? 'bg-gradient-to-r from-[#22C55E] to-[#10B981]'
                     : metric.score >= 40
-                      ? 'bg-yellow-500'
-                      : 'bg-red-500'
-                    }`}
-                  style={{ width: `${metric.score}%` }}
-                />
-              </div>
-              <span className="text-sm text-gray-600">{metric.label}</span>
-            </CardContent>
-          </Card>
+                      ? 'bg-gradient-to-r from-[#FF7F7F] to-[#FFB6C1]'
+                      : 'bg-gradient-to-r from-[#B76E79] to-[#FFB6C1]'
+                  }`}
+                style={{ width: `${metric.score}%` }}
+              />
+            </div>
+            <span className="text-sm text-[#6B3F3F]">{metric.label}</span>
+          </div>
         ))}
       </div>
 
       {/* Insights */}
-      <Card>
-        <CardHeader>
-          <CardTitle>İçgörüler</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {result.insights.map((insight, index) => (
-            <div key={index} className="flex gap-3 p-4 bg-gray-50 rounded-lg">
-              <div className="text-2xl">{insight.icon}</div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold">{insight.title}</span>
-                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                    {insight.category}
-                  </span>
+      <div className="ios-card-elevated animate-fadeIn" style={{ animationDelay: '0.4s' }}>
+        <div className="p-6">
+          <h3 className="text-xl font-bold text-[#331A1A] mb-4 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[#FFB6C1]" />
+            İçgörüler
+          </h3>
+          <div className="space-y-3">
+            {result.insights.map((insight, index) => (
+              <div key={index} className="flex gap-3 p-4 bg-[#FFF0F5] rounded-xl border border-[#FFB6C1]/20">
+                <div className="text-2xl">{insight.icon}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="font-semibold text-[#331A1A]">{insight.title}</span>
+                    <span className="text-xs px-2 py-1 bg-white text-[#B76E79] rounded-lg border border-[#FFB6C1]/30">
+                      {insight.category}
+                    </span>
+                  </div>
+                  <p className="text-sm text-[#6B3F3F] leading-relaxed">{insight.description}</p>
                 </div>
-                <p className="text-sm text-gray-600">{insight.description}</p>
               </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Recommendations */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Öneriler</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {result.recommendations.map((rec, index) => (
-            <div key={index} className="p-4 border rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold">{rec.title}</h4>
-                <span
-                  className={`text-xs px-2 py-1 rounded ${rec.priority === 'high'
-                    ? 'bg-red-100 text-red-700'
-                    : rec.priority === 'medium'
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-blue-100 text-blue-700'
-                    }`}
-                >
-                  {rec.priority === 'high'
-                    ? 'Yüksek'
-                    : rec.priority === 'medium'
-                      ? 'Orta'
-                      : 'Düşük'}
-                </span>
+      <div className="ios-card-elevated animate-fadeIn" style={{ animationDelay: '0.5s' }}>
+        <div className="p-6">
+          <h3 className="text-xl font-bold text-[#331A1A] mb-4 flex items-center gap-2">
+            <Heart className="w-5 h-5 text-[#FFB6C1] fill-[#FFB6C1]" />
+            Öneriler
+          </h3>
+          <div className="space-y-4">
+            {result.recommendations.map((rec, index) => (
+              <div key={index} className="p-4 border-2 border-[#FFB6C1]/30 rounded-xl bg-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-[#331A1A]">{rec.title}</h4>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-lg ${rec.priority === 'high'
+                        ? 'bg-[#FFB6C1] text-white'
+                        : rec.priority === 'medium'
+                          ? 'bg-[#FFF0F5] text-[#B76E79]'
+                          : 'bg-white text-[#6B3F3F] border border-[#FFB6C1]/30'
+                      }`}
+                  >
+                    {rec.priority === 'high'
+                      ? '🌹 Yüksek'
+                      : rec.priority === 'medium'
+                        ? '💗 Orta'
+                        : '💕 Düşük'}
+                  </span>
+                </div>
+                <p className="text-sm text-[#6B3F3F] mb-3 leading-relaxed">{rec.description}</p>
+                <div className="bg-[#FFF0F5] p-3 rounded-xl text-sm border border-[#FFB6C1]/20">
+                  <strong className="text-[#B76E79]">Egzersiz:</strong>{' '}
+                  <span className="text-[#331A1A]">{rec.exercise}</span>
+                </div>
               </div>
-              <p className="text-sm text-gray-600 mb-2">{rec.description}</p>
-              <div className="bg-blue-50 p-3 rounded text-sm">
-                <strong>Egzersiz:</strong> {rec.exercise}
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* AI Coach CTA */}
-      <Card className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-none">
-        <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div>
-            <h3 className="text-xl font-bold mb-1 flex items-center">
-              <Zap className="w-5 h-5 mr-2" />
-              AI İlişki Koçuna Danış
-            </h3>
-            <p className="text-indigo-100 text-sm">
-              Bu analiz hakkında detaylı sorular sor ve kişisel tavsiyeler al.
-            </p>
+      <div className="ios-card-elevated bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white border-none animate-fadeIn" style={{ animationDelay: '0.6s' }}>
+        <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+              <MessageCircleHeart className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
+                <span className="amor-logo">AMOR AI</span> Koçuna Danış
+              </h3>
+              <p className="text-white/90 text-sm">
+                Bu analiz hakkında detaylı sorular sor ve kişisel tavsiyeler al 💬
+              </p>
+            </div>
           </div>
           <a
             href={`/chat?analysis_id=${result.analysis_id || ''}`}
-            className="bg-white text-indigo-600 hover:bg-indigo-50 px-6 py-2 rounded-full font-semibold transition-colors shadow-lg"
+            className="ios-button bg-white text-[#B76E79] hover:bg-white/90 px-6 py-3 font-semibold shadow-xl whitespace-nowrap"
           >
-            Koç ile Konuş
+            Koç ile Konuş 💗
           </a>
-        </CardContent>
-      </Card>
-
+        </div>
+      </div>
     </div>
   );
 }
