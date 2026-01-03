@@ -18,10 +18,10 @@ from datetime import datetime
 import shutil
 
 # Add backend to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from app.core.config import settings
-from app.models.database import Base, User, Analysis, CoachingStatus
+from backend.app.core.config import settings
+from backend.app.models.database import Base, User, Analysis, CoachingStatus
 
 logging.basicConfig(
     level=logging.INFO,

@@ -1,0 +1,40 @@
+services:
+  # Backend API Service
+  - type: web
+    name: iliski-analiz-api
+    env: python
+    region: frankfurt  # EU region (closer to Turkey)
+    plan: free  # Free tier to start, upgrade to paid later
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: DATABASE_URL
+        sync: false  # Will be set manually in Render dashboard
+      - key: SECRET_KEY
+        generateValue: true  # Auto-generate secure key
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: AI_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false  # Set manually
+      - key: CORS_ORIGINS
+        value: '["http://localhost:3000","capacitor://localhost","http://localhost"]'
+    autoDeploy: true  # Auto-deploy on git push
+
+# Optional: PostgreSQL Database (Paid - $7/month)
+# Uncomment if you want Render-managed PostgreSQL
+# databases:
+#   - name: iliski-analiz-db
+#     databaseName: iliski_analiz
+#     user: iliski_user
+#     plan: starter  # $7/month
