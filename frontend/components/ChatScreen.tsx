@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, Plus, MessageSquare } from 'lucide-react';
+import { Send, Bot, Plus, Heart, Sparkles } from 'lucide-react';
 import { api, chatApi } from '@/lib/api';
 import { useAuth } from '../app/providers';
 import { useRouter } from 'next/navigation';
@@ -108,32 +108,32 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
     };
 
     return (
-        <div className="flex h-[calc(100vh-120px)] bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="flex h-[calc(100vh-120px)] bg-romantic-gradient-soft rounded-2xl shadow-lg overflow-hidden safe-bottom">
             {/* Sidebar - Session List */}
-            <div className="w-64 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 hidden md:flex flex-col">
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="w-64 bg-white/80 backdrop-blur-sm border-r border-[#FFB6C1]/30 hidden md:flex flex-col">
+                <div className="p-4 border-b border-[#FFB6C1]/30">
                     <button
                         onClick={() => startNewSession()}
-                        className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-4 rounded-xl transition-colors font-medium text-sm"
+                        className="ios-button-primary w-full flex items-center justify-center gap-2 py-2.5 px-4 text-sm"
                     >
                         <Plus className="w-4 h-4" />
                         Yeni Sohbet
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                <div className="flex-1 overflow-y-auto p-2 space-y-1 ios-scroll">
                     {sessions.map((session) => (
                         <button
                             key={session.id}
                             onClick={() => loadMessages(session.id)}
-                            className={`w-full text-left p-3 rounded-lg text-sm transition-colors ${sessionId === session.id
-                                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            className={`w-full text-left p-3 rounded-xl text-sm transition-all ${sessionId === session.id
+                                ? 'bg-white text-[#B76E79] shadow-sm border border-[#FFB6C1]/30'
+                                : 'text-[#6B3F3F] hover:bg-white/50'
                                 }`}
                         >
                             <div className="font-medium truncate">{session.title || 'Yeni Sohbet'}</div>
-                            <div className="text-xs text-slate-400 mt-1">
-                                {new Date(session.updated_at).toLocaleDateString()}
+                            <div className="text-xs text-[#6B3F3F]/60 mt-1">
+                                {new Date(session.updated_at).toLocaleDateString('tr-TR')}
                             </div>
                         </button>
                     ))}
@@ -141,41 +141,75 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
             </div>
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col min-w-0">
-                <div className="bg-white dark:bg-slate-800 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <h2 className="font-semibold text-slate-800 dark:text-white flex items-center">
-                        <Bot className="w-5 h-5 mr-2 text-indigo-500" />
-                        İlişki Koçu
-                    </h2>
-                    {/* Mobile: New Chat Button (visible only on small screens) */}
+            <div className="flex-1 flex flex-col min-w-0 bg-white/60 backdrop-blur-sm">
+                {/* Header */}
+                <div className="bg-white/80 backdrop-blur-sm p-4 border-b border-[#FFB6C1]/30 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#FFB6C1] to-[#FF7F7F] rounded-full blur-lg opacity-30 animate-heartbeat"></div>
+                            <div className="relative w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md">
+                                <Heart className="w-5 h-5 text-[#B76E79] fill-[#FFB6C1]" />
+                            </div>
+                        </div>
+                        <div>
+                            <h2 className="font-semibold text-[#331A1A] flex items-center gap-2">
+                                <span className="amor-logo text-lg">AMOR AI</span>
+                                <span className="text-sm font-normal text-[#6B3F3F]">Koç</span>
+                            </h2>
+                            <p className="text-xs text-[#6B3F3F]/60">İlişki danışmanınız 💕</p>
+                        </div>
+                    </div>
+                    {/* Mobile: New Chat Button */}
                     <button
                         onClick={() => startNewSession()}
-                        className="md:hidden p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg"
+                        className="md:hidden p-2 bg-[#FFF0F5] text-[#B76E79] rounded-lg active:scale-95 transition-transform"
                     >
                         <Plus className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 ios-scroll">
                     {messages.length === 0 ? (
-                        <div className="text-center text-gray-400 mt-10">
-                            <div className="w-16 h-16 bg-indigo-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Bot className="w-8 h-8 text-indigo-500 opacity-80" />
+                        <div className="text-center mt-10 px-4 animate-fadeIn">
+                            <div className="relative inline-block mb-4">
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#FFB6C1] to-[#FF7F7F] rounded-full blur-2xl opacity-20 animate-heartbeat"></div>
+                                <div className="relative w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl">
+                                    <Heart className="w-10 h-10 text-[#B76E79] fill-[#FFB6C1]" />
+                                </div>
                             </div>
-                            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Merhaba!</h3>
-                            <p className="max-w-xs mx-auto text-sm">Ben senin 7/24 yapay zeka ilişki koçunum. İlişkin, analizlerin veya duyguların hakkında konuşabiliriz.</p>
+                            <h3 className="text-xl font-semibold text-[#331A1A] mb-2">
+                                Merhaba! 💗
+                            </h3>
+                            <p className="max-w-xs mx-auto text-sm text-[#6B3F3F] leading-relaxed">
+                                Ben senin 7/24 yapay zeka ilişki koçunum. İlişkin, analizlerin veya duyguların hakkında konuşabiliriz.
+                            </p>
+                            <div className="mt-6 flex flex-wrap gap-2 justify-center">
+                                <button
+                                    onClick={() => setInput('İlişkimizi nasıl geliştirebilirim?')}
+                                    className="px-3 py-1.5 bg-white text-[#B76E79] text-xs rounded-lg border border-[#FFB6C1]/30 hover:bg-[#FFF0F5] transition-colors"
+                                >
+                                    💬 İlişkimi geliştir
+                                </button>
+                                <button
+                                    onClick={() => setInput('Analizim hakkında ne önerirsin?')}
+                                    className="px-3 py-1.5 bg-white text-[#B76E79] text-xs rounded-lg border border-[#FFB6C1]/30 hover:bg-[#FFF0F5] transition-colors"
+                                >
+                                    📊 Analiz önerileri
+                                </button>
+                            </div>
                         </div>
                     ) : (
-                        messages.map((msg) => (
+                        messages.map((msg, index) => (
                             <div
                                 key={msg.id}
-                                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
+                                style={{ animationDelay: `${index * 0.05}s` }}
                             >
                                 <div
-                                    className={`max-w-[85%] rounded-2xl p-4 ${msg.role === 'user'
-                                        ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-br-none shadow-md'
-                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-bl-none'
+                                    className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.role === 'user'
+                                        ? 'bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white rounded-br-sm'
+                                        : 'bg-white text-[#331A1A] rounded-bl-sm border border-[#FFB6C1]/20'
                                         }`}
                                 >
                                     <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
@@ -184,11 +218,11 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
                         ))
                     )}
                     {isLoading && (
-                        <div className="flex justify-start">
-                            <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-2xl rounded-bl-none flex items-center space-x-2">
-                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        <div className="flex justify-start animate-fadeIn">
+                            <div className="bg-white p-4 rounded-2xl rounded-bl-sm flex items-center space-x-2 border border-[#FFB6C1]/20">
+                                <div className="w-2 h-2 bg-[#B76E79] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                <div className="w-2 h-2 bg-[#FFB6C1] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                <div className="w-2 h-2 bg-[#FF7F7F] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                             </div>
                         </div>
                     )}
@@ -196,21 +230,21 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
                 </div>
 
                 {/* Input */}
-                <div className="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+                <div className="p-4 bg-white/80 backdrop-blur-sm border-t border-[#FFB6C1]/30">
                     <div className="flex gap-3 max-w-3xl mx-auto">
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                            placeholder="Bir şeyler yaz..."
-                            className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                            placeholder="Bir şeyler yaz... 💭"
+                            className="ios-input flex-1"
                             disabled={isLoading}
                         />
                         <button
                             onClick={sendMessage}
                             disabled={isLoading || !input.trim()}
-                            className="p-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl transition-colors shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20"
+                            className="ios-button-primary p-3 disabled:opacity-50 flex items-center justify-center"
                         >
                             <Send className="w-5 h-5" />
                         </button>
