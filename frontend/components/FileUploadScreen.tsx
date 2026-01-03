@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, CheckCircle, Heart } from 'lucide-react';
 
 interface FileUploadScreenProps {
   onSubmit: (file: File) => void;
@@ -27,7 +27,7 @@ export function FileUploadScreen({ onSubmit, onBack }: FileUploadScreenProps) {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setUploadedFile(e.dataTransfer.files[0]);
     }
@@ -41,131 +41,137 @@ export function FileUploadScreen({ onSubmit, onBack }: FileUploadScreenProps) {
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-2xl p-6 min-h-[600px] flex flex-col">
-      {/* Header */}
-      <div className="flex items-center mb-6">
-        <button
-          onClick={onBack}
-          className="p-2 hover:bg-gray-100 rounded-xl transition-colors mr-2"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
-        </button>
-        <div>
-          <h2 className="text-gray-900">Dosya Yükle</h2>
-          <p className="text-xs text-gray-500">WhatsApp veya SMS geçmişi</p>
-        </div>
+    <div className="min-h-screen bg-romantic-gradient-soft flex flex-col safe-top safe-bottom px-4 py-6">
+      {/* AMOR AI Header */}
+      <div className="text-center mb-4 animate-fadeIn">
+        <h1 className="amor-logo text-2xl mb-1">AMOR AI</h1>
+        <p className="text-[#6B3F3F] text-sm">Dosya yükleme 📁</p>
       </div>
 
-      {/* Instructions */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-        <h4 className="text-sm text-blue-900 mb-2">📱 Nasıl Export Alınır?</h4>
-        <div className="space-y-1 text-xs text-blue-700">
-          <p>• WhatsApp: Sohbet {">"} Ayarlar {">"} Sohbeti Dışa Aktar</p>
-          <p>• SMS: Telefon ayarlarından yedek al</p>
-          <p>• Desteklenen formatlar: .txt, .zip</p>
-        </div>
-      </div>
-
-      {/* Upload Area */}
-      <div className="flex-1 mb-6">
-        {!uploadedFile ? (
-          <div
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            className={`h-64 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all ${
-              dragActive
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-slate-300 bg-slate-50 hover:border-slate-400'
-            }`}
+      <div className="ios-card-elevated p-6 flex-1 flex flex-col max-w-2xl w-full mx-auto">
+        {/* Header with Back */}
+        <div className="flex items-center mb-6">
+          <button
+            onClick={onBack}
+            className="p-2 hover:bg-[#FFF0F5] rounded-xl transition-colors mr-2 active:scale-95"
           >
-            <Upload className="w-12 h-12 text-slate-400 mb-3" />
-            <p className="text-sm text-gray-700 mb-1">Dosyayı buraya sürükle</p>
-            <p className="text-xs text-gray-500 mb-4">veya</p>
-            
-            <label className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors cursor-pointer">
-              Dosya Seç
-              <input
-                type="file"
-                onChange={handleChange}
-                accept=".txt,.zip"
-                className="hidden"
-              />
-            </label>
-            
-            <p className="text-xs text-gray-400 mt-4">Maks. 10 MB</p>
+            <ArrowLeft className="w-5 h-5 text-[#B76E79]" />
+          </button>
+          <div>
+            <h2 className="text-lg font-semibold text-[#331A1A]">Dosya Yükle</h2>
+            <p className="text-xs text-[#6B3F3F]">WhatsApp veya SMS geçmişi</p>
           </div>
-        ) : (
-          <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl">
-            <div className="flex items-start gap-3 mb-4">
-              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h4 className="text-sm text-gray-900 mb-1">Dosya Yüklendi</h4>
-                <p className="text-xs text-gray-600">{uploadedFile.name}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {(uploadedFile.size / 1024).toFixed(2)} KB
-                </p>
-              </div>
-            </div>
-            
-            <button
-              onClick={() => setUploadedFile(null)}
-              className="text-xs text-red-600 hover:text-red-700 transition-colors"
+        </div>
+
+        {/* Instructions */}
+        <div className="mb-6 p-4 bg-[#FFF0F5] border border-[#FFB6C1]/30 rounded-xl">
+          <h4 className="text-sm text-[#B76E79] mb-2 font-medium">📱 Nasıl Export Alınır?</h4>
+          <div className="space-y-1 text-xs text-[#6B3F3F]">
+            <p>• WhatsApp: Sohbet {">"} Ayarlar {">"} Sohbeti Dışa Aktar</p>
+            <p>• SMS: Telefon ayarlarından yedek al</p>
+            <p>• Desteklenen formatlar: .txt, .zip</p>
+          </div>
+        </div>
+
+        {/* Upload Area */}
+        <div className="flex-1 mb-6">
+          {!uploadedFile ? (
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              className={`h-64 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all ${dragActive
+                  ? 'border-[#B76E79] bg-[#FFF0F5]'
+                  : 'border-[#FFB6C1]/50 bg-white hover:border-[#FFB6C1]'
+                }`}
             >
-              Farklı dosya seç
-            </button>
-          </div>
-        )}
-      </div>
+              <Upload className="w-12 h-12 text-[#FFB6C1] mb-3" />
+              <p className="text-sm text-[#331A1A] mb-1 font-medium">Dosyayı buraya sürükle</p>
+              <p className="text-xs text-[#6B3F3F] mb-4">veya</p>
 
-      {/* Analysis Info */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <AnalysisMetric icon="📊" label="Mesaj Sayısı" />
-        <AnalysisMetric icon="📅" label="Zaman Aralığı" />
-        <AnalysisMetric icon="💬" label="İletişim Paterni" />
-      </div>
+              <label className="ios-button-primary px-6 py-2.5 cursor-pointer">
+                Dosya Seç 📂
+                <input
+                  type="file"
+                  onChange={handleChange}
+                  accept=".txt,.zip"
+                  className="hidden"
+                />
+              </label>
 
-      {/* Submit Button */}
-      <button
-        onClick={async () => {
-          if (!uploadedFile || isSubmitting) return;
-          setIsSubmitting(true);
-          try {
-            await onSubmit(uploadedFile);
-          } finally {
-            setIsSubmitting(false);
-          }
-        }}
-        disabled={!uploadedFile || isSubmitting}
-        className={`w-full py-4 rounded-2xl transition-all flex items-center justify-center gap-2 ${
-          uploadedFile && !isSubmitting
-            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg hover:scale-[1.02]'
-            : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-        }`}
-      >
-        {isSubmitting ? (
-          <>
-            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Analiz Ediliyor...
-          </>
-        ) : (
-          <>
-            <FileText className="w-5 h-5" />
-            Dosyayı Analiz Et
-          </>
-        )}
-      </button>
+              <p className="text-xs text-[#6B3F3F]/60 mt-4">Maks. 10 MB</p>
+            </div>
+          ) : (
+            <div className="p-6 bg-gradient-to-br from-[#FFF0F5] to-white border-2 border-[#22C55E]/30 rounded-2xl">
+              <div className="flex items-start gap-3 mb-4">
+                <CheckCircle className="w-6 h-6 text-[#22C55E] flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h4 className="text-sm text-[#331A1A] mb-1 font-medium">Dosya Yüklendi ✓</h4>
+                  <p className="text-xs text-[#6B3F3F]">{uploadedFile.name}</p>
+                  <p className="text-xs text-[#6B3F3F]/60 mt-1">
+                    {(uploadedFile.size / 1024).toFixed(2)} KB
+                  </p>
+                </div>
+              </div>
 
-      {/* Privacy Note */}
-      <div className="mt-4 p-3 bg-slate-50 rounded-xl">
-        <p className="text-xs text-gray-600 flex items-start gap-2">
-          <span className="text-lg">🔒</span>
-          <span>Dosyanız şifrelenir ve analiz sonrası otomatik olarak silinir. Hiçbir veri saklanmaz.</span>
-        </p>
+              <button
+                onClick={() => setUploadedFile(null)}
+                className="text-xs text-[#FF7F7F] hover:text-[#B76E79] transition-colors"
+              >
+                Farklı dosya seç 🔄
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Analysis Info */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <AnalysisMetric icon="📊" label="Mesaj Sayısı" />
+          <AnalysisMetric icon="📅" label="Zaman Aralığı" />
+          <AnalysisMetric icon="💬" label="İletişim Paterni" />
+        </div>
+
+        {/* Submit Button */}
+        <button
+          onClick={async () => {
+            if (!uploadedFile || isSubmitting) return;
+            setIsSubmitting(true);
+            try {
+              await onSubmit(uploadedFile);
+            } finally {
+              setIsSubmitting(false);
+            }
+          }}
+          disabled={!uploadedFile || isSubmitting}
+          className={`w-full py-4 rounded-2xl transition-all flex items-center justify-center gap-2 ${uploadedFile && !isSubmitting
+              ? 'bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white hover:shadow-xl active:scale-98'
+              : 'bg-[#FFB6C1]/30 text-[#6B3F3F]/50 cursor-not-allowed'
+            }`}
+        >
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Analiz Ediliyor...
+            </>
+          ) : (
+            <>
+              <Heart className="w-5 h-5 fill-white" />
+              Dosyayı Analiz Et 💗
+            </>
+          )}
+        </button>
+
+        {/* Privacy Note */}
+        <div className="mt-4 p-3 bg-[#FFF0F5] rounded-xl border border-[#FFB6C1]/20">
+          <p className="text-xs text-[#6B3F3F] flex items-start gap-2">
+            <span className="text-lg">🔒</span>
+            <span>Dosyanız şifrelenir ve analiz sonrası otomatik olarak silinir. Hiçbir veri saklanmaz.</span>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -173,9 +179,9 @@ export function FileUploadScreen({ onSubmit, onBack }: FileUploadScreenProps) {
 
 function AnalysisMetric({ icon, label }: { icon: string; label: string }) {
   return (
-    <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl text-center border border-slate-200">
+    <div className="ios-card p-3 text-center border border-[#FFB6C1]/20">
       <div className="text-xl mb-1">{icon}</div>
-      <span className="text-xs text-gray-600">{label}</span>
+      <span className="text-xs text-[#6B3F3F]">{label}</span>
     </div>
   );
 }
