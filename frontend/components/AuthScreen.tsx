@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Heart } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Heart } from 'lucide-react';
 
 interface AuthScreenProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -57,153 +57,169 @@ export function AuthScreen({ onLogin, onRegister, onContinueAsGuest, isLoading, 
   const displayError = error || localError;
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 transition-colors">
-      {/* Logo */}
-      <div className="text-center mb-8">
-        <div className="w-24 h-24 mx-auto mb-4 relative">
-          <img
-            src="/amor-logo.jpg"
-            alt="AMOR Logo"
-            className="w-full h-full object-contain drop-shadow-lg"
-          />
+    <div className="min-h-screen flex flex-col items-center justify-center safe-top safe-bottom px-6 bg-romantic-gradient-soft">
+      {/* AMOR AI Logo */}
+      <div className="mb-8 text-center animate-fadeIn">
+        <div className="relative mb-4 inline-block">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#FFB6C1] to-[#FF7F7F] rounded-full blur-2xl opacity-30 animate-heartbeat"></div>
+          <div className="relative bg-white p-6 rounded-full shadow-xl">
+            <Heart className="w-16 h-16 text-[#B76E79] fill-[#FFB6C1]" />
+          </div>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-wide">AMOR</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2 font-light">
-          {mode === 'login' ? 'İlişkine değer ver' : 'Aşkın matematiğini keşfet'}
+        <h1 className="amor-logo text-4xl mb-1 tracking-tight">AMOR AI</h1>
+        <p className="text-[#6B3F3F] text-sm font-medium">
+          {mode === 'login' ? 'İlişkine değer ver 💕' : 'Aşkın matematiğini keşfet 💗'}
         </p>
       </div>
 
-      {/* Error Display */}
-      {displayError && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl">
-          <p className="text-sm text-red-600 dark:text-red-400">{displayError}</p>
+      {/* Main Auth Card */}
+      <div className="ios-card-elevated max-w-md w-full p-8 animate-slideUp">
+        {/* Mode Tabs */}
+        <div className="flex gap-2 mb-6 p-1 bg-[#FFF0F5] rounded-xl">
+          <button
+            onClick={() => { setMode('login'); setLocalError(''); }}
+            className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all ${mode === 'login'
+                ? 'bg-white text-[#B76E79] shadow-sm'
+                : 'text-[#6B3F3F]/60'
+              }`}
+          >
+            Giriş Yap
+          </button>
+          <button
+            onClick={() => { setMode('register'); setLocalError(''); }}
+            className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all ${mode === 'register'
+                ? 'bg-white text-[#B76E79] shadow-sm'
+                : 'text-[#6B3F3F]/60'
+              }`}
+          >
+            Kayıt Ol
+          </button>
         </div>
-      )}
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {mode === 'register' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              İsim
-            </label>
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Adınız Soyadınız"
-                className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none transition-colors"
-              />
-            </div>
+        {/* Error Display */}
+        {displayError && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl animate-shake">
+            <p className="text-sm text-red-600">{displayError}</p>
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Email
-          </label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="ornek@email.com"
-              className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none transition-colors"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Şifre
-          </label>
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full pl-12 pr-12 py-3 rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:border-purple-500 focus:outline-none transition-colors"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2"
-            >
-              {showPassword ? (
-                <EyeOff className="w-5 h-5 text-gray-400" />
-              ) : (
-                <Eye className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Yükleniyor...
-            </span>
-          ) : mode === 'login' ? (
-            'Giriş Yap'
-          ) : (
-            'Kayıt Ol'
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'register' && (
+            <div className="animate-fadeIn">
+              <label className="block text-sm font-medium text-[#331A1A] mb-2">
+                İsim Soyisim
+              </label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#B76E79]/50" />
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Adınız Soyadınız"
+                  className="ios-input w-full pl-12 pr-4"
+                />
+              </div>
+            </div>
           )}
-        </button>
-      </form>
 
-      {/* Toggle Mode */}
-      <div className="mt-6 text-center">
-        <p className="text-gray-600 dark:text-gray-400">
-          {mode === 'login' ? 'Hesabınız yok mu?' : 'Zaten hesabınız var mı?'}
+          <div>
+            <label className="block text-sm font-medium text-[#331A1A] mb-2">
+              Email
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#B76E79]/50" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="ornek@email.com"
+                className="ios-input w-full pl-12 pr-4"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#331A1A] mb-2">
+              Şifre
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#B76E79]/50" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="En az 6 karakter"
+                className="ios-input w-full pl-12 pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 no-select"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5 text-[#B76E79]/50" />
+                ) : (
+                  <Eye className="w-5 h-5 text-[#B76E79]/50" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Submit Button */}
           <button
-            onClick={() => {
-              setMode(mode === 'login' ? 'register' : 'login');
-              setLocalError('');
-            }}
-            className="ml-2 text-purple-600 dark:text-purple-400 font-semibold hover:underline"
+            type="submit"
+            disabled={isLoading}
+            className="ios-button-primary w-full py-4 text-white disabled:opacity-50 disabled:cursor-not-allowed mt-6"
           >
-            {mode === 'login' ? 'Kayıt Ol' : 'Giriş Yap'}
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Yükleniyor...
+              </span>
+            ) : mode === 'login' ? (
+              '💗 Giriş Yap'
+            ) : (
+              '💕 Hesap Oluştur'
+            )}
           </button>
+        </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4 my-6">
+          <div className="flex-1 h-px bg-[#FFB6C1]/30" />
+          <span className="text-sm text-[#6B3F3F]/60">veya</span>
+          <div className="flex-1 h-px bg-[#FFB6C1]/30" />
+        </div>
+
+        {/* Guest Mode */}
+        <button
+          onClick={onContinueAsGuest}
+          className="w-full py-3 border-2 border-[#FFB6C1]/30 text-[#6B3F3F] rounded-xl font-medium hover:bg-[#FFF0F5] transition-all active:scale-95"
+        >
+          Misafir Olarak Devam Et
+        </button>
+
+        {/* Privacy Note */}
+        <p className="mt-6 text-xs text-center text-[#6B3F3F]/60">
+          🔒 Devam ederek{' '}
+          <a href="/privacy-policy" className="text-[#B76E79] hover:underline font-medium">
+            Gizlilik Politikası
+          </a>
+          'nı kabul etmiş olursunuz.
         </p>
       </div>
 
-      {/* Divider */}
-      <div className="flex items-center gap-4 my-6">
-        <div className="flex-1 h-px bg-gray-200 dark:bg-slate-600" />
-        <span className="text-sm text-gray-500 dark:text-gray-400">veya</span>
-        <div className="flex-1 h-px bg-gray-200 dark:bg-slate-600" />
+      {/* Bottom Branding */}
+      <div className="mt-8 text-center animate-fadeIn" style={{ animationDelay: '0.3s' }}>
+        <p className="text-[#6B3F3F]/60 text-sm">
+          Sevgi dolu ilişkiler için
+        </p>
+        <p className="amor-logo text-lg font-semibold mt-1">AMOR AI</p>
       </div>
-
-      {/* Guest Mode */}
-      <button
-        onClick={onContinueAsGuest}
-        className="w-full py-3 border-2 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-      >
-        Misafir Olarak Devam Et
-      </button>
-
-      {/* Privacy Note */}
-      <p className="mt-6 text-xs text-center text-gray-500 dark:text-gray-400">
-        Devam ederek{' '}
-        <a href="/privacy-policy" className="text-purple-600 hover:underline">
-          Gizlilik Politikası
-        </a>
-        'nı kabul etmiş olursunuz.
-      </p>
     </div>
   );
 }
