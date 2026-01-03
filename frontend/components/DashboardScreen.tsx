@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, TrendingUp, Shield, Zap, FileText, Calendar, ArrowRight, LogOut, User as UserIcon, AlertTriangle, MessageCircle, Bot } from 'lucide-react';
+import { Plus, TrendingUp, Shield, FileText, Calendar, ArrowRight, LogOut, User as UserIcon, AlertTriangle, Bot, Heart, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { InsightData, User } from '@/types';
 import { DashboardSkeleton } from '@/components/SkeletonLoader';
@@ -35,10 +35,10 @@ interface DashboardScreenProps {
 
 function StatCard({ icon: Icon, label, value, color }: { icon: typeof TrendingUp; label: string; value: string; color: string }) {
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50 dark:from-slate-700 dark:to-slate-800 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-slate-600">
-      <Icon className={`w-5 h-5 ${color} mb-1`} />
-      <p className="text-lg font-bold text-gray-900 dark:text-white">{value}</p>
-      <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+    <div className="ios-card p-4">
+      <Icon className={`w-5 h-5 ${color} mb-2`} />
+      <p className="text-xl font-bold text-[#331A1A]">{value}</p>
+      <p className="text-xs text-[#6B3F3F]">{label}</p>
     </div>
   );
 }
@@ -60,12 +60,12 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
     : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 safe-bottom bg-romantic-gradient-soft min-h-screen px-4 py-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto transition-colors duration-300"
+        className="ios-card-elevated p-6 max-h-[90vh] overflow-y-auto ios-scroll"
       >
 
         {user && user.onboarding_completed === false && (
@@ -84,20 +84,20 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
           </div>
         )}
 
-        {/* Header */}
+        {/* Header with AMOR AI Branding */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-              {user ? `Merhaba, ${user.full_name.split(' ')[0]}!` : 'AMOR'}
+            <h1 className="amor-logo text-2xl mb-1">
+              AMOR AI
             </h1>
+            <p className="text-sm text-[#6B3F3F]">
+              {user ? `Merhaba, ${user.full_name.split(' ')[0]} 💕` : 'İlişki merkezi'}
+            </p>
             {isPro && (
-              <div className="flex items-center gap-1.5">
-                <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-                <span className="text-sm text-amber-600">Pro Üye</span>
+              <div className="flex items-center gap-1.5 mt-1">
+                <Sparkles className="w-4 h-4 text-[#FFB6C1] fill-[#FFB6C1]" />
+                <span className="text-xs text-[#B76E79] font-medium">Pro Üye</span>
               </div>
-            )}
-            {!user && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">Misafir Mod</p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -105,18 +105,18 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
             {user ? (
               <button
                 onClick={onLogout}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                className="p-2 hover:bg-[#FFF0F5] rounded-xl transition-colors active:scale-95"
                 title="Çıkış Yap"
               >
-                <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <LogOut className="w-5 h-5 text-[#B76E79]" />
               </button>
             ) : (
               !isPro && (
                 <button
                   onClick={onUpgrade}
-                  className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-xl text-sm hover:shadow-lg transition-all"
+                  className="ios-button-primary px-4 py-2 text-sm"
                 >
-                  Giriş Yap
+                  Giriş Yap 💗
                 </button>
               )
             )}
@@ -124,11 +124,11 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={TrendingUp} label="Ort. Skor" value={`${avgScore}/10`} color="text-indigo-500" />
-          <StatCard icon={FileText} label="Analiz" value={analysisHistory.length.toString()} color="text-blue-500" />
-          <StatCard icon={Shield} label="Gizlilik" value="Korumalı" color="text-green-500" />
-          <StatCard icon={Calendar} label="Üyelik" value={isPro ? "Pro" : "Ücretsiz"} color={isPro ? "text-amber-500" : "text-gray-500"} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          <StatCard icon={Heart} label="Ort. Skor 💗" value={`${avgScore}/10`} color="text-[#B76E79]" />
+          <StatCard icon={FileText} label="Analiz 📊" value={analysisHistory.length.toString()} color="text-[#FF7F7F]" />
+          <StatCard icon={Shield} label="Gizlilik 🔒" value="Korumalı" color="text-[#22C55E]" />
+          <StatCard icon={Calendar} label="Üyelik ✨" value={isPro ? "Pro" : "Ücretsiz"} color={isPro ? "text-[#FFB6C1]" : "text-[#6B3F3F]"} />
         </div>
 
         {/* Daily Pulse & Main Action */}
@@ -142,14 +142,14 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onStartAnalysis}
-              className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl p-6 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 group"
+              className="w-full bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white rounded-2xl p-6 shadow-xl group"
             >
               <div className="flex items-center justify-between">
                 <div className="text-left">
-                  <h3 className="text-2xl font-bold mb-1 group-hover:translate-x-1 transition-transform">Yeni Analiz Başlat</h3>
-                  <p className="text-indigo-100/90 text-sm">Metin veya ses kaydı yükle</p>
+                  <h3 className="text-2xl font-bold mb-1 group-hover:translate-x-1 transition-transform">Yeni Analiz Başlat 💕</h3>
+                  <p className="text-white/90 text-sm">Mesaj veya dosya yükle</p>
                 </div>
-                <div className="bg-white/20 p-3 rounded-xl group-hover:rotate-12 transition-transform">
+                <div className="bg-white/20 p-3 rounded-xl group-hover:rotate-12 transition-transform backdrop-blur-sm">
                   <Plus className="w-8 h-8" />
                 </div>
               </div>
@@ -174,30 +174,30 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onStartChat}
-                className="w-full bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white rounded-2xl p-6 shadow-lg shadow-fuchsia-200 dark:shadow-fuchsia-900/20 group"
+                className="w-full bg-gradient-to-br from-[#FFB6C1] to-[#FF7F7F] text-white rounded-2xl p-6 shadow-xl group"
               >
                 <div className="flex items-center justify-between">
                   <div className="text-left">
-                    <h3 className="text-2xl font-bold mb-1 group-hover:translate-x-1 transition-transform">AI İlişki Koçu</h3>
-                    <p className="text-pink-100/90 text-sm">İlişkiniz hakkında dertleşin</p>
+                    <h3 className="text-2xl font-bold mb-1 group-hover:translate-x-1 transition-transform">AMOR AI Koç 💬</h3>
+                    <p className="text-white/90 text-sm">Dertleş, soru sor, öğren</p>
                   </div>
-                  <div className="bg-white/20 p-3 rounded-xl group-hover:-rotate-12 transition-transform">
-                    <Bot className="w-8 h-8" />
+                  <div className="bg-white/20 p-3 rounded-xl group-hover:-rotate-12 transition-transform backdrop-blur-sm">
+                    <Heart className="w-8 h-8 fill-white" />
                   </div>
                 </div>
               </motion.button>
             ) : (
-              <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-slate-800 dark:to-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 flex items-center justify-between opacity-75">
+              <div className="ios-card p-4 flex items-center justify-between opacity-75 border-2 border-[#FFB6C1]/30">
                 <div className="flex items-center gap-3">
-                  <div className="bg-gray-100 dark:bg-slate-700 p-2.5 rounded-xl">
-                    <Bot className="w-6 h-6 text-gray-500 dark:text-gray-400" />
+                  <div className="bg-[#FFF0F5] p-2.5 rounded-xl">
+                    <Heart className="w-6 h-6 text-[#B76E79]" />
                   </div>
                   <div className="text-left">
-                    <h3 className="font-semibold text-gray-700 dark:text-gray-300">AI İlişki Koçu</h3>
-                    <p className="text-xs text-gray-500">Sadece Pro üyeler için</p>
+                    <h3 className="font-semibold text-[#331A1A]">AMOR AI Koç</h3>
+                    <p className="text-xs text-[#6B3F3F]">Sadece Pro üyeler için 💗</p>
                   </div>
                 </div>
-                <button onClick={onUpgrade} className="text-xs bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-3 py-1.5 rounded-lg font-medium">
+                <button onClick={onUpgrade} className="text-xs bg-[#B76E79] text-white px-3 py-1.5 rounded-lg font-medium active:scale-95 transition-transform">
                   Kilidi Aç
                 </button>
               </div>
@@ -308,24 +308,26 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
         )
       }
 
+
       {/* Pro Banner for logged in users */}
       {
         user && !isPro && (
           <button
             onClick={onUpgrade}
-            className="w-full mt-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border border-amber-200 dark:border-amber-700 rounded-2xl p-4 flex items-center gap-3"
+            className="w-full mt-6 ios-card-elevated p-4 flex items-center gap-3 border-2 border-[#FFB6C1]/30 active:scale-98 transition-transform"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white fill-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-[#FFB6C1] to-[#FF7F7F] rounded-xl flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white fill-white" />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-medium text-amber-800 dark:text-amber-300">Pro'ya Yükselt</p>
-              <p className="text-xs text-amber-600 dark:text-amber-400">Sınırsız analiz, detaylı raporlar</p>
+              <p className="font-medium text-[#B76E79]">Pro'ya Yükselt ✨</p>
+              <p className="text-xs text-[#6B3F3F]">Sınırsız analiz, AMOR AI koç</p>
             </div>
-            <ArrowRight className="w-5 h-5 text-amber-500" />
+            <ArrowRight className="w-5 h-5 text-[#B76E79]" />
           </button>
         )
       }
     </div>
+
   );
 }
