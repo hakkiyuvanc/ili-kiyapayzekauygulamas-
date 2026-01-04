@@ -95,6 +95,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.23",
     "babel-jest": "^29.7.0",
     "babel-plugin-react-compiler": "1.0.0",
     "concurrently": "^9.2.1",
@@ -108,7 +109,8 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "tailwindcss": "^4",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
     "typescript": "^5",
     "wait-on": "^9.0.3"
   }
