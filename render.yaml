@@ -6,11 +6,11 @@ services:
     region: frankfurt  # EU region (closer to Turkey)
     plan: free  # Free tier to start, upgrade to paid later
     buildCommand: pip install -r requirements.txt
-    startCommand: cd backend && PYTHONPATH=/opt/render/project/src/backend python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: PYTHONPATH=/opt/render/project/src python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
       - key: PYTHONPATH
-        value: /opt/render/project/src/backend
+        value: /opt/render/project/src
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: ENVIRONMENT

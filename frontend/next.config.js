@@ -3,12 +3,10 @@ const nextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
 
-  // Output static export for Capacitor
-  output: 'export',
-
-  // Optimize images (must be unoptimized for static export)
+  // Image optimization (Vercel automatically handles this)
   images: {
-    unoptimized: true,
+    domains: [], // Add your image domains if needed
+    formats: ['image/avif', 'image/webp'],
   },
 
   // Force webpack (disable Turbopack)
