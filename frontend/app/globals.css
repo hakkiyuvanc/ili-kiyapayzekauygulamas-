@@ -1,6 +1,8 @@
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
 
 :root {
   /* 🌹 AMOR AI - Romantic iOS Theme */
@@ -420,47 +422,97 @@ html {
 
 /* iOS-style cards */
 .ios-card {
-  @apply bg-card rounded-2xl shadow-sm border border-border/50;
+  background-color: hsl(var(--card));
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid hsl(var(--border) / 0.5);
   backdrop-filter: blur(10px);
 }
 
 .ios-card-elevated {
-  @apply ios-card;
+  background-color: hsl(var(--card));
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--border) / 0.5);
+  backdrop-filter: blur(10px);
   box-shadow: 0 4px 16px rgba(183, 110, 121, 0.12);
 }
 
 /* iOS-style buttons */
 .ios-button {
-  @apply rounded-xl font-semibold transition-all active:scale-95;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
   box-shadow: 0 2px 8px rgba(183, 110, 121, 0.15);
 }
 
+.ios-button:active {
+  transform: scale(0.95);
+}
+
 .ios-button-primary {
-  @apply ios-button bg-primary text-primary-foreground;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  box-shadow: 0 2px 8px rgba(183, 110, 121, 0.15);
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.ios-button-primary:active {
+  transform: scale(0.95);
 }
 
 .ios-button-secondary {
-  @apply ios-button bg-secondary text-secondary-foreground;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  box-shadow: 0 2px 8px rgba(183, 110, 121, 0.15);
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+}
+
+.ios-button-secondary:active {
+  transform: scale(0.95);
 }
 
 /* iOS-style inputs */
 .ios-input {
-  @apply rounded-xl bg-input-background border-0 px-4 py-3;
+  border-radius: 0.75rem;
+  background-color: var(--input-background);
+  border: 0;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
   font-size: 16px !important;
   /* Prevent iOS zoom */
 }
 
 /* Typography */
 h1 {
-  @apply text-4xl font-bold tracking-tight;
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 h2 {
-  @apply text-3xl font-bold tracking-tight;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 h3 {
-  @apply text-xl font-semibold;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
 }
 
 /* AMOR AI Logo placeholder */
