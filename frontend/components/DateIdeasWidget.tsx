@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, CalendarHeart, RefreshCw } from 'lucide-react';
+import { Sparkles, CalendarHeart } from 'lucide-react';
 
 const IDEAS = [
     "🍕 Evde Pizza Yapma Gecesi",

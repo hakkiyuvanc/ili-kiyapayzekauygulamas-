@@ -138,6 +138,34 @@ MIT License - detaylar için LICENSE dosyasına bakın.
 
 Pull request'ler memnuniyetle karşılanır. Büyük değişiklikler için lütfen önce bir issue açın.
 
+**Detaylı bilgi için:** [CONTRIBUTING.md](./CONTRIBUTING.md)
+
+### Kod Kalitesi Standartları
+
+Projemiz yüksek kod kalitesi standartlarını korur:
+
+- ✅ **ESLint**: Kod kalitesi ve tutarlılık
+- ✅ **TypeScript**: Type safety
+- ✅ **React Best Practices**: useCallback, proper hooks
+- ✅ **Romantic iOS Theme**: Tutarlı tasarım sistemi
+- ✅ **Testing**: Jest + React Testing Library
+
+```bash
+# Frontend kod kalitesi kontrolleri
+cd frontend
+npm run lint          # ESLint check
+npm run type-check    # TypeScript check
+npm test             # Run tests
+```
+
+### Quick Start for Contributors
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
 ## 📧 İletişim
 
 Sorular için: [GitHub Issues](https://github.com/hakkiyuvanc/ili-kiyapayzekauygulamas-/issues)

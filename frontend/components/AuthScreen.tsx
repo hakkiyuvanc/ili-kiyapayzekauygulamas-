@@ -79,8 +79,8 @@ export function AuthScreen({ onLogin, onRegister, onContinueAsGuest, isLoading, 
           <button
             onClick={() => { setMode('login'); setLocalError(''); }}
             className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all ${mode === 'login'
-                ? 'bg-white text-[#B76E79] shadow-sm'
-                : 'text-[#6B3F3F]/60'
+              ? 'bg-white text-[#B76E79] shadow-sm'
+              : 'text-[#6B3F3F]/60'
               }`}
           >
             Giriş Yap
@@ -88,8 +88,8 @@ export function AuthScreen({ onLogin, onRegister, onContinueAsGuest, isLoading, 
           <button
             onClick={() => { setMode('register'); setLocalError(''); }}
             className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all ${mode === 'register'
-                ? 'bg-white text-[#B76E79] shadow-sm'
-                : 'text-[#6B3F3F]/60'
+              ? 'bg-white text-[#B76E79] shadow-sm'
+              : 'text-[#6B3F3F]/60'
               }`}
           >
             Kayıt Ol
@@ -104,7 +104,7 @@ export function AuthScreen({ onLogin, onRegister, onContinueAsGuest, isLoading, 
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" role="form" aria-label={mode === 'login' ? 'Giriş formu' : 'Kayıt formu'}>
           {mode === 'register' && (
             <div className="animate-fadeIn">
               <label className="block text-sm font-medium text-[#331A1A] mb-2">
@@ -118,6 +118,9 @@ export function AuthScreen({ onLogin, onRegister, onContinueAsGuest, isLoading, 
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Adınız Soyadınız"
                   className="ios-input w-full pl-12 pr-4"
+                  aria-label="İsim Soyisim"
+                  aria-required="true"
+                  autoComplete="name"
                 />
               </div>
             </div>
@@ -135,6 +138,9 @@ export function AuthScreen({ onLogin, onRegister, onContinueAsGuest, isLoading, 
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ornek@email.com"
                 className="ios-input w-full pl-12 pr-4"
+                aria-label="Email adresi"
+                aria-required="true"
+                autoComplete="email"
               />
             </div>
           </div>
@@ -151,11 +157,16 @@ export function AuthScreen({ onLogin, onRegister, onContinueAsGuest, isLoading, 
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="En az 6 karakter"
                 className="ios-input w-full pl-12 pr-12"
+                aria-label="Şifre"
+                aria-required="true"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 no-select"
+                aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                tabIndex={0}
               >
                 {showPassword ? (
                   <EyeOff className="w-5 h-5 text-[#B76E79]/50" />

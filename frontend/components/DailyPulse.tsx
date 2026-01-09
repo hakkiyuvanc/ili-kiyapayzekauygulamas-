@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Smile, Heart, CheckCircle } from 'lucide-react';
+import { Calendar, Heart, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface DailyStatus {

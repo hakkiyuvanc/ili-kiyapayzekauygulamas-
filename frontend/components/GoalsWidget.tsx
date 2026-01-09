@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Edit2, Flag, Plus, X } from 'lucide-react';
 import { userApi } from '@/lib/api';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const PRESET_GOALS = [
     "Daha az tartışma",
@@ -74,8 +73,8 @@ export function GoalsWidget({ initialGoals }: GoalsWidgetProps) {
                                     key={goal}
                                     onClick={() => toggleGoal(goal)}
                                     className={`text-left px-3 py-2 rounded-lg text-sm transition-all flex items-center justify-between ${goals.includes(goal)
-                                            ? 'bg-violet-200 dark:bg-violet-800 text-violet-900 dark:text-violet-100 font-medium'
-                                            : 'bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'
+                                        ? 'bg-violet-200 dark:bg-violet-800 text-violet-900 dark:text-violet-100 font-medium'
+                                        : 'bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'
                                         }`}
                                 >
                                     {goal}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, TrendingUp, Shield, FileText, Calendar, ArrowRight, LogOut, User as UserIcon, AlertTriangle, Bot, Heart, Sparkles } from 'lucide-react';
+import { Plus, TrendingUp, Shield, FileText, Calendar, ArrowRight, LogOut, User as UserIcon, AlertTriangle, Heart, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { InsightData, User } from '@/types';
 import { DashboardSkeleton } from '@/components/SkeletonLoader';
@@ -35,10 +35,12 @@ interface DashboardScreenProps {
 
 function StatCard({ icon: Icon, label, value, color }: { icon: typeof TrendingUp; label: string; value: string; color: string }) {
   return (
-    <div className="ios-card p-4">
-      <Icon className={`w-5 h-5 ${color} mb-2`} />
-      <p className="text-xl font-bold text-[#331A1A]">{value}</p>
-      <p className="text-xs text-[#6B3F3F]">{label}</p>
+    <div className="ios-card p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className={`w-5 h-5 ${color}`} />
+      </div>
+      <p className="text-2xl font-bold text-[#331A1A] mb-1">{value}</p>
+      <p className="text-xs text-[#6B3F3F] font-medium">{label}</p>
     </div>
   );
 }
@@ -128,7 +130,20 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
           <StatCard icon={Heart} label="Ort. Skor 💗" value={`${avgScore}/10`} color="text-[#B76E79]" />
           <StatCard icon={FileText} label="Analiz 📊" value={analysisHistory.length.toString()} color="text-[#FF7F7F]" />
           <StatCard icon={Shield} label="Gizlilik 🔒" value="Korumalı" color="text-[#22C55E]" />
-          <StatCard icon={Calendar} label="Üyelik ✨" value={isPro ? "Pro" : "Ücretsiz"} color={isPro ? "text-[#FFB6C1]" : "text-[#6B3F3F]"} />
+
+          {/* Membership Card - Special Design */}
+          <div className="ios-card p-4 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className={`w-5 h-5 ${isPro ? "text-[#FFB6C1]" : "text-[#B76E79]"}`} />
+            </div>
+            <div className={`inline-block px-3 py-1 rounded-full text-sm font-bold mb-1 ${isPro
+              ? "bg-gradient-to-r from-[#FFB6C1] to-[#FF7F7F] text-white"
+              : "bg-gradient-to-r from-[#FFB6C1]/20 to-[#FF7F7F]/20 text-[#B76E79] border-2 border-[#FFB6C1]"
+              }`}>
+              {isPro ? "Pro ✨" : "Ücretsiz"}
+            </div>
+            <p className="text-xs text-[#6B3F3F] font-medium">Üyelik Durumu</p>
+          </div>
         </div>
 
         {/* Daily Pulse & Main Action */}

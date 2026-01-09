@@ -34,105 +34,107 @@ export default function SubscriptionPage() {
     };
 
     return (
-        <div className="container mx-auto py-12 px-4 max-w-5xl">
-            <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent mb-4">
-                    Pro Üyeliğe Yükseltin
-                </h1>
-                <p className="text-gray-400 text-lg">
-                    İlişkilerinizde daha derin içgörüler ve sınırsız analizler için Pro avantajlarını keşfedin.
-                </p>
-            </div>
+        <div className="min-h-screen bg-romantic-gradient-soft safe-top safe-bottom">
+            <div className="container mx-auto py-12 px-4 max-w-5xl">
+                <div className="text-center mb-12 animate-fadeIn">
+                    <h1 className="text-4xl font-bold amor-logo mb-4">
+                        Pro Üyeliğe Yükseltin 💕
+                    </h1>
+                    <p className="text-[#6B3F3F] text-lg">
+                        İlişkilerinizde daha derin içgörüler ve sınırsız analizler için Pro avantajlarını keşfedin.
+                    </p>
+                </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-                {/* Free Plan */}
-                <Card className="bg-gray-800/50 border-gray-700 hover:border-gray-600 transition-colors">
-                    <CardHeader>
-                        <CardTitle className="text-2xl">Ücretsiz</CardTitle>
-                        <CardDescription>Temel analizler için başlangıç paketi</CardDescription>
-                        <div className="mt-4">
-                            <span className="text-4xl font-bold">₺0</span>
-                            <span className="text-gray-400">/ay</span>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <ul className="space-y-3">
-                            <li className="flex items-center">
-                                <Check className="w-5 h-5 text-green-500 mr-2" />
-                                <span>Günlük 1 sohbet analizi</span>
-                            </li>
-                            <li className="flex items-center">
-                                <Check className="w-5 h-5 text-green-500 mr-2" />
-                                <span>Temel duygu analizi</span>
-                            </li>
-                            <li className="flex items-center">
-                                <Check className="w-5 h-5 text-green-500 mr-2" />
-                                <span>AI Koç ile sınırlı sohbet</span>
-                            </li>
-                            <li className="flex items-center text-gray-500">
-                                <X className="w-5 h-5 mr-2" />
-                                <span>WhatsApp geçmişi yükleme</span>
-                            </li>
-                            <li className="flex items-center text-gray-500">
-                                <X className="w-5 h-5 mr-2" />
-                                <span>Detaylı ilişki raporu</span>
-                            </li>
-                        </ul>
-                    </CardContent>
-                    <CardFooter>
-                        <Button className="w-full" variant="outline" disabled>
-                            Mevcut Plan
-                        </Button>
-                    </CardFooter>
-                </Card>
+                <div className="grid md:grid-cols-2 gap-8">
+                    {/* Free Plan */}
+                    <Card className="ios-card-elevated border-[#FFB6C1]/30 hover:border-[#FFB6C1] transition-all animate-slideUp">
+                        <CardHeader>
+                            <CardTitle className="text-2xl text-[#331A1A]">Ücretsiz</CardTitle>
+                            <CardDescription className="text-[#6B3F3F]">Temel analizler için başlangıç paketi</CardDescription>
+                            <div className="mt-4">
+                                <span className="text-4xl font-bold text-[#B76E79]">₺0</span>
+                                <span className="text-[#6B3F3F]/60">/ay</span>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <ul className="space-y-3">
+                                <li className="flex items-center text-[#331A1A]">
+                                    <Check className="w-5 h-5 text-[#B76E79] mr-2 flex-shrink-0" />
+                                    <span>Günlük 1 sohbet analizi</span>
+                                </li>
+                                <li className="flex items-center text-[#331A1A]">
+                                    <Check className="w-5 h-5 text-[#B76E79] mr-2 flex-shrink-0" />
+                                    <span>Temel duygu analizi</span>
+                                </li>
+                                <li className="flex items-center text-[#331A1A]">
+                                    <Check className="w-5 h-5 text-[#B76E79] mr-2 flex-shrink-0" />
+                                    <span>AI Koç ile sınırlı sohbet</span>
+                                </li>
+                                <li className="flex items-center text-[#6B3F3F]/50">
+                                    <X className="w-5 h-5 mr-2 flex-shrink-0" />
+                                    <span>WhatsApp geçmişi yükleme</span>
+                                </li>
+                                <li className="flex items-center text-[#6B3F3F]/50">
+                                    <X className="w-5 h-5 mr-2 flex-shrink-0" />
+                                    <span>Detaylı ilişki raporu</span>
+                                </li>
+                            </ul>
+                        </CardContent>
+                        <CardFooter>
+                            <Button className="w-full bg-[#FFF0F5] text-[#6B3F3F] hover:bg-[#FFB6C1]/20 border border-[#FFB6C1]/30" variant="outline" disabled>
+                                Mevcut Plan
+                            </Button>
+                        </CardFooter>
+                    </Card>
 
-                {/* Pro Plan */}
-                <Card className="bg-gradient-to-b from-purple-900/40 to-black border-purple-500/50 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs px-3 py-1 rounded-bl-lg">
-                        POPÜLER
-                    </div>
-                    <CardHeader>
-                        <CardTitle className="text-2xl text-purple-400">Pro Üyelik</CardTitle>
-                        <CardDescription>İlişki uzmanı seviyesinde analizler</CardDescription>
-                        <div className="mt-4">
-                            <span className="text-4xl font-bold">₺199</span>
-                            <span className="text-gray-400">/ay</span>
+                    {/* Pro Plan */}
+                    <Card className="ios-card-elevated bg-gradient-to-br from-[#FFB6C1]/10 to-[#FF7F7F]/10 border-[#B76E79]/50 relative overflow-hidden animate-slideUp" style={{ animationDelay: '0.1s' }}>
+                        <div className="absolute top-0 right-0 bg-gradient-to-r from-[#B76E79] to-[#FF7F7F] text-white text-xs px-3 py-1 rounded-bl-lg font-semibold">
+                            POPÜLER ✨
                         </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <ul className="space-y-3">
-                            <li className="flex items-center">
-                                <Check className="w-5 h-5 text-purple-400 mr-2" />
-                                <span>Sınırsız sohbet analizi</span>
-                            </li>
-                            <li className="flex items-center">
-                                <Check className="w-5 h-5 text-purple-400 mr-2" />
-                                <span>WhatsApp geçmişi yükleme</span>
-                            </li>
-                            <li className="flex items-center">
-                                <Check className="w-5 h-5 text-purple-400 mr-2" />
-                                <span>AI Koç ile sınırsız sohbet</span>
-                            </li>
-                            <li className="flex items-center">
-                                <Check className="w-5 h-5 text-purple-400 mr-2" />
-                                <span>Detaylı ilişki raporu (PDF)</span>
-                            </li>
-                            <li className="flex items-center">
-                                <Check className="w-5 h-5 text-purple-400 mr-2" />
-                                <span>Öncelikli destek</span>
-                            </li>
-                        </ul>
-                    </CardContent>
-                    <CardFooter>
-                        <Button
-                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
-                            onClick={handleUpgrade}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? 'Yönlendiriliyor...' : 'Pro\'ya Yükselt'}
-                        </Button>
-                    </CardFooter>
-                </Card>
+                        <CardHeader>
+                            <CardTitle className="text-2xl text-[#B76E79]">Pro Üyelik</CardTitle>
+                            <CardDescription className="text-[#6B3F3F]">İlişki uzmanı seviyesinde analizler</CardDescription>
+                            <div className="mt-4">
+                                <span className="text-4xl font-bold text-[#B76E79]">₺199</span>
+                                <span className="text-[#6B3F3F]/60">/ay</span>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <ul className="space-y-3">
+                                <li className="flex items-center text-[#331A1A]">
+                                    <Check className="w-5 h-5 text-[#B76E79] mr-2 flex-shrink-0" />
+                                    <span>Sınırsız sohbet analizi</span>
+                                </li>
+                                <li className="flex items-center text-[#331A1A]">
+                                    <Check className="w-5 h-5 text-[#B76E79] mr-2 flex-shrink-0" />
+                                    <span>WhatsApp geçmişi yükleme</span>
+                                </li>
+                                <li className="flex items-center text-[#331A1A]">
+                                    <Check className="w-5 h-5 text-[#B76E79] mr-2 flex-shrink-0" />
+                                    <span>AI Koç ile sınırsız sohbet</span>
+                                </li>
+                                <li className="flex items-center text-[#331A1A]">
+                                    <Check className="w-5 h-5 text-[#B76E79] mr-2 flex-shrink-0" />
+                                    <span>Detaylı ilişki raporu (PDF)</span>
+                                </li>
+                                <li className="flex items-center text-[#331A1A]">
+                                    <Check className="w-5 h-5 text-[#B76E79] mr-2 flex-shrink-0" />
+                                    <span>Öncelikli destek</span>
+                                </li>
+                            </ul>
+                        </CardContent>
+                        <CardFooter>
+                            <Button
+                                className="ios-button-primary w-full py-3 text-white border-0"
+                                onClick={handleUpgrade}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? 'Yönlendiriliyor...' : 'Pro\'ya Yükselt 💗'}
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </div>
             </div>
         </div>
     );

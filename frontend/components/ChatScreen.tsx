@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, Plus, Heart, Sparkles } from 'lucide-react';
-import { api, chatApi } from '@/lib/api';
-import { useAuth } from '../app/providers';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Send, Plus, Heart } from 'lucide-react';
+import { chatApi } from '@/lib/api';
+import { ChatLoadingIndicator } from './LoadingSkeleton';
 
 interface Message {
     id: number;
@@ -23,7 +22,6 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
     const [sessionId, setSessionId] = useState<number | null>(initialSessionId || null);
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const router = useRouter();
 
     // Scroll to bottom
     const scrollToBottom = () => {
@@ -34,25 +32,17 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
         scrollToBottom();
     }, [messages]);
 
-    useEffect(() => {
-        loadSessions();
-        if (initialSessionId) {
-            loadMessages(initialSessionId);
-        } else if (initialContextId) {
-            startNewSession(initialContextId);
-        }
-    }, [initialSessionId, initialContextId]);
-
-    const loadSessions = async () => {
+    // Memoized functions
+    const loadSessions = useCallback(async () => {
         try {
             const res = await chatApi.getSessions();
             setSessions(res.data);
         } catch (err) {
             console.error('Failed to load sessions', err);
         }
-    };
+    }, []);
 
-    const loadMessages = async (sid: number) => {
+    const loadMessages = useCallback(async (sid: number) => {
         try {
             const res = await chatApi.getSession(sid);
             setMessages(res.data.messages || []);
@@ -60,9 +50,9 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
         } catch (err) {
             console.error('Failed to load messages', err);
         }
-    };
+    }, []);
 
-    const startNewSession = async (analysisId?: number) => {
+    const startNewSession = useCallback(async (analysisId?: number) => {
         try {
             const res = await chatApi.createSession({
                 title: 'Yeni Sohbet',
@@ -74,7 +64,17 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
         } catch (err) {
             console.error('Failed to create session', err);
         }
-    };
+    }, [loadSessions]);
+
+    // Load initial data
+    useEffect(() => {
+        loadSessions();
+        if (initialSessionId) {
+            loadMessages(initialSessionId);
+        } else if (initialContextId) {
+            startNewSession(initialContextId);
+        }
+    }, [initialSessionId, initialContextId, loadSessions, loadMessages, startNewSession]);
 
     const sendMessage = async () => {
         if (!input.trim()) return;
@@ -169,7 +169,12 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 ios-scroll">
+                <div
+                    className="flex-1 overflow-y-auto p-4 space-y-4 ios-scroll"
+                    role="log"
+                    aria-live="polite"
+                    aria-label="Mesaj geçmişi"
+                >
                     {messages.length === 0 ? (
                         <div className="text-center mt-10 px-4 animate-fadeIn">
                             <div className="relative inline-block mb-4">
@@ -217,38 +222,36 @@ export const ChatScreen: React.FC<{ initialSessionId?: number, initialContextId?
                             </div>
                         ))
                     )}
-                    {isLoading && (
-                        <div className="flex justify-start animate-fadeIn">
-                            <div className="bg-white p-4 rounded-2xl rounded-bl-sm flex items-center space-x-2 border border-[#FFB6C1]/20">
-                                <div className="w-2 h-2 bg-[#B76E79] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                <div className="w-2 h-2 bg-[#FFB6C1] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                <div className="w-2 h-2 bg-[#FF7F7F] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                            </div>
-                        </div>
-                    )}
+                    {isLoading && <ChatLoadingIndicator />}
                     <div ref={messagesEndRef} />
                 </div>
 
                 {/* Input */}
                 <div className="p-4 bg-white/80 backdrop-blur-sm border-t border-[#FFB6C1]/30">
-                    <div className="flex gap-3 max-w-3xl mx-auto">
+                    <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-3 max-w-3xl mx-auto">
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                             placeholder="Bir şeyler yaz... 💭"
                             className="ios-input flex-1"
                             disabled={isLoading}
+                            aria-label="Mesaj yaz"
+                            aria-describedby="message-hint"
+                            autoComplete="off"
                         />
                         <button
-                            onClick={sendMessage}
+                            type="submit"
                             disabled={isLoading || !input.trim()}
                             className="ios-button-primary p-3 disabled:opacity-50 flex items-center justify-center"
+                            aria-label="Mesaj gönder"
                         >
-                            <Send className="w-5 h-5" />
+                            <Send className="w-5 h-5" aria-hidden="true" />
                         </button>
-                    </div>
+                    </form>
+                    <span id="message-hint" className="sr-only">
+                        Enter tuşuna basarak da gönderebilirsiniz
+                    </span>
                 </div>
             </div>
         </div>

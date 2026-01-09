@@ -40,12 +40,12 @@ function VerifyForm() {
     if (isSuccess) {
         return (
             <div className="text-center py-8">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                <div className="w-16 h-16 bg-[#FFB6C1]/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#FFB6C1]/30">
+                    <CheckCircle className="w-8 h-8 text-[#B76E79]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Email Doğrulandı!</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">Hesabınız başarıyla aktifleştirildi.</p>
-                <div className="text-sm text-gray-400">Giriş sayfasına yönlendiriliyorsunuz...</div>
+                <h3 className="text-xl font-bold text-[#331A1A] mb-2">Email Doğrulandı!</h3>
+                <p className="text-[#6B3F3F] mb-6">Hesabınız başarıyla aktifleştirildi.</p>
+                <div className="text-sm text-[#6B3F3F]">Giriş sayfasına yönlendiriliyorsunuz...</div>
             </div>
         );
     }
@@ -61,7 +61,7 @@ function VerifyForm() {
                     id="code"
                     type="text"
                     placeholder="000000"
-                    className="h-12 text-center text-lg tracking-[0.5em] font-mono bg-gray-50 dark:bg-slate-700/50 border-gray-200 dark:border-slate-700 focus:ring-indigo-500 rounded-xl"
+                    className="h-12 text-center text-lg tracking-[0.5em] font-mono ios-input focus:ring-[#B76E79] rounded-xl"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
                     required
@@ -79,7 +79,7 @@ function VerifyForm() {
 
             <Button
                 type="submit"
-                className="w-full h-11 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="ios-button-primary w-full h-11"
                 disabled={isLoading || code.length !== 6}
             >
                 {isLoading ? (
@@ -99,7 +99,7 @@ function VerifyForm() {
 
 export default function VerifyEmailPage() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-romantic-gradient-soft p-4 safe-top safe-bottom">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -108,16 +108,16 @@ export default function VerifyEmailPage() {
             >
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-3">
-                        <div className="w-12 h-12 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3">
+                        <div className="w-12 h-12 bg-gradient-to-tr from-[#B76E79] to-[#FFB6C1] rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3">
                             <Heart className="w-6 h-6 text-white fill-white" />
                         </div>
                     </div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                        İlişki Analiz AI
+                    <h1 className="amor-logo text-2xl">
+                        AMOR AI
                     </h1>
                 </div>
 
-                <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl">
+                <Card className="ios-card-elevated">
                     <CardHeader className="space-y-1">
                         <CardTitle className="text-2xl font-bold text-center">Email Doğrulama</CardTitle>
                         <CardDescription className="text-center">
@@ -132,7 +132,7 @@ export default function VerifyEmailPage() {
                     <CardFooter className="flex justify-center">
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                             Kod gelmedi mi?{' '}
-                            <button className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
+                            <button className="font-semibold text-[#B76E79] hover:text-[#FF7F7F] transition-colors">
                                 Tekrar Gönder
                             </button>
                         </p>

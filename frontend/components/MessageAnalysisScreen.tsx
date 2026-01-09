@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Send, Clipboard, Heart } from 'lucide-react';
+import { ArrowLeft, Clipboard, Heart } from 'lucide-react';
 
 interface MessageAnalysisScreenProps {
   onSubmit: (message: string) => void;
@@ -74,8 +74,8 @@ export function MessageAnalysisScreen({ onSubmit, onBack }: MessageAnalysisScree
             <button
               onClick={() => setDirection('received')}
               className={`py-2.5 rounded-lg text-sm transition-all active:scale-95 ${direction === 'received'
-                  ? 'bg-white text-[#B76E79] shadow-sm border border-[#FFB6C1]/30'
-                  : 'text-[#6B3F3F] hover:text-[#B76E79]'
+                ? 'bg-white text-[#B76E79] shadow-sm border border-[#FFB6C1]/30'
+                : 'text-[#6B3F3F] hover:text-[#B76E79]'
                 }`}
             >
               📥 Aldığım Mesaj
@@ -83,8 +83,8 @@ export function MessageAnalysisScreen({ onSubmit, onBack }: MessageAnalysisScree
             <button
               onClick={() => setDirection('sending')}
               className={`py-2.5 rounded-lg text-sm transition-all active:scale-95 ${direction === 'sending'
-                  ? 'bg-white text-[#B76E79] shadow-sm border border-[#FFB6C1]/30'
-                  : 'text-[#6B3F3F] hover:text-[#B76E79]'
+                ? 'bg-white text-[#B76E79] shadow-sm border border-[#FFB6C1]/30'
+                : 'text-[#6B3F3F] hover:text-[#B76E79]'
                 }`}
             >
               📤 Göndereceğim
@@ -138,8 +138,8 @@ export function MessageAnalysisScreen({ onSubmit, onBack }: MessageAnalysisScree
           onClick={handleSubmit}
           disabled={!canSubmit || isSubmitting}
           className={`w-full py-4 rounded-2xl transition-all flex items-center justify-center gap-2 ${canSubmit && !isSubmitting
-              ? 'bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white hover:shadow-xl active:scale-98'
-              : 'bg-[#FFB6C1]/30 text-[#6B3F3F]/50 cursor-not-allowed'
+            ? 'bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white hover:shadow-xl active:scale-98'
+            : 'bg-[#FFB6C1]/30 text-[#6B3F3F]/50 cursor-not-allowed'
             }`}
         >
           {isSubmitting ? (

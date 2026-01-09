@@ -14,13 +14,32 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Ignore electron files (they use CommonJS)
     "electron/**",
+    // Ignore test files (they have different patterns)
+    "**/*.test.tsx",
+    "**/*.test.ts",
+    "__tests__/**",
+    // Ignore node_modules
+    "node_modules/**",
   ]),
   {
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "warn",
+      // Type safety
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_"
+      }],
+
+      // React
       "react/no-unescaped-entities": "off",
       "react-hooks/set-state-in-effect": "off",
+      "react/display-name": "off", // Allow anonymous components
+
+      // Next.js
+      "@next/next/no-img-element": "warn", // Warn instead of error
+
+      // General
+      "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
 ]);

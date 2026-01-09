@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, ChevronRight, ChevronLeft, Heart } from 'lucide-react';
+import { ArrowLeft, ChevronRight, ChevronLeft } from 'lucide-react';
 
 interface RelationshipAssessmentScreenProps {
   onSubmit: (answers: Record<string, string>) => void;

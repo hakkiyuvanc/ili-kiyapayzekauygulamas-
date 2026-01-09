@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Trophy, Flame, TrendingUp } from 'lucide-react';
+import { Flame, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { analysisApi } from '@/lib/api';
 

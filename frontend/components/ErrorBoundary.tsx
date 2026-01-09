@@ -85,7 +85,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4"
+                        className="min-h-screen bg-romantic-gradient-soft dark:bg-romantic-gradient-dark flex items-center justify-center p-4 safe-top safe-bottom"
                     >
                         <motion.div
                             initial={{ scale: 0.9, y: 20 }}
@@ -93,7 +93,7 @@ export class ErrorBoundary extends Component<Props, State> {
                             transition={{ delay: 0.1 }}
                             className="max-w-2xl w-full"
                         >
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 md:p-12">
+                            <div className="ios-card-elevated p-8 md:p-12">
                                 {/* Icon */}
                                 <motion.div
                                     initial={{ scale: 0 }}
@@ -101,8 +101,8 @@ export class ErrorBoundary extends Component<Props, State> {
                                     transition={{ delay: 0.2, type: 'spring' }}
                                     className="flex justify-center mb-6"
                                 >
-                                    <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-full">
-                                        <AlertTriangle className="w-12 h-12 text-red-600 dark:text-red-400" />
+                                    <div className="bg-[#FFF0F5] dark:bg-[#B76E79]/20 p-4 rounded-full">
+                                        <AlertTriangle className="w-12 h-12 text-[#B76E79] dark:text-[#FFB6C1]" />
                                     </div>
                                 </motion.div>
 
@@ -162,7 +162,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                 >
                                     <button
                                         onClick={this.handleReset}
-                                        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                                        className="ios-button-primary flex items-center justify-center gap-2 px-6 py-3"
                                     >
                                         <RefreshCw className="w-5 h-5" />
                                         Sayfayı Yenile
@@ -170,7 +170,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
                                     <button
                                         onClick={this.handleGoHome}
-                                        className="flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-gray-300 dark:border-gray-600"
+                                        className="flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-[#331A1A] hover:bg-[#FFF0F5] dark:hover:bg-[#261616] text-[#6B3F3F] dark:text-[#FFB6C1] font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border border-[#FFB6C1]/30 active:scale-95"
                                     >
                                         <Home className="w-5 h-5" />
                                         Ana Sayfaya Dön
