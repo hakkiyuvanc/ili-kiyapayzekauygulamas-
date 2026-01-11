@@ -4,17 +4,17 @@ set -e
 echo "🚀 Starting İlişki Analiz AI Backend..."
 
 # Set Python path to project root
-export PYTHONPATH=/opt/render/project/src
+export PYTHONPATH=$(pwd)
 
 # Print debug info
 echo "📁 Working directory: $(pwd)"
 echo "🐍 PYTHONPATH: $PYTHONPATH"
 echo "🐍 Python version: $(python --version)"
 
-# Run database migrations (if needed)
+# Run database migrations
 if [ -f "backend/alembic.ini" ]; then
     echo "📦 Running database migrations..."
-    cd backend && alembic upgrade head && cd .. || echo "⚠️  Migration failed or not configured"
+    cd backend && python -m alembic upgrade head && cd .. || echo "⚠️  Migration failed or not configured"
 fi
 
 # Start uvicorn from project root
