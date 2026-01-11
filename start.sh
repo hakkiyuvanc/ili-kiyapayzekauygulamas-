@@ -12,9 +12,11 @@ echo "🐍 PYTHONPATH: $PYTHONPATH"
 echo "🐍 Python version: $(python --version)"
 
 # Run database migrations
-if [ -f "backend/alembic.ini" ]; then
-    echo "📦 Running database migrations..."
-    cd backend && python -m alembic upgrade head && cd .. || echo "⚠️  Migration failed or not configured"
+echo "📦 Running database migrations..."
+if [ -d "backend/alembic" ]; then
+    cd backend && python -m alembic upgrade head && cd .. || echo "⚠️  Migration failed"
+else
+    echo "⚠️  Alembic not found, skipping migrations"
 fi
 
 # Start uvicorn from project root
