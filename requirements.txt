@@ -1,3 +1,4 @@
+# Core Framework
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 pydantic==2.5.0
@@ -6,22 +7,28 @@ python-dotenv==1.0.0
 httpx==0.26.0
 python-multipart==0.0.6
 
-# NLP (optional heavy dependencies - install separately if needed)
-# spacy>=3.7.0
-# python -m spacy download tr_core_news_lg
+# Email Validation
+email-validator>=2.0.0
 
-# Database (optional - start with SQLite)
-# sqlalchemy>=2.0.25
-# alembic>=1.13.0
-# psycopg2-binary>=2.9.9
+# Database
+sqlalchemy>=2.0.25
+alembic>=1.13.0
+psycopg2-binary>=2.9.9
 
-# Auth (optional - for later)
-# python-jose[cryptography]>=3.3.0
-# passlib[bcrypt]>=1.7.4
+# Authentication
+python-jose[cryptography]>=3.3.0
+passlib[argon2]>=1.7.4
+
+# AI Providers
+google-generativeai>=0.3.0
+openai>=1.0.0
+anthropic>=0.7.0
+
+# Rate Limiting
+slowapi>=0.1.9
 
 # Compatibility
 importlib-metadata>=6.0.0
-passlib[bcrypt]
-python-jose[cryptography]
-python-multipart
-email-validator>=2.0.0
+
+# Optional: Sentry (error tracking)
+sentry-sdk[fastapi]>=1.40.0
