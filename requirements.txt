@@ -33,3 +33,5 @@ importlib-metadata>=6.0.0
 
 # Optional: Sentry (error tracking)
 sentry-sdk[fastapi]>=1.40.0
+stripe>=8.0.0
+redis>=5.0.0
