@@ -1,36 +1,52 @@
 """FastAPI Ana Uygulama"""
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.core.config import settings
-from app.core.database import engine, Base
+from app.api import feedback  # NEW
 from app.api import (
-    auth,
     analysis,
-    upload,
+    auth,
+    chat,
+    coaching,
+    daily,
     stats,
-    users,
     subscription,
     system,
-    chat,
-    daily,
-    coaching,
-    feedback,  # NEW
+    upload,
+    users,
 )
+from app.core.config import settings
+from app.core.database import Base, engine
+
 # Modelleri import et ki Base.metadata dolusun
-from app.models import database as models
 from app.services.ai_service import get_ai_service
+
 
 # Lifespan manager for startup events
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup: Initialize logging
+    from app.core.logging import setup_logging
+
+    setup_logging()
+
+    # Startup: Initialize Sentry
+    try:
+        from app.core.sentry import init_sentry
+
+        init_sentry()
+    except ImportError:
+        print("⚠️ Sentry SDK not installed, skipping error tracking setup")
+
     # Startup: Tabloları oluştur
     Base.metadata.create_all(bind=engine)
     yield
     # Shutdown logic here if needed
+
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -38,18 +54,24 @@ app = FastAPI(
     description="Yapay zeka destekli ilişki analizi API",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Rate Limiter
-from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+
 from app.core.limiter import limiter
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+# Request ID Middleware
+from app.middleware.request_id import RequestIDMiddleware
+
+app.add_middleware(RequestIDMiddleware)
 
 # CORS middleware
 app.add_middleware(
@@ -59,6 +81,42 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+
+    # HSTS (HTTP Strict Transport Security)
+    if settings.ENVIRONMENT == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+    # Prevent clickjacking
+    response.headers["X-Frame-Options"] = "DENY"
+
+    # Prevent MIME type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    # XSS Protection
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+
+    # Content Security Policy
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data:;"
+    )
+
+    # Referrer Policy
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    # Permissions Policy
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+
+    return response
 
 
 @app.get("/", tags=["Health"])
@@ -86,17 +144,18 @@ async def health_check():
         },
     )
 
+
 @app.get("/api/system/status", tags=["System"])
 async def system_status():
     """Sistem durumunu kontrol et (AI, DB)"""
     ai_service = get_ai_service()
-    
+
     return {
         "ai_enabled": settings.AI_ENABLED,
         "ai_provider": settings.AI_PROVIDER,
         "ai_available": ai_service._is_available(),  # True if keys are valid
-        "database": "connected", # SQLAlchemy lazy connect, assumes active if no error yet
-        "version": settings.APP_VERSION
+        "database": "connected",  # SQLAlchemy lazy connect, assumes active if no error yet
+        "version": settings.APP_VERSION,
     }
 
 
@@ -111,7 +170,7 @@ app.include_router(chat.router, prefix="/api/chat", tags=["AI Coach"])
 app.include_router(daily.router, prefix="/api/daily", tags=["Daily Pulse"])
 app.include_router(stats.router, prefix="/api/stats", tags=["User Stats"])
 app.include_router(coaching.router, prefix="/api/coaching", tags=["Coaching"])
-app.include_router(feedback.router, prefix="/api/feedback", tags=["Feedback"]) # NEW
+app.include_router(feedback.router, prefix="/api/feedback", tags=["Feedback"])  # NEW
 
 
 if __name__ == "__main__":

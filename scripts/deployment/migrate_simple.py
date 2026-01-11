@@ -3,10 +3,11 @@ Simple SQLite to PostgreSQL Migration Script
 """
 
 import os
-import sys
-from pathlib import Path
 import shutil
+import sys
 from datetime import datetime
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Load environment
@@ -22,7 +23,7 @@ if "sqlite" in DATABASE_URL.lower():
 print("=" * 60)
 print("🚀 PostgreSQL Migration Script")
 print("=" * 60)
-print(f"Source: sqlite:///./iliski_analiz.db")
+print("Source: sqlite:///./iliski_analiz.db")
 print(f"Target: {DATABASE_URL[:60]}...")
 print()
 

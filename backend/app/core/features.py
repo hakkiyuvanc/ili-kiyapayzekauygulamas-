@@ -7,12 +7,12 @@ FREE_TIER_CHAT_MESSAGES_LIMIT = 10  # Per day
 
 # Pro-only features (will be filtered out for free users)
 PRO_ONLY_FEATURES = [
-    "reply_suggestions",      # AI-generated reply suggestions
-    "detailed_insights",      # Extended analysis insights  
-    "advanced_metrics",       # Additional metric calculations
-    "trend_analysis",         # Historical trend tracking
-    "pdf_export",            # PDF report generation
-    "priority_support",      # Priority customer support
+    "reply_suggestions",  # AI-generated reply suggestions
+    "detailed_insights",  # Extended analysis insights
+    "advanced_metrics",  # Additional metric calculations
+    "trend_analysis",  # Historical trend tracking
+    "pdf_export",  # PDF report generation
+    "priority_support",  # Priority customer support
 ]
 
 # Rate limiting

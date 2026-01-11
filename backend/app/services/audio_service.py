@@ -1,8 +1,9 @@
+from typing import BinaryIO, Optional
 
-import os
-from typing import Optional, BinaryIO
 from openai import OpenAI
+
 from app.core.config import settings
+
 
 class AudioService:
     """Service for handling audio operations, primarily transcription."""
@@ -15,11 +16,11 @@ class AudioService:
     def transcribe_audio(self, file_obj: BinaryIO, filename: str) -> Optional[str]:
         """
         Transcribe audio file using OpenAI Whisper API.
-        
+
         Args:
             file_obj: The audio file object (file-like).
             filename: Original filename to determine extension/format hint.
-            
+
         Returns:
             Transcribed text or None if failed.
         """
@@ -28,24 +29,26 @@ class AudioService:
             return None
 
         try:
-            # Create a tuple (filename, file_obj, content_type) if needed, 
+            # Create a tuple (filename, file_obj, content_type) if needed,
             # but openai client usually takes (filename, file_obj)
-            # We need to make sure the file pointer is at start if it was read before, 
+            # We need to make sure the file pointer is at start if it was read before,
             # but here we assume it's fresh or reset.
-            
+
             transcript = self.client.audio.transcriptions.create(
                 model="whisper-1",
                 file=(filename, file_obj),
                 response_format="text",
-                language="tr" # Hinting Turkish improves accuracy for this app context
+                language="tr",  # Hinting Turkish improves accuracy for this app context
             )
             return transcript
         except Exception as e:
             print(f"AudioService Error: {e}")
             return None
 
+
 # Singleton
 _audio_service_instance = None
+
 
 def get_audio_service() -> AudioService:
     global _audio_service_instance

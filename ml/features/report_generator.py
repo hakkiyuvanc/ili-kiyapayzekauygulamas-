@@ -1,9 +1,8 @@
 """Analiz Rapor Oluşturucu"""
 
-from typing import Dict, List, Optional
-from datetime import datetime
 import json
 import os
+from datetime import datetime
 
 
 class ReportGenerator:
@@ -14,7 +13,7 @@ class ReportGenerator:
         self.ai_enabled = os.getenv("AI_ENABLED", "true").lower() == "true"
         self._ai_service = None
 
-    def generate_summary(self, metrics: Dict[str, any]) -> str:
+    def generate_summary(self, metrics: dict[str, any]) -> str:
         """Özet metin oluştur"""
         sentiment = metrics.get("sentiment", {})
         empathy = metrics.get("empathy", {})
@@ -69,15 +68,18 @@ class ReportGenerator:
         if self._ai_service is None and self.ai_enabled:
             try:
                 from backend.app.services.ai_service import get_ai_service
+
                 self._ai_service = get_ai_service()
             except Exception as e:
                 print(f"AI service yüklenemedi: {e}")
                 self.ai_enabled = False
         return self._ai_service
 
-    def generate_insights(self, metrics: Dict[str, any], conversation_summary: str = "") -> List[Dict[str, str]]:
+    def generate_insights(
+        self, metrics: dict[str, any], conversation_summary: str = ""
+    ) -> list[dict[str, str]]:
         """İçgörüler ve gözlemler - AI destekli"""
-        
+
         # AI varsa kullan
         if self.ai_enabled:
             ai_service = self._get_ai_service()
@@ -88,7 +90,7 @@ class ReportGenerator:
                         return ai_insights
                 except Exception as e:
                     print(f"AI insights hatası: {e}")
-        
+
         # Fallback: Rule-based insights
         insights = []
 
@@ -100,82 +102,102 @@ class ReportGenerator:
 
         # Sentiment insights
         if sentiment.get("score", 50) >= 70:
-            insights.append({
-                "category": "Güçlü Yön",
-                "title": "Pozitif İletişim",
-                "description": "İletişiminiz güçlü bir pozitif ton içeriyor. Bu, ilişkiniz için çok değerli bir temel.",
-                "icon": "✅",
-            })
+            insights.append(
+                {
+                    "category": "Güçlü Yön",
+                    "title": "Pozitif İletişim",
+                    "description": "İletişiminiz güçlü bir pozitif ton içeriyor. Bu, ilişkiniz için çok değerli bir temel.",
+                    "icon": "✅",
+                }
+            )
         elif sentiment.get("score", 50) <= 30:
-            insights.append({
-                "category": "Dikkat Noktası",
-                "title": "Negatif Ton",
-                "description": "İletişimde negatif ifadeler ağır basıyor. Pozitif dil kullanımını artırmak faydalı olabilir.",
-                "icon": "⚠️",
-            })
+            insights.append(
+                {
+                    "category": "Dikkat Noktası",
+                    "title": "Negatif Ton",
+                    "description": "İletişimde negatif ifadeler ağır basıyor. Pozitif dil kullanımını artırmak faydalı olabilir.",
+                    "icon": "⚠️",
+                }
+            )
 
         # Empathy insights
         if empathy.get("score", 0) >= 60:
-            insights.append({
-                "category": "Güçlü Yön",
-                "title": "Yüksek Empati",
-                "description": "Karşınızdakinin duygularını anlamaya çalıştığınız açıkça görülüyor.",
-                "icon": "💝",
-            })
+            insights.append(
+                {
+                    "category": "Güçlü Yön",
+                    "title": "Yüksek Empati",
+                    "description": "Karşınızdakinin duygularını anlamaya çalıştığınız açıkça görülüyor.",
+                    "icon": "💝",
+                }
+            )
         elif empathy.get("score", 0) <= 20:
-            insights.append({
-                "category": "Gelişim Alanı",
-                "title": "Empati Eksikliği",
-                "description": "'Anlıyorum', 'hissediyorum' gibi empati ifadeleri kullanımını artırabilirsiniz.",
-                "icon": "💡",
-            })
+            insights.append(
+                {
+                    "category": "Gelişim Alanı",
+                    "title": "Empati Eksikliği",
+                    "description": "'Anlıyorum', 'hissediyorum' gibi empati ifadeleri kullanımını artırabilirsiniz.",
+                    "icon": "💡",
+                }
+            )
 
         # Conflict insights
         if conflict.get("score", 0) >= 60:
-            insights.append({
-                "category": "Dikkat Noktası",
-                "title": "Yüksek Çatışma",
-                "description": "Çatışma göstergeleri yüksek. 'Ama', 'hep', 'hiç' gibi mutlaklaştırıcı ifadelerden kaçınmaya çalışın.",
-                "icon": "⚠️",
-            })
+            insights.append(
+                {
+                    "category": "Dikkat Noktası",
+                    "title": "Yüksek Çatışma",
+                    "description": "Çatışma göstergeleri yüksek. 'Ama', 'hep', 'hiç' gibi mutlaklaştırıcı ifadelerden kaçınmaya çalışın.",
+                    "icon": "⚠️",
+                }
+            )
 
         # We-language insights
         if we_language.get("score", 50) >= 65:
-            insights.append({
-                "category": "Güçlü Yön",
-                "title": "Biz-dili Kullanımı",
-                "description": "'Biz', 'birlikte' gibi kelimeler ilişkide ortaklık hissini güçlendiriyor.",
-                "icon": "👥",
-            })
+            insights.append(
+                {
+                    "category": "Güçlü Yön",
+                    "title": "Biz-dili Kullanımı",
+                    "description": "'Biz', 'birlikte' gibi kelimeler ilişkide ortaklık hissini güçlendiriyor.",
+                    "icon": "👥",
+                }
+            )
         elif we_language.get("score", 50) <= 35:
-            insights.append({
-                "category": "Gelişim Alanı",
-                "title": "Bireysel Dil",
-                "description": "'Ben' ve 'Sen' dilinden 'Biz' diline geçiş ilişkinizi güçlendirebilir.",
-                "icon": "💡",
-            })
+            insights.append(
+                {
+                    "category": "Gelişim Alanı",
+                    "title": "Bireysel Dil",
+                    "description": "'Ben' ve 'Sen' dilinden 'Biz' diline geçiş ilişkinizi güçlendirebilir.",
+                    "icon": "💡",
+                }
+            )
 
         # Balance insights
         if balance.get("score", 0) >= 75:
-            insights.append({
-                "category": "Güçlü Yön",
-                "title": "Dengeli İletişim",
-                "description": "Her iki taraf da konuşmaya eşit katkıda bulunuyor.",
-                "icon": "⚖️",
-            })
+            insights.append(
+                {
+                    "category": "Güçlü Yön",
+                    "title": "Dengeli İletişim",
+                    "description": "Her iki taraf da konuşmaya eşit katkıda bulunuyor.",
+                    "icon": "⚖️",
+                }
+            )
         elif balance.get("score", 0) <= 40:
-            insights.append({
-                "category": "Dikkat Noktası",
-                "title": "Dengesiz İletişim",
-                "description": "Bir taraf diğerinden çok daha fazla konuşuyor. Dinleme-konuşma dengesi önemli.",
-                "icon": "⚠️",
-            })
+            insights.append(
+                {
+                    "category": "Dikkat Noktası",
+                    "title": "Dengesiz İletişim",
+                    "description": "Bir taraf diğerinden çok daha fazla konuşuyor. Dinleme-konuşma dengesi önemli.",
+                    "icon": "⚠️",
+                }
+            )
 
         return insights
 
-    def generate_recommendations(self, metrics: Dict[str, any], insights: List[Dict] = None) -> List[Dict[str, str]]:
+    def generate_recommendations(
+        self, metrics: dict[str, any], insights: list[dict] = None
+    ) -> list[dict[str, str]]:
         """Kişiselleştirilmiş öneriler - AI destekli"""
-        
+
         # AI varsa kullan
         if self.ai_enabled and insights:
             ai_service = self._get_ai_service()
@@ -186,7 +208,7 @@ class ReportGenerator:
                         return ai_recommendations
                 except Exception as e:
                     print(f"AI recommendations hatası: {e}")
-        
+
         # Fallback: Rule-based recommendations
         recommendations = []
 
@@ -198,71 +220,82 @@ class ReportGenerator:
 
         # Sentiment recommendations
         if sentiment.get("score", 50) <= 40:
-            recommendations.append({
-                "priority": "high",
-                "title": "Pozitif Dil Pratiği",
-                "description": "Günde en az 3 pozitif ifade kullanmaya çalışın: 'Teşekkür ederim', 'Senin için mutluyum', 'Bunu sevdim'",
-                "exercise": "Her akşam günün en iyi 3 anını paylaşın.",
-            })
+            recommendations.append(
+                {
+                    "priority": "high",
+                    "title": "Pozitif Dil Pratiği",
+                    "description": "Günde en az 3 pozitif ifade kullanmaya çalışın: 'Teşekkür ederim', 'Senin için mutluyum', 'Bunu sevdim'",
+                    "exercise": "Her akşam günün en iyi 3 anını paylaşın.",
+                }
+            )
 
         # Empathy recommendations
         if empathy.get("score", 0) <= 30:
-            recommendations.append({
-                "priority": "high",
-                "title": "Aktif Dinleme Egzersizi",
-                "description": "Karşınız konuşurken, sadece dinleyin ve 'Anlıyorum' diyerek doğrulayın.",
-                "exercise": "5 dakikalık kesintisiz dinleme seansları yapın.",
-            })
+            recommendations.append(
+                {
+                    "priority": "high",
+                    "title": "Aktif Dinleme Egzersizi",
+                    "description": "Karşınız konuşurken, sadece dinleyin ve 'Anlıyorum' diyerek doğrulayın.",
+                    "exercise": "5 dakikalık kesintisiz dinleme seansları yapın.",
+                }
+            )
 
         # Conflict recommendations
         if conflict.get("score", 0) >= 50:
-            recommendations.append({
-                "priority": "high",
-                "title": "Yumuşak Başlangıç Tekniği",
-                "description": "'Sen hep...' yerine 'Ben ... hissediyorum' şeklinde başlayın.",
-                "exercise": "Şikayetlerinizi 'Ben dili' ile ifade etmeyi deneyin.",
-            })
+            recommendations.append(
+                {
+                    "priority": "high",
+                    "title": "Yumuşak Başlangıç Tekniği",
+                    "description": "'Sen hep...' yerine 'Ben ... hissediyorum' şeklinde başlayın.",
+                    "exercise": "Şikayetlerinizi 'Ben dili' ile ifade etmeyi deneyin.",
+                }
+            )
 
         # We-language recommendations
         if we_language.get("score", 50) <= 40:
-            recommendations.append({
-                "priority": "medium",
-                "title": "Biz-dili Geliştirme",
-                "description": "Ortak hedeflerinizden ve paylaşılan deneyimlerinizden bahsedin.",
-                "exercise": "Haftalık 'Biz' planları yapın: 'Bu hafta biz ne yapalım?'",
-            })
+            recommendations.append(
+                {
+                    "priority": "medium",
+                    "title": "Biz-dili Geliştirme",
+                    "description": "Ortak hedeflerinizden ve paylaşılan deneyimlerinizden bahsedin.",
+                    "exercise": "Haftalık 'Biz' planları yapın: 'Bu hafta biz ne yapalım?'",
+                }
+            )
 
         # Balance recommendations
         if balance.get("score", 0) <= 50:
-            recommendations.append({
-                "priority": "medium",
-                "title": "Konuşma Dengesi",
-                "description": "Az konuşan taraf için alan açın, çok konuşan taraf duraksamalar bırakın.",
-                "exercise": "Her konuşmada karşınızın en az 3 cümle söylemesini bekleyin.",
-            })
+            recommendations.append(
+                {
+                    "priority": "medium",
+                    "title": "Konuşma Dengesi",
+                    "description": "Az konuşan taraf için alan açın, çok konuşan taraf duraksamalar bırakın.",
+                    "exercise": "Her konuşmada karşınızın en az 3 cümle söylemesini bekleyin.",
+                }
+            )
 
         # Genel öneri
-        recommendations.append({
-            "priority": "low",
-            "title": "Günlük Check-in",
-            "description": "Her gün 10 dakika kesintisiz konuşma zamanı ayırın.",
-            "exercise": "Telefonlar kapalı, sadece ikiniz. Günü özetleyin ve paylaşın.",
-        })
+        recommendations.append(
+            {
+                "priority": "low",
+                "title": "Günlük Check-in",
+                "description": "Her gün 10 dakika kesintisiz konuşma zamanı ayırın.",
+                "exercise": "Telefonlar kapalı, sadece ikiniz. Günü özetleyin ve paylaşın.",
+            }
+        )
 
         return recommendations
 
     def generate_report(
         self,
-        metrics: Dict[str, any],
-        conversation_stats: Dict[str, any] = None,
-        metadata: Dict[str, any] = None,
-    ) -> Dict[str, any]:
+        metrics: dict[str, any],
+        conversation_stats: dict[str, any] = None,
+        metadata: dict[str, any] = None,
+    ) -> dict[str, any]:
         """Tam analiz raporu oluştur"""
         report = {
             "version": self.version,
             "generated_at": datetime.utcnow().isoformat(),
             "metadata": metadata or {},
-            
             # Ana metrikler
             "metrics": {
                 "sentiment": metrics.get("sentiment", {}),
@@ -271,24 +304,22 @@ class ReportGenerator:
                 "we_language": metrics.get("we_language", {}),
                 "communication_balance": metrics.get("communication_balance", {}),
             },
-            
             # Genel skor (0-100)
             "overall_score": self._calculate_overall_score(metrics),
-            
             # Özet
             "summary": self.generate_summary(metrics),
         }
-        
+
         # İçgörüler (AI destekli)
         insights = self.generate_insights(metrics, report["summary"])
         report["insights"] = insights
-        
+
         # Öneriler (AI destekli, insights kullanarak)
         report["recommendations"] = self.generate_recommendations(metrics, insights)
-        
+
         # Konuşma istatistikleri
         report["conversation_stats"] = conversation_stats or {}
-        
+
         # AI ile özet geliştirme (opsiyonel)
         if self.ai_enabled:
             ai_service = self._get_ai_service()
@@ -303,17 +334,19 @@ class ReportGenerator:
         # Cevap önerileri (AI destekli)
         reply_suggestions = []
         if self.ai_enabled:
-             ai_service = self._get_ai_service()
-             if ai_service:
-                 try:
-                    reply_suggestions = ai_service.generate_reply_suggestions(metrics, report["summary"])
-                 except Exception as e:
-                     print(f"Cevap önerisi hatası: {e}")
+            ai_service = self._get_ai_service()
+            if ai_service:
+                try:
+                    reply_suggestions = ai_service.generate_reply_suggestions(
+                        metrics, report["summary"]
+                    )
+                except Exception as e:
+                    print(f"Cevap önerisi hatası: {e}")
         report["reply_suggestions"] = reply_suggestions
-        
+
         return report
 
-    def _calculate_overall_score(self, metrics: Dict[str, any]) -> float:
+    def _calculate_overall_score(self, metrics: dict[str, any]) -> float:
         """Genel ilişki sağlığı skoru (0-10)"""
         sentiment_score = metrics.get("sentiment", {}).get("score", 50)
         empathy_score = metrics.get("empathy", {}).get("score", 0)
@@ -341,52 +374,52 @@ class ReportGenerator:
         # 0-10 ölçeğine dönüştür
         return round(overall_100 / 10, 2)
 
-    def export_to_json(self, report: Dict[str, any], filepath: str):
+    def export_to_json(self, report: dict[str, any], filepath: str):
         """Raporu JSON olarak kaydet"""
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
 
-    def export_to_text(self, report: Dict[str, any]) -> str:
+    def export_to_text(self, report: dict[str, any]) -> str:
         """Raporu okunabilir metin formatında dışa aktar"""
         lines = []
         lines.append("=" * 60)
         lines.append("İLİŞKİ ANALİZ RAPORU")
         lines.append("=" * 60)
         lines.append("")
-        
+
         lines.append(f"Tarih: {report['generated_at']}")
         lines.append(f"Genel Skor: {report['overall_score']:.1f}/10")
         lines.append("")
-        
+
         lines.append("ÖZET")
         lines.append("-" * 60)
-        lines.append(report['summary'])
+        lines.append(report["summary"])
         lines.append("")
-        
+
         lines.append("METRİKLER")
         lines.append("-" * 60)
-        for metric_name, metric_data in report['metrics'].items():
-            if isinstance(metric_data, dict) and 'score' in metric_data:
-                label = metric_data.get('label', '')
-                score = metric_data.get('score', 0)
+        for metric_name, metric_data in report["metrics"].items():
+            if isinstance(metric_data, dict) and "score" in metric_data:
+                label = metric_data.get("label", "")
+                score = metric_data.get("score", 0)
                 lines.append(f"{metric_name.upper()}: {score:.1f}/100 - {label}")
         lines.append("")
-        
+
         lines.append("İÇGÖRÜLER")
         lines.append("-" * 60)
-        for insight in report['insights']:
+        for insight in report["insights"]:
             lines.append(f"{insight['icon']} {insight['title']}")
             lines.append(f"   {insight['description']}")
             lines.append("")
-        
+
         lines.append("ÖNERİLER")
         lines.append("-" * 60)
-        for i, rec in enumerate(report['recommendations'], 1):
+        for i, rec in enumerate(report["recommendations"], 1):
             lines.append(f"{i}. {rec['title']} [Öncelik: {rec['priority'].upper()}]")
             lines.append(f"   {rec['description']}")
             lines.append(f"   Egzersiz: {rec['exercise']}")
             lines.append("")
-        
+
         lines.append("=" * 60)
-        
+
         return "\n".join(lines)

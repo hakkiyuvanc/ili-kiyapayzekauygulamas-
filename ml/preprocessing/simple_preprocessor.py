@@ -1,7 +1,6 @@
 """Basit Mock Preprocessor - spaCy olmadan çalışır"""
 
 import re
-from typing import List, Dict, Set
 
 
 class SimpleTurkishPreprocessor:
@@ -11,18 +10,65 @@ class SimpleTurkishPreprocessor:
         self.stopwords = self._load_turkish_stopwords()
         self.pii_patterns = self._compile_pii_patterns()
 
-    def _load_turkish_stopwords(self) -> Set[str]:
+    def _load_turkish_stopwords(self) -> set[str]:
         stopwords = {
-            "acaba", "ama", "aslında", "az", "bazı", "belki", "biri", "birkaç",
-            "birşey", "biz", "bu", "çok", "çünkü", "da", "daha", "de", "defa",
-            "diye", "eğer", "en", "gibi", "hem", "hep", "hepsi", "her", "hiç",
-            "için", "ile", "ise", "kez", "ki", "kim", "mı", "mu", "mü", "nasıl",
-            "ne", "neden", "nerde", "nerede", "nereye", "niçin", "niye", "o",
-            "sanki", "şey", "siz", "şu", "tüm", "ve", "veya", "ya", "yani",
+            "acaba",
+            "ama",
+            "aslında",
+            "az",
+            "bazı",
+            "belki",
+            "biri",
+            "birkaç",
+            "birşey",
+            "biz",
+            "bu",
+            "çok",
+            "çünkü",
+            "da",
+            "daha",
+            "de",
+            "defa",
+            "diye",
+            "eğer",
+            "en",
+            "gibi",
+            "hem",
+            "hep",
+            "hepsi",
+            "her",
+            "hiç",
+            "için",
+            "ile",
+            "ise",
+            "kez",
+            "ki",
+            "kim",
+            "mı",
+            "mu",
+            "mü",
+            "nasıl",
+            "ne",
+            "neden",
+            "nerde",
+            "nerede",
+            "nereye",
+            "niçin",
+            "niye",
+            "o",
+            "sanki",
+            "şey",
+            "siz",
+            "şu",
+            "tüm",
+            "ve",
+            "veya",
+            "ya",
+            "yani",
         }
         return stopwords
 
-    def _compile_pii_patterns(self) -> Dict[str, re.Pattern]:
+    def _compile_pii_patterns(self) -> dict[str, re.Pattern]:
         return {
             "phone": re.compile(r"\b0?[5-9]\d{2}\s?\d{3}\s?\d{2}\s?\d{2}\b"),
             "email": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
@@ -45,16 +91,16 @@ class SimpleTurkishPreprocessor:
             text = pattern.sub(f"{mask}_{pii_type.upper()}", text)
         return text
 
-    def tokenize(self, text: str, remove_stop: bool = False) -> List[str]:
+    def tokenize(self, text: str, remove_stop: bool = False) -> list[str]:
         # Basit whitespace tokenization
         tokens = text.split()
         if remove_stop:
             tokens = [t for t in tokens if t.lower() not in self.stopwords]
         return tokens
 
-    def extract_sentences(self, text: str) -> List[str]:
+    def extract_sentences(self, text: str) -> list[str]:
         # Basit cümle ayırma
-        sentences = re.split(r'[.!?]+', text)
+        sentences = re.split(r"[.!?]+", text)
         return [s.strip() for s in sentences if s.strip()]
 
     def preprocess(
@@ -63,7 +109,7 @@ class SimpleTurkishPreprocessor:
         clean: bool = True,
         remove_pii: bool = True,
         remove_stop: bool = False,
-    ) -> Dict[str, any]:
+    ) -> dict[str, any]:
         result = {"original": text}
 
         if clean:
@@ -84,7 +130,8 @@ class SimpleTurkishPreprocessor:
             "char_count": len(text),
             "word_count": len(result["tokens"]),
             "sentence_count": len(result["sentences"]),
-            "avg_word_length": sum(len(t) for t in result["tokens"]) / max(len(result["tokens"]), 1),
+            "avg_word_length": sum(len(t) for t in result["tokens"])
+            / max(len(result["tokens"]), 1),
         }
 
         return result

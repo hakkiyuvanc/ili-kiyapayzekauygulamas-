@@ -10,7 +10,6 @@ Based on research from:
 """
 
 RELATIONSHIP_PSYCHOLOGY_KB = {
-    
     "conflict_high": {
         "title": "Gottman'ın 4 Atlı Teorisi ve Çatışma Yönetimi",
         "source": "Gottman, J. M. (1994). What Predicts Divorce?",
@@ -25,7 +24,7 @@ RELATIONSHIP_PSYCHOLOGY_KB = {
    - Antidot: "Ben-dili" kullanımı
    - Uygulama: "Sen asla dinlemiyorsun" → "Dinlendiğimi hissetmediğimde üzülüyorum"
 
-2. **KÜÇÜMSEME (Contempt)** 
+2. **KÜÇÜMSEME (Contempt)**
    - En tehlikeli kalıp (boşanma riski 5.6x artırır)
    - Belirtiler: İğneleyici şakalar, gözlerini devirme, alaycılık, küfür
    - Kök neden: Çözülmemiş kronik negativite
@@ -51,9 +50,8 @@ RELATIONSHIP_PSYCHOLOGY_KB = {
 - "Yeniden başlayabilir miyiz?" gibi meta-iletişim
 
 **Kaynak:** Gottman, J. M., & Silver, N. (1999). The Seven Principles for Making Marriage Work.
-"""
+""",
     },
-    
     "empathy_low": {
         "title": "Empati ve Aktif Dinleme - Bilişsel ve Duygusal Rezonans",
         "source": "Rogers, C. (1951). Client-Centered Therapy",
@@ -103,9 +101,8 @@ RELATIONSHIP_PSYCHOLOGY_KB = {
 4. Doğrula (duygularını meşrulaştır)
 
 **Kaynak:** Decety, J., & Jackson, P. L. (2004). The functional architecture of human empathy. Behavioral and Cognitive Neuroscience Reviews.
-"""
+""",
     },
-    
     "we_language_low": {
         "title": "Biz-Dili (Plural Pronouns) ve İlişki Kimliği",
         "source": "Simmons vd. (2005). Journal of Social and Personal Relationships",
@@ -157,9 +154,8 @@ RELATIONSHIP_PSYCHOLOGY_KB = {
 - Sağlıksız: Bireysellik kaybı, iç içe geçme
 
 **Kaynak:** Agnew, C. R., Van Lange, P. A., Rusbult, C. E., & Langston, C. A. (1998). Cognitive interdependence: Commitment and the mental representation of close relationships.
-"""
+""",
     },
-    
     "communication_balance_poor": {
         "title": "İletişim Dengesi ve Turn-Taking Dinamikleri",
         "source": "Sacks, Schegloff & Jefferson (1974). Language in Social Interaction",
@@ -224,9 +220,8 @@ RELATIONSHIP_PSYCHOLOGY_KB = {
 - Turning away: Görmezden gelme (%33 mutsuz çiftler)
 
 **Kaynak:** Driver, J. L., & Gottman, J. M. (2004). Daily marital interactions and positive affect during marital conflict among newlywed couples.
-"""
+""",
     },
-    
     "sentiment_negative": {
         "title": "Negatif Duygu Regülasyonu ve Emotional Flooding",
         "source": "Gottman, J. M. (1999). The Marriage Clinic",
@@ -293,9 +288,8 @@ RELATIONSHIP_PSYCHOLOGY_KB = {
 - Ortak pozitif anılar yaratma
 
 **Kaynak:** Gottman, J. M., & Levenson, R. W. (1992). Marital processes predictive of later dissolution: Behavior, physiology, and health.
-"""
+""",
     },
-    
     "attachment_patterns": {
         "title": "Bağlanma Teorisi ve İlişki Dinamikleri",
         "source": "Bowlby, J. (1982). Attachment and Loss",
@@ -336,9 +330,8 @@ RELATIONSHIP_PSYCHOLOGY_KB = {
 - Güvenli liman yaratma
 
 **Kaynak:** Johnson, S. M. (2004). The Practice of Emotionally Focused Couple Therapy: Creating Connection.
-"""
+""",
     },
-    
     "general_strength": {
         "title": "İlişki Direnci ve Pozitif Psikoloji Yaklaşımı",
         "source": "Gottman, J. M. (1999). The Seven Principles",
@@ -392,57 +385,57 @@ RELATIONSHIP_PSYCHOLOGY_KB = {
 - Date night (aktivite veya derin konuşma)
 - İlişki durum değerlendirmesi
 
-**Kaynaklar:** 
+**Kaynaklar:**
 - Gottman, J. M., & Silver, N. (2015). The Seven Principles for Making Marriage Work.
 - Chapman, G. (2015). The 5 Love Languages.
 - Johnson, S. (2008). Hold Me Tight.
-"""
-    }
+""",
+    },
 }
 
 
 def get_relevant_knowledge(metrics: dict) -> list:
     """
     Select relevant psychology knowledge based on metrics
-    
+
     Uses evidence-based selection criteria to match relationship patterns
     with appropriate psychological frameworks.
-    
+
     Args:
         metrics: Dict containing analysis metrics (sentiment, empathy, conflict, etc.)
-        
+
     Returns:
         List of knowledge snippets (max 3 for prompt efficiency)
     """
     knowledge = []
-    
+
     # High conflict → Gottman's Four Horsemen
     if metrics.get("conflict", {}).get("score", 0) > 60:
         knowledge.append(RELATIONSHIP_PSYCHOLOGY_KB["conflict_high"])
-    
+
     # Low empathy → Active listening & empathy skills
     if metrics.get("empathy", {}).get("score", 100) < 50:
         knowledge.append(RELATIONSHIP_PSYCHOLOGY_KB["empathy_low"])
-    
+
     # Low we-language → Plural pronouns & relationship identity
     if metrics.get("we_language", {}).get("score", 100) < 40:
         knowledge.append(RELATIONSHIP_PSYCHOLOGY_KB["we_language_low"])
-    
+
     # Poor communication balance → Turn-taking dynamics
     balance_score = metrics.get("communication_balance", {}).get("score", 50)
     if balance_score < 40 or balance_score > 60:
         knowledge.append(RELATIONSHIP_PSYCHOLOGY_KB["communication_balance_poor"])
-    
+
     # Negative sentiment → Emotion regulation
     if metrics.get("sentiment", {}).get("score", 50) < 40:
         knowledge.append(RELATIONSHIP_PSYCHOLOGY_KB["sentiment_negative"])
-    
+
     # Add attachment or general strength as baseline (if space)
     if len(knowledge) == 0:
         knowledge.append(RELATIONSHIP_PSYCHOLOGY_KB["general_strength"])
     elif len(knowledge) < 2:
         knowledge.append(RELATIONSHIP_PSYCHOLOGY_KB["attachment_patterns"])
-    
+
     # Limit to 3 snippets (prevent prompt bloat, optimize token usage)
     return knowledge[:3]
 
@@ -450,30 +443,30 @@ def get_relevant_knowledge(metrics: dict) -> list:
 def format_knowledge_context(knowledge_list: list) -> str:
     """
     Format knowledge snippets for prompt injection
-    
+
     Creates a structured context section with academic references
     that enhances AI responses with evidence-based psychological knowledge.
-    
+
     Args:
         knowledge_list: List of knowledge dictionaries
-        
+
     Returns:
         Formatted context string with citations
     """
     if not knowledge_list:
         return ""
-    
+
     context = "\n\n📚 UZMAN BİLGİ KAYNAKLARI (Evidence-Based Psychology):\n\n"
-    
+
     for i, kb in enumerate(knowledge_list, 1):
         context += f"═══ [{i}] {kb['title']} ═══\n"
         context += f"📖 Kaynak: {kb['source']}\n\n"
-        context += kb['content'].strip()
+        context += kb["content"].strip()
         context += "\n\n"
-    
+
     context += "💡 TaliMAT: Yukarıdaki bilimsel kaynaklardaki bilgileri kullanarak "
     context += "kanıta dayalı, profesyonel içgörüler üret. Spesifik tekniklere ve "
     context += "araştırmalara referans ver.\n"
     context += "═" * 50 + "\n\n"
-    
+
     return context

@@ -1,10 +1,11 @@
 """Test script - Auth ve Database"""
 
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
+
 
 import requests
-import json
 
 BASE_URL = "http://127.0.0.1:8000/api"
 
@@ -15,16 +16,16 @@ def test_auth_flow():
     print("AUTHENTİCATİON & DATABASE TEST")
     print("=" * 70)
     print()
-    
+
     # 1. Kullanıcı kaydı
     print("1️⃣  Yeni kullanıcı kaydı...")
     register_data = {
         "email": "test@example.com",
         "password": "test123456",
         "full_name": "Test User",
-        "username": "testuser"
+        "username": "testuser",
     }
-    
+
     try:
         response = requests.post(f"{BASE_URL}/auth/register", json=register_data)
         if response.status_code == 201:
@@ -37,16 +38,13 @@ def test_auth_flow():
     except Exception as e:
         print(f"   ❌ Bağlantı hatası: {e}")
         return
-    
+
     print()
-    
+
     # 2. Login
     print("2️⃣  Kullanıcı girişi...")
-    login_data = {
-        "email": "test@example.com",
-        "password": "test123456"
-    }
-    
+    login_data = {"email": "test@example.com", "password": "test123456"}
+
     try:
         response = requests.post(f"{BASE_URL}/auth/login-json", json=login_data)
         if response.status_code == 200:
@@ -59,13 +57,13 @@ def test_auth_flow():
     except Exception as e:
         print(f"   ❌ Hata: {e}")
         return
-    
+
     print()
-    
+
     # 3. Profil bilgisi
     print("3️⃣  Profil bilgisi çekiliyor...")
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     try:
         response = requests.get(f"{BASE_URL}/auth/me", headers=headers)
         if response.status_code == 200:
@@ -75,22 +73,19 @@ def test_auth_flow():
             print(f"   ❌ Hata: {response.status_code}")
     except Exception as e:
         print(f"   ❌ Hata: {e}")
-    
+
     print()
-    
+
     # 4. Analiz yap (database'e kaydet)
     print("4️⃣  Analiz yapılıyor ve database'e kaydediliyor...")
     analysis_data = {
         "text": "Ahmet: Merhaba canım!\nAyşe: Merhaba aşkım, nasılsın?",
         "format_type": "simple",
-        "privacy_mode": True
+        "privacy_mode": True,
     }
-    
+
     try:
-        response = requests.post(
-            f"{BASE_URL}/analysis/analyze?save_to_db=true",
-            json=analysis_data
-        )
+        response = requests.post(f"{BASE_URL}/analysis/analyze?save_to_db=true", json=analysis_data)
         if response.status_code == 200:
             result = response.json()
             analysis_id = result.get("analysis_id")
@@ -100,12 +95,12 @@ def test_auth_flow():
             print(f"   ❌ Analiz hatası: {response.status_code}")
     except Exception as e:
         print(f"   ❌ Hata: {e}")
-    
+
     print()
-    
+
     # 5. Analiz geçmişi
     print("5️⃣  Analiz geçmişi çekiliyor...")
-    
+
     try:
         response = requests.get(f"{BASE_URL}/analysis/history?limit=5")
         if response.status_code == 200:
@@ -118,7 +113,7 @@ def test_auth_flow():
             print(f"   ❌ Hata: {response.status_code}")
     except Exception as e:
         print(f"   ❌ Hata: {e}")
-    
+
     print()
     print("=" * 70)
     print("✅ Test tamamlandı!")

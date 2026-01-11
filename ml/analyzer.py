@@ -1,18 +1,18 @@
 """Ana İlişki Analiz Pipeline'ı"""
 
-from typing import Dict, List, Optional
-
 # spaCy optional - fallback to simple preprocessor
 try:
     from ml.preprocessing.turkish_nlp import get_preprocessor
+
     USE_SPACY = True
 except (ImportError, OSError):
     from ml.preprocessing.simple_preprocessor import get_simple_preprocessor as get_preprocessor
+
     USE_SPACY = False
 
-from ml.preprocessing.conversation_parser import ConversationParser
 from ml.features.relationship_metrics import RelationshipMetrics
 from ml.features.report_generator import ReportGenerator
+from ml.preprocessing.conversation_parser import ConversationParser
 
 
 class RelationshipAnalyzer:
@@ -30,15 +30,15 @@ class RelationshipAnalyzer:
         text: str,
         format_type: str = "auto",
         privacy_mode: bool = True,
-    ) -> Dict[str, any]:
+    ) -> dict[str, any]:
         """
         Metin analizi yap
-        
+
         Args:
             text: Analiz edilecek metin (konuşma veya tek metin)
             format_type: 'auto', 'whatsapp', 'simple', 'plain'
             privacy_mode: PII maskeleme yapılsın mı
-            
+
         Returns:
             Analiz raporu
         """
@@ -64,7 +64,7 @@ class RelationshipAnalyzer:
 
         # 2. Metni birleştir ve preprocess et
         full_text = " ".join([msg["content"] for msg in messages])
-        
+
         preprocessed = self.preprocessor.preprocess(
             full_text,
             clean=True,
@@ -76,24 +76,24 @@ class RelationshipAnalyzer:
 
         # 3. Metrikleri hesapla
         metrics = {}
-        
+
         # Sentiment
         metrics["sentiment"] = self.metrics_calculator.calculate_sentiment_score(processed_text)
-        
+
         # Empati
         metrics["empathy"] = self.metrics_calculator.calculate_empathy_score(processed_text)
-        
+
         # Çatışma
         metrics["conflict"] = self.metrics_calculator.calculate_conflict_score(processed_text)
-        
+
         # Biz-dili
         metrics["we_language"] = self.metrics_calculator.calculate_we_language_score(processed_text)
-        
+
         # İletişim dengesi (eğer birden fazla katılımcı varsa)
         if conversation_stats.get("participant_count", 0) >= 2:
             messages_by_participant = self.parser.split_by_participant(messages)
-            metrics["communication_balance"] = self.metrics_calculator.calculate_communication_balance(
-                messages_by_participant
+            metrics["communication_balance"] = (
+                self.metrics_calculator.calculate_communication_balance(messages_by_participant)
             )
         else:
             metrics["communication_balance"] = {
@@ -121,16 +121,16 @@ class RelationshipAnalyzer:
 
     def analyze_conversation(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         privacy_mode: bool = True,
-    ) -> Dict[str, any]:
+    ) -> dict[str, any]:
         """
         Yapılandırılmış mesaj listesini analiz et
-        
+
         Args:
             messages: [{"sender": "...", "content": "...", "timestamp": "..."}]
             privacy_mode: PII maskeleme
-            
+
         Returns:
             Analiz raporu
         """
@@ -139,10 +139,10 @@ class RelationshipAnalyzer:
 
         # Konuşma istatistikleri
         conversation_stats = self.parser.calculate_conversation_stats(messages)
-        
+
         # Metni birleştir
         full_text = " ".join([msg["content"] for msg in messages])
-        
+
         # Preprocess
         preprocessed = self.preprocessor.preprocess(
             full_text,
@@ -150,7 +150,7 @@ class RelationshipAnalyzer:
             remove_pii=privacy_mode,
             remove_stop=False,
         )
-        
+
         processed_text = preprocessed.get("pii_masked", preprocessed.get("cleaned", full_text))
 
         # Metrikleri hesapla
@@ -164,8 +164,8 @@ class RelationshipAnalyzer:
         # İletişim dengesi
         if conversation_stats.get("participant_count", 0) >= 2:
             messages_by_participant = self.parser.split_by_participant(messages)
-            metrics["communication_balance"] = self.metrics_calculator.calculate_communication_balance(
-                messages_by_participant
+            metrics["communication_balance"] = (
+                self.metrics_calculator.calculate_communication_balance(messages_by_participant)
             )
         else:
             metrics["communication_balance"] = {

@@ -1,14 +1,15 @@
 """Feedback API endpoints"""
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List, Optional
 from datetime import datetime, timezone
+from typing import Optional
 
-from app.models.database import Feedback, User
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+
 from app.api.auth import get_current_user
 from app.core.dependencies import get_feedback_repository
+from app.models.database import Feedback, User
 from app.repositories import FeedbackRepository
-from pydantic import BaseModel, Field
 
 router = APIRouter()
 
@@ -16,6 +17,7 @@ router = APIRouter()
 # Schemas
 class FeedbackCreate(BaseModel):
     """Feedback creation schema"""
+
     analysis_id: Optional[int] = None
     rating: int = Field(..., ge=1, le=5, description="Rating from 1 to 5")
     comment: Optional[str] = Field(None, max_length=1000)
@@ -24,6 +26,7 @@ class FeedbackCreate(BaseModel):
 
 class FeedbackResponse(BaseModel):
     """Feedback response schema"""
+
     id: int
     analysis_id: Optional[int]
     user_id: int
@@ -40,11 +43,11 @@ class FeedbackResponse(BaseModel):
 async def create_feedback(
     feedback_data: FeedbackCreate,
     current_user: User = Depends(get_current_user),
-    repo: FeedbackRepository = Depends(get_feedback_repository)
+    repo: FeedbackRepository = Depends(get_feedback_repository),
 ):
     """
     Create new feedback
-    
+
     - **analysis_id**: Optional analysis ID this feedback relates to
     - **rating**: Rating from 1 to 5
     - **comment**: Optional comment text
@@ -55,9 +58,9 @@ async def create_feedback(
     if feedback_data.category and feedback_data.category not in valid_categories:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid category. Must be one of: {', '.join(valid_categories)}"
+            detail=f"Invalid category. Must be one of: {', '.join(valid_categories)}",
         )
-    
+
     # Create feedback entity
     feedback = Feedback(
         user_id=current_user.id,
@@ -65,23 +68,23 @@ async def create_feedback(
         rating=feedback_data.rating,
         comment=feedback_data.comment,
         category=feedback_data.category or "general",
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
     )
-    
+
     # Save via repository
     return repo.create(feedback)
 
 
-@router.get("/my-feedback", response_model=List[FeedbackResponse])
+@router.get("/my-feedback", response_model=list[FeedbackResponse])
 async def get_my_feedback(
     skip: int = 0,
     limit: int = 20,
     current_user: User = Depends(get_current_user),
-    repo: FeedbackRepository = Depends(get_feedback_repository)
+    repo: FeedbackRepository = Depends(get_feedback_repository),
 ):
     """
     Get current user's feedback history
-    
+
     - **skip**: Number of records to skip (pagination)
     - **limit**: Maximum number of records to return
     """
@@ -92,11 +95,11 @@ async def get_my_feedback(
 @router.get("/stats", response_model=dict)
 async def get_feedback_stats(
     current_user: User = Depends(get_current_user),
-    repo: FeedbackRepository = Depends(get_feedback_repository)
+    repo: FeedbackRepository = Depends(get_feedback_repository),
 ):
     """
     Get feedback statistics for current user
-    
+
     Returns count and average rating
     """
     # Get stats via repository

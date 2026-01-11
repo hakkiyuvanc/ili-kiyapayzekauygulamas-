@@ -29,49 +29,50 @@ def test_basic_analysis():
 
     if report.get("status") == "success":
         print("✅ Analiz başarılı!\n")
-        
+
         print(f"📊 GENEL SKOR: {report['overall_score']:.1f}/100")
         print()
-        
+
         print("📈 METRİKLER:")
         print("-" * 60)
-        for metric_name, metric_data in report['metrics'].items():
-            if isinstance(metric_data, dict) and 'score' in metric_data:
-                score = metric_data.get('score', 0)
-                label = metric_data.get('label', '')
+        for metric_name, metric_data in report["metrics"].items():
+            if isinstance(metric_data, dict) and "score" in metric_data:
+                score = metric_data.get("score", 0)
+                label = metric_data.get("label", "")
                 print(f"  {metric_name:20s}: {score:5.1f}/100 - {label}")
         print()
-        
+
         print("💡 ÖZET:")
         print("-" * 60)
         print(f"  {report['summary']}")
         print()
-        
+
         print(f"✨ İÇGÖRÜLER ({len(report['insights'])} adet):")
         print("-" * 60)
-        for insight in report['insights']:
+        for insight in report["insights"]:
             print(f"  {insight['icon']} {insight['title']}")
             print(f"     {insight['description']}")
             print()
-        
+
         print(f"🎯 ÖNERİLER ({len(report['recommendations'])} adet):")
         print("-" * 60)
-        for i, rec in enumerate(report['recommendations'][:3], 1):  # İlk 3'ü göster
+        for i, rec in enumerate(report["recommendations"][:3], 1):  # İlk 3'ü göster
             print(f"  {i}. {rec['title']} [{rec['priority'].upper()}]")
             print(f"     {rec['description']}")
             print()
-        
+
         # Metin raporu oluştur
         from ml.features.report_generator import ReportGenerator
+
         generator = ReportGenerator()
         text_report = generator.export_to_text(report)
-        
+
         # Dosyaya kaydet
         with open("test_report.txt", "w", encoding="utf-8") as f:
             f.write(text_report)
-        
+
         print("💾 Detaylı rapor 'test_report.txt' dosyasına kaydedildi")
-        
+
     else:
         print(f"❌ Analiz başarısız: {report.get('error')}")
 

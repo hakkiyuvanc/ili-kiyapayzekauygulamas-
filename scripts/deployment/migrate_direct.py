@@ -3,19 +3,19 @@ Direct PostgreSQL Schema Creation and Data Migration
 """
 
 import os
-import sys
-from pathlib import Path
 import shutil
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 os.chdir(Path(__file__).parent.parent.parent)
 
 # Now import after path is set
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -50,21 +50,22 @@ print()
 print("Step 2/3: Creating PostgreSQL schema")
 try:
     # Import Base after environment is loaded
-    from backend.app.models.database import Base
     from backend.app.core.database import engine as pg_engine
-    
+    from backend.app.models.database import Base
+
     # Create all tables
     Base.metadata.create_all(bind=pg_engine)
     print("✅ Schema created successfully")
-    
+
     # Verify tables
     inspector = inspect(pg_engine)
     tables = inspector.get_table_names()
     print(f"✅ Created {len(tables)} tables: {', '.join(tables)}")
-    
+
 except Exception as e:
     print(f"❌ Schema creation failed: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)
 
@@ -76,53 +77,76 @@ try:
     sqlite_engine = create_engine(SQLITE_URL)
     SqliteSession = sessionmaker(bind=sqlite_engine)
     PostgresSession = sessionmaker(bind=pg_engine)
-    
+
     sqlite_session = SqliteSession()
     postgres_session = PostgresSession()
-    
-    from backend.app.models.database import User, Analysis, CoachingStatus, ChatSession, ChatMessage, DailyPulse, Feedback, AnalysisHistory
-    
+
+    from backend.app.models.database import (
+        Analysis,
+        AnalysisHistory,
+        ChatMessage,
+        ChatSession,
+        CoachingStatus,
+        DailyPulse,
+        Feedback,
+        User,
+    )
+
     # Order matters due to foreign keys
-    models = [User, CoachingStatus, Analysis, AnalysisHistory, Feedback, ChatSession, ChatMessage, DailyPulse]
-    
+    models = [
+        User,
+        CoachingStatus,
+        Analysis,
+        AnalysisHistory,
+        Feedback,
+        ChatSession,
+        ChatMessage,
+        DailyPulse,
+    ]
+
     total_migrated = 0
     for model in models:
         table_name = model.__tablename__
         try:
             records = sqlite_session.query(model).all()
             count = len(records)
-            
+
             if count == 0:
                 print(f"  ⏭️  {table_name}: No data")
                 continue
-            
+
             print(f"  🔄 Migrating {table_name}: {count} records...")
-            
+
             for record in records:
                 # Copy all attributes except id (let PostgreSQL auto-generate)
-                data = {c.name: getattr(record, c.name) for c in record.__table__.columns if c.name != 'id'}
+                data = {
+                    c.name: getattr(record, c.name)
+                    for c in record.__table__.columns
+                    if c.name != "id"
+                }
                 new_record = model(**data)
                 postgres_session.add(new_record)
-            
+
             postgres_session.commit()
             total_migrated += count
             print(f"  ✅ {table_name}: {count} records migrated")
-            
+
         except Exception as e:
             postgres_session.rollback()
             print(f"  ⚠️  {table_name}: {e}")
-    
+
     sqlite_session.close()
     postgres_session.close()
-    
+
     print()
     print("=" * 60)
     print(f"✅ Migration completed! {total_migrated} total records migrated")
     print("=" * 60)
-    
+
 except Exception as e:
     print(f"❌ Data migration failed: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)
 

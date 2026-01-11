@@ -1,7 +1,6 @@
-
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from fastapi import Request
+from slowapi import Limiter
+
 
 def get_key_func(request: Request):
     """
@@ -12,6 +11,7 @@ def get_key_func(request: Request):
     if forwarded:
         return forwarded.split(",")[0]
     return request.client.host if request.client else "127.0.0.1"
+
 
 # Initialize Limiter
 limiter = Limiter(key_func=get_key_func)

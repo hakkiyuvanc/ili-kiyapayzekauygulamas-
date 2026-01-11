@@ -1,8 +1,6 @@
 """Konuşma Verisi Preprocessor"""
 
 import re
-from typing import List, Dict, Optional
-from datetime import datetime
 
 
 class ConversationParser:
@@ -14,10 +12,12 @@ class ConversationParser:
             # Android: 01/01/2023, 12:30 - Ahmet: Merhaba
             re.compile(r"(\d{1,2}/\d{1,2}/\d{2,4}),?\s+(\d{1,2}:\d{2})\s*-\s*([^:]+):\s*(.+)"),
             # iOS: [01/01/2023, 12:30:45] Ahmet: Merhaba
-            re.compile(r"\[(\d{1,2}/\d{1,2}/\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?)\]\s*([^:]+):\s*(.+)"),
+            re.compile(
+                r"\[(\d{1,2}/\d{1,2}/\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?)\]\s*([^:]+):\s*(.+)"
+            ),
         ]
 
-    def parse_whatsapp_export(self, text: str) -> List[Dict[str, any]]:
+    def parse_whatsapp_export(self, text: str) -> list[dict[str, any]]:
         """WhatsApp export dosyasını parse et"""
         messages = []
         lines = text.split("\n")
@@ -32,21 +32,23 @@ class ConversationParser:
                 match = pattern.match(line)
                 if match:
                     date_str, time_str, sender, content = match.groups()
-                    
+
                     # Sistem mesajlarını atla
                     if "<Media omitted>" in content or "güvenlik kodu değişti" in content.lower():
                         continue
 
-                    messages.append({
-                        "timestamp": f"{date_str} {time_str}",
-                        "sender": sender.strip(),
-                        "content": content.strip(),
-                    })
+                    messages.append(
+                        {
+                            "timestamp": f"{date_str} {time_str}",
+                            "sender": sender.strip(),
+                            "content": content.strip(),
+                        }
+                    )
                     break
 
         return messages
 
-    def parse_simple_format(self, text: str) -> List[Dict[str, any]]:
+    def parse_simple_format(self, text: str) -> list[dict[str, any]]:
         """Basit format: Her satır bir mesaj (Kişi: Mesaj)"""
         messages = []
         lines = text.split("\n")
@@ -60,25 +62,29 @@ class ConversationParser:
             if ":" in line:
                 parts = line.split(":", 1)
                 if len(parts) == 2:
-                    messages.append({
-                        "timestamp": None,
-                        "sender": parts[0].strip(),
-                        "content": parts[1].strip(),
-                    })
+                    messages.append(
+                        {
+                            "timestamp": None,
+                            "sender": parts[0].strip(),
+                            "content": parts[1].strip(),
+                        }
+                    )
             else:
                 # Sender belirtilmemişse önceki mesajın devamı olabilir
                 if messages:
                     messages[-1]["content"] += " " + line
                 else:
-                    messages.append({
-                        "timestamp": None,
-                        "sender": "Unknown",
-                        "content": line,
-                    })
+                    messages.append(
+                        {
+                            "timestamp": None,
+                            "sender": "Unknown",
+                            "content": line,
+                        }
+                    )
 
         return messages
 
-    def identify_participants(self, messages: List[Dict[str, any]]) -> List[str]:
+    def identify_participants(self, messages: list[dict[str, any]]) -> list[str]:
         """Konuşmaya katılanları tespit et"""
         participants = set()
         for msg in messages:
@@ -88,8 +94,8 @@ class ConversationParser:
         return sorted(list(participants))
 
     def split_by_participant(
-        self, messages: List[Dict[str, any]]
-    ) -> Dict[str, List[Dict[str, any]]]:
+        self, messages: list[dict[str, any]]
+    ) -> dict[str, list[dict[str, any]]]:
         """Mesajları kişilere göre ayır"""
         by_participant = {}
         for msg in messages:
@@ -99,7 +105,7 @@ class ConversationParser:
             by_participant[sender].append(msg)
         return by_participant
 
-    def calculate_conversation_stats(self, messages: List[Dict[str, any]]) -> Dict[str, any]:
+    def calculate_conversation_stats(self, messages: list[dict[str, any]]) -> dict[str, any]:
         """Konuşma istatistikleri"""
         if not messages:
             return {
@@ -146,10 +152,10 @@ class ConversationParser:
 
         return stats
 
-    def parse(self, text: str, format_type: str = "auto") -> Dict[str, any]:
+    def parse(self, text: str, format_type: str = "auto") -> dict[str, any]:
         """
         Konuşmayı parse et
-        
+
         Args:
             text: Ham metin
             format_type: 'auto', 'whatsapp', 'simple'
@@ -171,7 +177,7 @@ class ConversationParser:
         stats = self.calculate_conversation_stats(messages)
 
         detected_format = "whatsapp" if any(m.get("timestamp") for m in messages) else "simple"
-        
+
         return {
             "messages": messages,
             "stats": stats,

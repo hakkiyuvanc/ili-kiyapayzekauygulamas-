@@ -1,13 +1,17 @@
-from typing import Optional, List
-from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
+
 
 class CoachingStatusBase(BaseModel):
     current_focus_area: Optional[str] = None
-    completed_tasks: List[str] = []
+    completed_tasks: list[str] = []
+
 
 class CoachingStatusUpdate(CoachingStatusBase):
     pass
+
 
 class CoachingStatusResponse(CoachingStatusBase):
     id: int

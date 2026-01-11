@@ -1,10 +1,8 @@
 """Türkçe Metin Ön İşleme Modülü"""
 
 import re
-import string
-from typing import List, Dict, Set
+
 import spacy
-from spacy.language import Language
 
 
 class TurkishPreprocessor:
@@ -19,7 +17,9 @@ class TurkishPreprocessor:
             self.nlp = spacy.load(model_name)
             print(f"✅ Loaded spaCy Turkish model: {model_name}")
         except OSError:
-            print(f"⚠️ Turkish model '{model_name}' not found. Using blank Turkish model (limited features)")
+            print(
+                f"⚠️ Turkish model '{model_name}' not found. Using blank Turkish model (limited features)"
+            )
             print("💡 To install full model: python -m spacy download tr_core_news_lg")
             self.nlp = spacy.blank("tr")
             # Add basic sentence segmentation
@@ -29,24 +29,71 @@ class TurkishPreprocessor:
 
         # Türkçe stopwords
         self.stopwords = self._load_turkish_stopwords()
-        
+
         # PII patterns
         self.pii_patterns = self._compile_pii_patterns()
 
-    def _load_turkish_stopwords(self) -> Set[str]:
+    def _load_turkish_stopwords(self) -> set[str]:
         """Türkçe stopword'leri yükle"""
         # Temel Türkçe stopword listesi
         stopwords = {
-            "acaba", "ama", "aslında", "az", "bazı", "belki", "biri", "birkaç",
-            "birşey", "biz", "bu", "çok", "çünkü", "da", "daha", "de", "defa",
-            "diye", "eğer", "en", "gibi", "hem", "hep", "hepsi", "her", "hiç",
-            "için", "ile", "ise", "kez", "ki", "kim", "mı", "mu", "mü", "nasıl",
-            "ne", "neden", "nerde", "nerede", "nereye", "niçin", "niye", "o",
-            "sanki", "şey", "siz", "şu", "tüm", "ve", "veya", "ya", "yani",
+            "acaba",
+            "ama",
+            "aslında",
+            "az",
+            "bazı",
+            "belki",
+            "biri",
+            "birkaç",
+            "birşey",
+            "biz",
+            "bu",
+            "çok",
+            "çünkü",
+            "da",
+            "daha",
+            "de",
+            "defa",
+            "diye",
+            "eğer",
+            "en",
+            "gibi",
+            "hem",
+            "hep",
+            "hepsi",
+            "her",
+            "hiç",
+            "için",
+            "ile",
+            "ise",
+            "kez",
+            "ki",
+            "kim",
+            "mı",
+            "mu",
+            "mü",
+            "nasıl",
+            "ne",
+            "neden",
+            "nerde",
+            "nerede",
+            "nereye",
+            "niçin",
+            "niye",
+            "o",
+            "sanki",
+            "şey",
+            "siz",
+            "şu",
+            "tüm",
+            "ve",
+            "veya",
+            "ya",
+            "yani",
         }
         return stopwords
 
-    def _compile_pii_patterns(self) -> Dict[str, re.Pattern]:
+    def _compile_pii_patterns(self) -> dict[str, re.Pattern]:
         """PII (Kişisel Bilgi) tespit kalıpları"""
         return {
             "phone": re.compile(r"\b0?[5-9]\d{2}\s?\d{3}\s?\d{2}\s?\d{2}\b"),
@@ -81,40 +128,40 @@ class TurkishPreprocessor:
             text = pattern.sub(f"{mask}_{pii_type.upper()}", text)
         return text
 
-    def tokenize(self, text: str, remove_stop: bool = False) -> List[str]:
+    def tokenize(self, text: str, remove_stop: bool = False) -> list[str]:
         """Metni tokenize et"""
         doc = self.nlp(text)
-        
+
         tokens = []
         for token in doc:
             # Noktalama ve boşlukları atla
             if token.is_punct or token.is_space:
                 continue
-            
+
             # Stopword kontrolü
             if remove_stop and token.text.lower() in self.stopwords:
                 continue
-            
+
             tokens.append(token.text)
-        
+
         return tokens
 
-    def lemmatize(self, text: str) -> List[str]:
+    def lemmatize(self, text: str) -> list[str]:
         """Metni lemmatize et (kök forma indir)"""
         doc = self.nlp(text)
         return [token.lemma_ for token in doc if not token.is_punct and not token.is_space]
 
-    def extract_sentences(self, text: str) -> List[str]:
+    def extract_sentences(self, text: str) -> list[str]:
         """Cümlelere ayır"""
         doc = self.nlp(text)
         return [sent.text.strip() for sent in doc.sents]
 
-    def get_pos_tags(self, text: str) -> List[tuple]:
+    def get_pos_tags(self, text: str) -> list[tuple]:
         """Part-of-speech tagging"""
         doc = self.nlp(text)
         return [(token.text, token.pos_) for token in doc]
 
-    def extract_entities(self, text: str) -> List[Dict[str, str]]:
+    def extract_entities(self, text: str) -> list[dict[str, str]]:
         """Named Entity Recognition"""
         doc = self.nlp(text)
         return [
@@ -133,7 +180,7 @@ class TurkishPreprocessor:
         clean: bool = True,
         remove_pii: bool = True,
         remove_stop: bool = False,
-    ) -> Dict[str, any]:
+    ) -> dict[str, any]:
         """Tam preprocessing pipeline"""
         result = {"original": text}
 
@@ -159,7 +206,8 @@ class TurkishPreprocessor:
             "char_count": len(text),
             "word_count": len(result["tokens"]),
             "sentence_count": len(result["sentences"]),
-            "avg_word_length": sum(len(t) for t in result["tokens"]) / max(len(result["tokens"]), 1),
+            "avg_word_length": sum(len(t) for t in result["tokens"])
+            / max(len(result["tokens"]), 1),
         }
 
         return result

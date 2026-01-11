@@ -1,7 +1,8 @@
 """Test Updated Metrics"""
 
 import sys
-sys.path.insert(0, '/Users/hakkiyuvanc/GİTHUB/ilişki yapay zeka/ili-kiyapayzekauygulamas-')
+
+sys.path.insert(0, "/Users/hakkiyuvanc/GİTHUB/ilişki yapay zeka/ili-kiyapayzekauygulamas-")
 
 from ml.analyzer import get_analyzer
 
@@ -21,13 +22,23 @@ result1 = analyzer.analyze_text(positive_text, format_type="simple")
 
 print(f"\nGenel Skor: {result1['overall_score']}/10")
 print("\nMetrikler:")
-print(f"  Sentiment: {result1['metrics']['sentiment']['score']:.1f} - {result1['metrics']['sentiment']['label']}")
-print(f"  Empathy: {result1['metrics']['empathy']['score']:.1f} - {result1['metrics']['empathy']['label']}")
+print(
+    f"  Sentiment: {result1['metrics']['sentiment']['score']:.1f} - {result1['metrics']['sentiment']['label']}"
+)
+print(
+    f"  Empathy: {result1['metrics']['empathy']['score']:.1f} - {result1['metrics']['empathy']['label']}"
+)
 print(f"    - Kelimeler: {result1['metrics']['empathy']['count']}")
 print(f"    - Emojiler: {result1['metrics']['empathy']['emoji_count']}")
-print(f"  Conflict: {result1['metrics']['conflict']['score']:.1f} - {result1['metrics']['conflict']['label']}")
-print(f"  We-language: {result1['metrics']['we_language']['score']:.1f} - {result1['metrics']['we_language']['label']}")
-print(f"  Balance: {result1['metrics']['communication_balance']['score']:.1f} - {result1['metrics']['communication_balance']['label']}")
+print(
+    f"  Conflict: {result1['metrics']['conflict']['score']:.1f} - {result1['metrics']['conflict']['label']}"
+)
+print(
+    f"  We-language: {result1['metrics']['we_language']['score']:.1f} - {result1['metrics']['we_language']['label']}"
+)
+print(
+    f"  Balance: {result1['metrics']['communication_balance']['score']:.1f} - {result1['metrics']['communication_balance']['label']}"
+)
 
 # Test 2: Çatışmalı konuşma
 print("\n" + "=" * 60)
@@ -44,14 +55,24 @@ result2 = analyzer.analyze_text(conflict_text, format_type="simple")
 
 print(f"\nGenel Skor: {result2['overall_score']}/10")
 print("\nMetrikler:")
-print(f"  Sentiment: {result2['metrics']['sentiment']['score']:.1f} - {result2['metrics']['sentiment']['label']}")
-print(f"  Empathy: {result2['metrics']['empathy']['score']:.1f} - {result2['metrics']['empathy']['label']}")
-print(f"  Conflict: {result2['metrics']['conflict']['score']:.1f} - {result2['metrics']['conflict']['label']}")
+print(
+    f"  Sentiment: {result2['metrics']['sentiment']['score']:.1f} - {result2['metrics']['sentiment']['label']}"
+)
+print(
+    f"  Empathy: {result2['metrics']['empathy']['score']:.1f} - {result2['metrics']['empathy']['label']}"
+)
+print(
+    f"  Conflict: {result2['metrics']['conflict']['score']:.1f} - {result2['metrics']['conflict']['label']}"
+)
 print(f"    - İndikatörler: {result2['metrics']['conflict']['indicators']}")
 print(f"    - Büyük harf: {result2['metrics']['conflict']['capital_ratio']:.1f}%")
 print(f"    - Ünlemler: {result2['metrics']['conflict']['exclamation_count']}")
-print(f"  We-language: {result2['metrics']['we_language']['score']:.1f} - {result2['metrics']['we_language']['label']}")
-print(f"  Balance: {result2['metrics']['communication_balance']['score']:.1f} - {result2['metrics']['communication_balance']['label']}")
+print(
+    f"  We-language: {result2['metrics']['we_language']['score']:.1f} - {result2['metrics']['we_language']['label']}"
+)
+print(
+    f"  Balance: {result2['metrics']['communication_balance']['score']:.1f} - {result2['metrics']['communication_balance']['label']}"
+)
 
 # Test 3: Dengeli, empatik konuşma
 print("\n" + "=" * 60)
@@ -69,11 +90,21 @@ result3 = analyzer.analyze_text(balanced_text, format_type="simple")
 
 print(f"\nGenel Skor: {result3['overall_score']}/10")
 print("\nMetrikler:")
-print(f"  Sentiment: {result3['metrics']['sentiment']['score']:.1f} - {result3['metrics']['sentiment']['label']}")
-print(f"  Empathy: {result3['metrics']['empathy']['score']:.1f} - {result3['metrics']['empathy']['label']}")
-print(f"  Conflict: {result3['metrics']['conflict']['score']:.1f} - {result3['metrics']['conflict']['label']}")
-print(f"  We-language: {result3['metrics']['we_language']['score']:.1f} - {result3['metrics']['we_language']['label']}")
-print(f"  Balance: {result3['metrics']['communication_balance']['score']:.1f} - {result3['metrics']['communication_balance']['label']}")
+print(
+    f"  Sentiment: {result3['metrics']['sentiment']['score']:.1f} - {result3['metrics']['sentiment']['label']}"
+)
+print(
+    f"  Empathy: {result3['metrics']['empathy']['score']:.1f} - {result3['metrics']['empathy']['label']}"
+)
+print(
+    f"  Conflict: {result3['metrics']['conflict']['score']:.1f} - {result3['metrics']['conflict']['label']}"
+)
+print(
+    f"  We-language: {result3['metrics']['we_language']['score']:.1f} - {result3['metrics']['we_language']['label']}"
+)
+print(
+    f"  Balance: {result3['metrics']['communication_balance']['score']:.1f} - {result3['metrics']['communication_balance']['label']}"
+)
 
 # Karşılaştırma özeti
 print("\n" + "=" * 60)

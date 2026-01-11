@@ -1,16 +1,16 @@
 """Alembic env.py - Database migration configuration"""
 
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+
 from alembic import context
+from sqlalchemy import engine_from_config, pool
+
+# Import models module to ensure all models are registered with Base
+import backend.app.models.database  # noqa: F401 - needed for model registration
+from backend.app.core.config import settings
 
 # Import Base and ensure all models are loaded
 from backend.app.core.database import Base
-# Import models module to ensure all models are registered with Base
-import backend.app.models.database  # noqa: F401 - needed for model registration
-
-from backend.app.core.config import settings
 
 # Alembic Config object
 config = context.config
@@ -49,10 +49,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

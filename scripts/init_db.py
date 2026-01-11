@@ -1,10 +1,10 @@
 """Database initialization script"""
 
 import sys
-sys.path.insert(0, '.')
 
-from backend.app.core.database import engine, Base
-from backend.app.models.database import User, Analysis, AnalysisHistory, Feedback, APIKey
+sys.path.insert(0, ".")
+
+from backend.app.core.database import Base, engine
 
 
 def init_db():

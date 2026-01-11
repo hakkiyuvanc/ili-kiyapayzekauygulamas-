@@ -1,8 +1,8 @@
 """Uygulama Konfigürasyonu"""
 
-from typing import List
-import os
-from pydantic import model_validator
+from typing import Any
+
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,14 +39,15 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-this-secret-key-in-production-min-32-chars"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # Refresh token expiration in days
 
     # CORS
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000", 
-        "http://localhost:8000", 
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
-        "http://127.0.0.1:8000"
+        "http://127.0.0.1:8000",
     ]
 
     # ML Settings
@@ -59,11 +60,12 @@ class Settings(BaseSettings):
 
     # File Upload
     MAX_UPLOAD_SIZE_MB: int = 10
-    ALLOWED_EXTENSIONS: List[str] = [".txt", ".json", ".zip"]
+    ALLOWED_EXTENSIONS: list[str] = [".txt", ".json", ".zip"]
 
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FILE: str = "logs/app.log"
+    LOG_JSON_FORMAT: bool = False  # Enable JSON logging for production
 
     # AI Settings
     AI_PROVIDER: str = "openai"  # openai, anthropic, none
@@ -91,9 +93,14 @@ class Settings(BaseSettings):
     STRIPE_API_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
     FRONTEND_URL: str = "http://localhost:3000"
-    
+
     # Redis Cache (Optional - falls back to in-memory if not configured)
     REDIS_URL: str = ""  # e.g., "redis://localhost:6379/0"
+
+    # Observability
+    SENTRY_DSN: str = ""  # Sentry error tracking DSN
+    SENTRY_ENVIRONMENT: str = "development"
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1  # 10% of transactions
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -101,12 +108,27 @@ class Settings(BaseSettings):
         case_sensitive=True,
     )
 
-    @model_validator(mode='after')
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Any) -> list[str]:
+        """Parse CORS origins from string or list"""
+        if isinstance(v, str):
+            # Handle JSON-like string format
+            import json
+
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # Handle comma-separated format
+                return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
+
+    @model_validator(mode="after")
     def validate_critical_settings(self):
         """Validate critical production settings"""
         # Production'da SECRET_KEY zorunlu ve güvenli olmalı
-        if self.ENVIRONMENT == 'production':
-            if 'change-this' in self.SECRET_KEY.lower():
+        if self.ENVIRONMENT == "production":
+            if "change-this" in self.SECRET_KEY.lower():
                 raise ValueError(
                     "❌ CRITICAL: SECRET_KEY must be changed in production! "
                     "Set a secure SECRET_KEY in your .env file (minimum 32 characters)."
@@ -116,7 +138,13 @@ class Settings(BaseSettings):
                     "❌ CRITICAL: SECRET_KEY must be at least 32 characters long! "
                     f"Current length: {len(self.SECRET_KEY)}"
                 )
-        
+
+            # Production'da Sentry DSN zorunlu
+            if not self.SENTRY_DSN:
+                raise ValueError(
+                    "❌ CRITICAL: SENTRY_DSN must be set in production for error tracking!"
+                )
+
         # Email servisi aktifse SMTP ayarları kontrolü
         if self.EMAIL_ENABLED:
             if not all([self.SMTP_HOST, self.SMTP_USER, self.SMTP_PASSWORD]):
@@ -124,9 +152,41 @@ class Settings(BaseSettings):
                     "❌ Email is enabled but SMTP settings are incomplete! "
                     "Please set SMTP_HOST, SMTP_USER, and SMTP_PASSWORD in your .env file."
                 )
-        
-        return self
 
+        # AI enabled ise provider'a göre API key kontrolü
+        if self.AI_ENABLED and self.AI_PROVIDER != "none":
+            if self.AI_PROVIDER == "openai" and not self.OPENAI_API_KEY:
+                raise ValueError(
+                    "❌ AI_PROVIDER is 'openai' but OPENAI_API_KEY is not set! "
+                    "Please set OPENAI_API_KEY in your .env file or set AI_PROVIDER='none'."
+                )
+            elif self.AI_PROVIDER == "anthropic" and not self.ANTHROPIC_API_KEY:
+                raise ValueError(
+                    "❌ AI_PROVIDER is 'anthropic' but ANTHROPIC_API_KEY is not set! "
+                    "Please set ANTHROPIC_API_KEY in your .env file or set AI_PROVIDER='none'."
+                )
+            elif self.AI_PROVIDER == "gemini" and not self.GEMINI_API_KEY:
+                raise ValueError(
+                    "❌ AI_PROVIDER is 'gemini' but GEMINI_API_KEY is not set! "
+                    "Please set GEMINI_API_KEY in your .env file or set AI_PROVIDER='none'."
+                )
+
+        # CORS origins validation
+        if self.ENVIRONMENT == "production":
+            if any("*" in origin for origin in self.CORS_ORIGINS):
+                raise ValueError(
+                    "❌ CRITICAL: Wildcard (*) in CORS_ORIGINS is not allowed in production! "
+                    "Please specify exact allowed origins."
+                )
+
+        # Database URL validation
+        if self.ENVIRONMENT == "production" and "sqlite" in self.DATABASE_URL.lower():
+            raise ValueError(
+                "⚠️  WARNING: SQLite is not recommended for production! "
+                "Please use PostgreSQL by setting DATABASE_URL to a PostgreSQL connection string."
+            )
+
+        return self
 
 
 settings = Settings()

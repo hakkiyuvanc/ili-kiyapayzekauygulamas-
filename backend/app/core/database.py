@@ -14,15 +14,17 @@ engine_kwargs = {
 
 # PostgreSQL-specific optimizations
 if "postgresql" in settings.DATABASE_URL:
-    engine_kwargs.update({
-        "poolclass": QueuePool,
-        "pool_size": 20,              # Number of persistent connections
-        "max_overflow": 40,            # Additional connections when needed
-        "pool_pre_ping": True,         # Verify connection health before use
-        "pool_recycle": 3600,          # Recycle connections after 1 hour
-        "pool_timeout": 30,            # Wait max 30s for connection
-        "echo": False,                 # Disable SQL logging in production
-    })
+    engine_kwargs.update(
+        {
+            "poolclass": QueuePool,
+            "pool_size": 20,  # Number of persistent connections
+            "max_overflow": 40,  # Additional connections when needed
+            "pool_pre_ping": True,  # Verify connection health before use
+            "pool_recycle": 3600,  # Recycle connections after 1 hour
+            "pool_timeout": 30,  # Wait max 30s for connection
+            "echo": False,  # Disable SQL logging in production
+        }
+    )
 
 engine = create_engine(settings.DATABASE_URL, **engine_kwargs)
 
