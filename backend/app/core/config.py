@@ -139,10 +139,10 @@ class Settings(BaseSettings):
                     f"Current length: {len(self.SECRET_KEY)}"
                 )
 
-            # Production'da Sentry DSN zorunlu
+            # Production'da Sentry önerilir ama zorunlu değil
             if not self.SENTRY_DSN:
-                raise ValueError(
-                    "❌ CRITICAL: SENTRY_DSN must be set in production for error tracking!"
+                print(
+                    "⚠️ WARNING: SENTRY_DSN not set in production. Error tracking disabled."
                 )
 
         # Email servisi aktifse SMTP ayarları kontrolü
