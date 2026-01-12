@@ -7,8 +7,8 @@ import os
 import time
 from typing import Any, Optional
 
-import google.generativeai as genai
 from anthropic import Anthropic
+from google import genai
 from openai import OpenAI
 
 from app.core.config import settings
@@ -41,8 +41,7 @@ class AIService:
         elif self.provider == "gemini":
             api_key = settings.GEMINI_API_KEY
             if api_key:
-                genai.configure(api_key=api_key)
-                self.gemini_client = genai.GenerativeModel(settings.GEMINI_MODEL)
+                self.gemini_client = genai.Client(api_key=api_key)
 
         # Structured logging
         if self._is_available():
@@ -206,7 +205,7 @@ class AIService:
             return fallback
 
     def chat_with_coach(
-        self, message: str, history: list[dict[str, str]], context: Optional[dict[str, Any]] = None
+        self, message: str, history: list[dict[str, str]], context: dict[str, Any] | None = None
     ) -> str:
         """
         AI İlişki Koçu ile sohbet et
@@ -247,21 +246,35 @@ class AIService:
 
             elif self.provider == "gemini" and self.gemini_client:
                 # Convert history to Gemini format
-                gemini_history = []
+                gemini_contents = []
+
+                # Add system prompt as the first user message
+                gemini_contents.append(
+                    genai.types.Content(role="user", parts=[genai.types.Part(text=system_prompt)])
+                )
+
+                # Add history
                 for msg in history[-10:]:
                     role = "user" if msg["role"] == "user" else "model"
-                    gemini_history.append({"role": role, "parts": [msg["content"]]})
+                    gemini_contents.append(
+                        genai.types.Content(
+                            role=role, parts=[genai.types.Part(text=msg["content"])]
+                        )
+                    )
 
-                # Add system prompt as the first message or configure it in model?
-                # Gemini doesn't strictly have system message in chat history the same way.
-                # We can prepend it to the first user message or use system_instruction if available in newer lib.
-                # For compatibility, let's prepend system prompt context to the current message or start of history.
+                # Add current message
+                gemini_contents.append(
+                    genai.types.Content(role="user", parts=[genai.types.Part(text=message)])
+                )
 
-                # Simple approach: Prepend system prompt to the last message call for this turn
-                full_message = f"{system_prompt}\n\nUSER MESSAGE: {message}"
-
-                chat = self.gemini_client.start_chat(history=gemini_history)
-                response = chat.send_message(full_message)
+                response = self.gemini_client.models.generate_content(
+                    model=settings.GEMINI_MODEL,
+                    contents=gemini_contents,
+                    config=genai.types.GenerateContentConfig(
+                        max_output_tokens=500,
+                        temperature=0.7,
+                    ),
+                )
                 return response.text
 
             # Default fallback
@@ -463,9 +476,10 @@ Metrikler:
             return response.content[0].text.strip()
 
         elif self.provider == "gemini" and self.gemini_client:
-            response = self.gemini_client.generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.gemini_client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=prompt,
+                config=genai.types.GenerateContentConfig(
                     max_output_tokens=max_tokens,
                     temperature=0.7,
                 ),
