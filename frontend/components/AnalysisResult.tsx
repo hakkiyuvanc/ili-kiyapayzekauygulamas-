@@ -68,6 +68,8 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
     },
   ];
 
+  const chartFillColor = chartData[0]?.fill ?? '#B76E79';
+
   return (
     <div className="space-y-6 safe-bottom px-4 bg-romantic-gradient-soft min-h-screen py-8">
       {/* AMOR AI Header */}
@@ -104,7 +106,7 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
                 <RadialBar
                   dataKey="score"
                   cornerRadius={10}
-                  fill={chartData[0]?.fill || '#B76E79'}
+                  fill={chartFillColor}
                 />
               </RadialBarChart>
             </ResponsiveContainer>
