@@ -104,7 +104,7 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
                 <RadialBar
                   dataKey="score"
                   cornerRadius={10}
-                  fill={chartData[0].fill}
+                  fill={chartData[0]?.fill || '#B76E79'}
                 />
               </RadialBarChart>
             </ResponsiveContainer>
@@ -149,10 +149,10 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
             <div className="w-full bg-[#FFF0F5] rounded-full h-2.5 mb-2">
               <div
                 className={`h-2.5 rounded-full transition-all duration-500 ${metric.score >= 70
-                    ? 'bg-gradient-to-r from-[#22C55E] to-[#10B981]'
-                    : metric.score >= 40
-                      ? 'bg-gradient-to-r from-[#FF7F7F] to-[#FFB6C1]'
-                      : 'bg-gradient-to-r from-[#B76E79] to-[#FFB6C1]'
+                  ? 'bg-gradient-to-r from-[#22C55E] to-[#10B981]'
+                  : metric.score >= 40
+                    ? 'bg-gradient-to-r from-[#FF7F7F] to-[#FFB6C1]'
+                    : 'bg-gradient-to-r from-[#B76E79] to-[#FFB6C1]'
                   }`}
                 style={{ width: `${metric.score}%` }}
               />
@@ -202,10 +202,10 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
                   <h4 className="font-semibold text-[#331A1A]">{rec.title}</h4>
                   <span
                     className={`text-xs px-2 py-1 rounded-lg ${rec.priority === 'high'
-                        ? 'bg-[#FFB6C1] text-white'
-                        : rec.priority === 'medium'
-                          ? 'bg-[#FFF0F5] text-[#B76E79]'
-                          : 'bg-white text-[#6B3F3F] border border-[#FFB6C1]/30'
+                      ? 'bg-[#FFB6C1] text-white'
+                      : rec.priority === 'medium'
+                        ? 'bg-[#FFF0F5] text-[#B76E79]'
+                        : 'bg-white text-[#6B3F3F] border border-[#FFB6C1]/30'
                       }`}
                   >
                     {rec.priority === 'high'
