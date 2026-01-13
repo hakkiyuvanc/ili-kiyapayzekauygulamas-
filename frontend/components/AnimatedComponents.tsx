@@ -8,12 +8,12 @@ interface AnimatedContainerProps {
   className?: string;
 }
 
-export function AnimatedContainer({ 
-  children, 
-  animation = 'fadeIn', 
-  delay = 0, 
+export function AnimatedContainer({
+  children,
+  animation = 'fadeIn',
+  delay = 0,
   duration = 500,
-  className = '' 
+  className = ''
 }: AnimatedContainerProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -31,7 +31,7 @@ export function AnimatedContainer({
   };
 
   return (
-    <div 
+    <div
       className={`
         transition-opacity
         ${isVisible ? 'opacity-100' : 'opacity-0'}
@@ -53,11 +53,11 @@ interface StaggeredListProps {
   className?: string;
 }
 
-export function StaggeredList({ 
-  children, 
-  staggerDelay = 100, 
+export function StaggeredList({
+  children,
+  staggerDelay = 100,
   animation = 'slideUp',
-  className = '' 
+  className = ''
 }: StaggeredListProps) {
   return (
     <div className={className}>
@@ -83,7 +83,7 @@ interface HoverScaleProps {
 
 export function HoverScale({ children, scale = 1.05, className = '' }: HoverScaleProps) {
   return (
-    <div 
+    <div
       className={`transition-transform duration-300 hover:scale-[var(--scale)] ${className}`}
       style={{ '--scale': scale } as React.CSSProperties}
     >
@@ -121,10 +121,11 @@ export function Shake({ children, trigger, className = '' }: ShakeProps) {
       const timer = setTimeout(() => setIsShaking(false), 500);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [trigger]);
 
   return (
-    <div 
+    <div
       className={`
         ${isShaking ? 'animate-shake' : ''}
         ${className}
@@ -138,7 +139,7 @@ export function Shake({ children, trigger, className = '' }: ShakeProps) {
 // Gradient text animation
 export function GradientText({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <span 
+    <span
       className={`
         bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
         bg-clip-text text-transparent 
