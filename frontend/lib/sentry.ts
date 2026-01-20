@@ -29,11 +29,7 @@ export function initSentry(): void {
       release: env.NEXT_PUBLIC_APP_VERSION,
 
       // Trace propagation targets for performance monitoring
-      tracePropagationTargets: [
-        "localhost",
-        env.NEXT_PUBLIC_API_URL,
-        /^\//,
-      ],
+      tracePropagationTargets: ["localhost", env.NEXT_PUBLIC_API_URL, /^\//],
 
       // Error filtering
       beforeSend(event, hint) {

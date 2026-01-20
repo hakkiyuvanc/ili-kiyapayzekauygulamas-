@@ -3,8 +3,8 @@ set -e
 
 echo "🚀 Starting İlişki Analiz AI Backend..."
 
-# Set Python path to project root
-export PYTHONPATH=$(pwd)
+# Set Python path to project root and backend directory
+export PYTHONPATH=$PYTHONPATH:$(pwd):$(pwd)/backend
 
 # Print debug info
 echo "📁 Working directory: $(pwd)"

@@ -7,8 +7,8 @@ import os
 import time
 from typing import Any, Optional
 
-from anthropic import Anthropic
 import google.generativeai as genai
+from anthropic import Anthropic
 from openai import OpenAI
 
 from app.core.config import settings
@@ -248,29 +248,25 @@ class AIService:
             elif self.provider == "gemini" and self.gemini_client:
                 # Build chat history for Gemini
                 chat_history = []
-                
+
                 # Add history (excluding system prompt)
                 for msg in history[-10:]:
                     role = "user" if msg["role"] == "user" else "model"
-                    chat_history.append({
-                        "role": role,
-                        "parts": [msg["content"]]
-                    })
+                    chat_history.append({"role": role, "parts": [msg["content"]]})
 
                 # Create chat session
                 model = genai.GenerativeModel(
-                    model_name=settings.GEMINI_MODEL,
-                    system_instruction=system_prompt
+                    model_name=settings.GEMINI_MODEL, system_instruction=system_prompt
                 )
                 chat = model.start_chat(history=chat_history)
-                
+
                 # Send message
                 response = chat.send_message(
                     message,
                     generation_config=genai.GenerationConfig(
                         max_output_tokens=500,
                         temperature=0.7,
-                    )
+                    ),
                 )
                 return response.text
 
