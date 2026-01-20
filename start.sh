@@ -23,6 +23,7 @@ else
     echo "ℹ️  Alembic directory not found, skipping migrations (this is normal for fresh deployments)"
 fi
 
-# Start uvicorn from project root
+# Start uvicorn from backend directory
 echo "✨ Starting uvicorn server..."
-exec python -m uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+cd backend
+exec python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
