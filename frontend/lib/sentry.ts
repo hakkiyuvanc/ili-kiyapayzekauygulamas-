@@ -28,6 +28,13 @@ export function initSentry(): void {
       // Release tracking
       release: env.NEXT_PUBLIC_APP_VERSION,
 
+      // Trace propagation targets for performance monitoring
+      tracePropagationTargets: [
+        "localhost",
+        env.NEXT_PUBLIC_API_URL,
+        /^\//,
+      ],
+
       // Error filtering
       beforeSend(event, hint) {
         // Don't send errors in development
@@ -60,22 +67,6 @@ export function initSentry(): void {
 
         return event;
       },
-
-      // Integrations
-      integrations: [
-        new Sentry.BrowserTracing({
-          // Set sampling rate for performance monitoring
-          tracePropagationTargets: [
-            "localhost",
-            env.NEXT_PUBLIC_API_URL,
-            /^\//,
-          ],
-        }),
-        new Sentry.Replay({
-          maskAllText: true,
-          blockAllMedia: true,
-        }),
-      ],
     });
 
     console.log(

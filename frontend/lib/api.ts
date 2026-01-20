@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { env } from './env';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const API_BASE_URL = env.NEXT_PUBLIC_API_URL;
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -23,7 +24,22 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error(`[API Error] Status: ${error.response?.status} URL: ${error.config?.url}`, error.response?.data);
+    // Log detailed error information
+    if (error.response) {
+      // Server responded with error status
+      console.error(`[API Error] Status: ${error.response.status} URL: ${error.config?.url}`, error.response.data);
+    } else if (error.request) {
+      // Request was made but no response received (network error)
+      console.error(`[API Network Error] URL: ${error.config?.url}`, {
+        baseURL: error.config?.baseURL,
+        url: error.config?.url,
+        method: error.config?.method,
+        message: error.message,
+      });
+    } else {
+      // Something else happened
+      console.error('[API Error]', error.message);
+    }
 
     // Don't redirect if it's a login attempt that failed (401 is expected for wrong password)
     const isLoginRequest = error.config?.url?.includes('/auth/login');

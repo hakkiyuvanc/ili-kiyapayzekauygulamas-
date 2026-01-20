@@ -8,7 +8,7 @@ import time
 from typing import Any, Optional
 
 from anthropic import Anthropic
-from google import genai
+import google.generativeai as genai
 from openai import OpenAI
 
 from app.core.config import settings
@@ -41,7 +41,8 @@ class AIService:
         elif self.provider == "gemini":
             api_key = settings.GEMINI_API_KEY
             if api_key:
-                self.gemini_client = genai.Client(api_key=api_key)
+                genai.configure(api_key=api_key)
+                self.gemini_client = genai
 
         # Structured logging
         if self._is_available():
@@ -205,7 +206,7 @@ class AIService:
             return fallback
 
     def chat_with_coach(
-        self, message: str, history: list[dict[str, str]], context: dict[str, Any] | None = None
+        self, message: str, history: list[dict[str, str]], context: Optional[dict[str, Any]] = None
     ) -> str:
         """
         AI İlişki Koçu ile sohbet et
@@ -245,35 +246,31 @@ class AIService:
                 return response.choices[0].message.content
 
             elif self.provider == "gemini" and self.gemini_client:
-                # Convert history to Gemini format
-                gemini_contents = []
-
-                # Add system prompt as the first user message
-                gemini_contents.append(
-                    genai.types.Content(role="user", parts=[genai.types.Part(text=system_prompt)])
-                )
-
-                # Add history
+                # Build chat history for Gemini
+                chat_history = []
+                
+                # Add history (excluding system prompt)
                 for msg in history[-10:]:
                     role = "user" if msg["role"] == "user" else "model"
-                    gemini_contents.append(
-                        genai.types.Content(
-                            role=role, parts=[genai.types.Part(text=msg["content"])]
-                        )
-                    )
+                    chat_history.append({
+                        "role": role,
+                        "parts": [msg["content"]]
+                    })
 
-                # Add current message
-                gemini_contents.append(
-                    genai.types.Content(role="user", parts=[genai.types.Part(text=message)])
+                # Create chat session
+                model = genai.GenerativeModel(
+                    model_name=settings.GEMINI_MODEL,
+                    system_instruction=system_prompt
                 )
-
-                response = self.gemini_client.models.generate_content(
-                    model=settings.GEMINI_MODEL,
-                    contents=gemini_contents,
-                    config=genai.types.GenerateContentConfig(
+                chat = model.start_chat(history=chat_history)
+                
+                # Send message
+                response = chat.send_message(
+                    message,
+                    generation_config=genai.GenerationConfig(
                         max_output_tokens=500,
                         temperature=0.7,
-                    ),
+                    )
                 )
                 return response.text
 
@@ -476,10 +473,10 @@ Metrikler:
             return response.content[0].text.strip()
 
         elif self.provider == "gemini" and self.gemini_client:
-            response = self.gemini_client.models.generate_content(
-                model=settings.GEMINI_MODEL,
-                contents=prompt,
-                config=genai.types.GenerateContentConfig(
+            model = genai.GenerativeModel(model_name=settings.GEMINI_MODEL)
+            response = model.generate_content(
+                prompt,
+                generation_config=genai.GenerationConfig(
                     max_output_tokens=max_tokens,
                     temperature=0.7,
                 ),

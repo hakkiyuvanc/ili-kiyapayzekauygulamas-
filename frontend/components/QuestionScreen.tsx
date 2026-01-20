@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { ChevronLeft, Heart } from 'lucide-react';
-import { ProgressTracker } from '@/components/ProgressTracker';
-import { Answer } from '@/types';
+import { useState } from "react";
+import { ChevronLeft, Heart } from "lucide-react";
+import { ProgressTracker } from "@/components/ProgressTracker";
+import { Answer } from "@/types";
 
 interface QuestionScreenProps {
   onComplete: (answers: Answer[]) => void;
@@ -10,84 +10,79 @@ interface QuestionScreenProps {
 const questions = [
   {
     id: 1,
-    question: 'Partnerinizle iletişiminizi nasıl değerlendirirsiniz?',
+    question: "Partnerinizle iletişiminizi nasıl değerlendirirsiniz?",
     options: [
-      'Çok açık ve samimi',
-      'Genelde iyi',
-      'Bazen zorluk yaşıyoruz',
-      'Çok az iletişim kuruyoruz'
-    ]
+      "Çok açık ve samimi",
+      "Genelde iyi",
+      "Bazen zorluk yaşıyoruz",
+      "Çok az iletişim kuruyoruz",
+    ],
   },
   {
     id: 2,
-    question: 'Partnerinizle ne sıklıkla kaliteli zaman geçiriyorsunuz?',
+    question: "Partnerinizle ne sıklıkla kaliteli zaman geçiriyorsunuz?",
     options: [
-      'Her gün',
-      'Haftada birkaç kez',
-      'Haftada bir',
-      'Ayda birkaç kez'
-    ]
+      "Her gün",
+      "Haftada birkaç kez",
+      "Haftada bir",
+      "Ayda birkaç kez",
+    ],
   },
   {
     id: 3,
-    question: 'İlişkinizde güven düzeyiniz nedir?',
+    question: "İlişkinizde güven düzeyiniz nedir?",
     options: [
-      'Tamamen güveniyorum',
-      'Genelde güveniyorum',
-      'Bazen şüphelerim oluyor',
-      'Güven sorunu yaşıyoruz'
-    ]
+      "Tamamen güveniyorum",
+      "Genelde güveniyorum",
+      "Bazen şüphelerim oluyor",
+      "Güven sorunu yaşıyoruz",
+    ],
   },
   {
     id: 4,
-    question: 'Anlaşmazlıkları nasıl çözüyorsunuz?',
+    question: "Anlaşmazlıkları nasıl çözüyorsunuz?",
     options: [
-      'Sakinçe konuşarak',
-      'Genelde uzlaşıya varıyoruz',
-      'Bazen tartışmalar büyüyor',
-      'Çözüm bulmakta zorlanıyoruz'
-    ]
+      "Sakinçe konuşarak",
+      "Genelde uzlaşıya varıyoruz",
+      "Bazen tartışmalar büyüyor",
+      "Çözüm bulmakta zorlanıyoruz",
+    ],
   },
   {
     id: 5,
-    question: 'Gelecek planlarınız ne kadar uyumlu?',
+    question: "Gelecek planlarınız ne kadar uyumlu?",
     options: [
-      'Tamamen aynı yöndeyiz',
-      'Çoğu konuda hemfikiriz',
-      'Bazı farklılıklar var',
-      'Çok farklı düşünüyoruz'
-    ]
+      "Tamamen aynı yöndeyiz",
+      "Çoğu konuda hemfikiriz",
+      "Bazı farklılıklar var",
+      "Çok farklı düşünüyoruz",
+    ],
   },
   {
     id: 6,
-    question: 'Partneriniz duygusal ihtiyaçlarınızı karşılıyor mu?',
+    question: "Partneriniz duygusal ihtiyaçlarınızı karşılıyor mu?",
     options: [
-      'Tamamen karşılıyor',
-      'Çoğunlukla karşılıyor',
-      'Kısmen karşılıyor',
-      'Karşılamıyor'
-    ]
+      "Tamamen karşılıyor",
+      "Çoğunlukla karşılıyor",
+      "Kısmen karşılıyor",
+      "Karşılamıyor",
+    ],
   },
   {
     id: 7,
-    question: 'İlişkinizde ne kadar mutlusunuz?',
-    options: [
-      'Çok mutluyum',
-      'Mutluyum',
-      'Orta düzeyde',
-      'Mutsuzum'
-    ]
+    question: "İlişkinizde ne kadar mutlusunuz?",
+    options: ["Çok mutluyum", "Mutluyum", "Orta düzeyde", "Mutsuzum"],
   },
   {
     id: 8,
-    question: 'Partnerinizi ne kadar desteklediğinizi düşünüyorsunuz?',
+    question: "Partnerinizi ne kadar desteklediğinizi düşünüyorsunuz?",
     options: [
-      'Her zaman destekliyorum',
-      'Genelde destekliyorum',
-      'Bazen destekliyorum',
-      'Yeterince destekleyemiyorum'
-    ]
-  }
+      "Her zaman destekliyorum",
+      "Genelde destekliyorum",
+      "Bazen destekliyorum",
+      "Yeterince destekleyemiyorum",
+    ],
+  },
 ];
 
 export function QuestionScreen({ onComplete }: QuestionScreenProps) {
@@ -95,9 +90,12 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
   const [answers, setAnswers] = useState<Answer[]>([]);
 
   const handleAnswer = (answer: string) => {
+    const currentQ = questions[currentQuestion];
+    if (!currentQ) return;
+
     const newAnswers = [
-      ...answers.filter(a => a.questionId !== questions[currentQuestion].id),
-      { questionId: questions[currentQuestion].id, answer }
+      ...answers.filter((a) => a.questionId !== currentQ.id),
+      { questionId: currentQ.id, answer },
     ];
     setAnswers(newAnswers);
 
@@ -119,7 +117,10 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
   };
 
   const progress = ((currentQuestion + 1) / questions.length) * 100;
-  const currentAnswer = answers.find(a => a.questionId === questions[currentQuestion].id)?.answer;
+  const currentAnswer = answers.find(
+    (a) => a.questionId === questions[currentQuestion]?.id,
+  )?.answer;
+  const currentQ = questions[currentQuestion];
 
   return (
     <div className="min-h-screen bg-romantic-gradient-soft flex flex-col safe-top safe-bottom px-4 py-6">
@@ -141,18 +142,19 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
         {/* Question */}
         <div className="flex-1 flex flex-col justify-center my-8">
           <h2 className="mb-8 text-[#331A1A] text-xl font-semibold leading-relaxed animate-fadeIn">
-            {questions[currentQuestion].question}
+            {currentQ?.question}
           </h2>
 
           <div className="space-y-3">
-            {questions[currentQuestion].options.map((option, index) => (
+            {currentQ?.options.map((option, index) => (
               <button
                 key={index}
                 onClick={() => handleAnswer(option)}
-                className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 active:scale-98 animate-slideInRight ${currentAnswer === option
-                    ? 'border-[#B76E79] bg-[#FFF0F5]'
-                    : 'border-[#FFB6C1]/30 hover:border-[#FFB6C1] hover:bg-[#FFF0F5]'
-                  }`}
+                className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 active:scale-98 animate-slideInRight ${
+                  currentAnswer === option
+                    ? "border-[#B76E79] bg-[#FFF0F5]"
+                    : "border-[#FFB6C1]/30 hover:border-[#FFB6C1] hover:bg-[#FFF0F5]"
+                }`}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <span className="text-[#331A1A] font-medium">{option}</span>
@@ -166,10 +168,11 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
           <button
             onClick={handleBack}
             disabled={currentQuestion === 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${currentQuestion === 0
-                ? 'text-[#6B3F3F]/30 cursor-not-allowed'
-                : 'text-[#B76E79] hover:bg-[#FFF0F5] active:scale-95'
-              }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+              currentQuestion === 0
+                ? "text-[#6B3F3F]/30 cursor-not-allowed"
+                : "text-[#B76E79] hover:bg-[#FFF0F5] active:scale-95"
+            }`}
           >
             <ChevronLeft className="w-5 h-5" />
             Geri
@@ -179,10 +182,11 @@ export function QuestionScreen({ onComplete }: QuestionScreenProps) {
             {questions.map((_, index) => (
               <div
                 key={index}
-                className={`transition-all duration-300 rounded-full ${index <= currentQuestion
-                    ? 'w-3 h-3 bg-gradient-to-r from-[#B76E79] to-[#FFB6C1]'
-                    : 'w-2 h-2 bg-[#FFB6C1]/30'
-                  }`}
+                className={`transition-all duration-300 rounded-full ${
+                  index <= currentQuestion
+                    ? "w-3 h-3 bg-gradient-to-r from-[#B76E79] to-[#FFB6C1]"
+                    : "w-2 h-2 bg-[#FFB6C1]/30"
+                }`}
               />
             ))}
           </div>
