@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     LOG_JSON_FORMAT: bool = False  # Enable JSON logging for production
 
     # AI Settings
-    AI_PROVIDER: str = "openai"  # openai, anthropic, none
+    AI_PROVIDER: str = "gemini"  # openai, anthropic, gemini, none
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
     ANTHROPIC_API_KEY: str = ""
