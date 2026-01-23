@@ -5,38 +5,32 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
-from app.api import feedback  # NEW
-from app.api import (
-    analysis,
-    auth,
-    chat,
-    coaching,
-    daily,
-    stats,
-    subscription,
-    system,
-    upload,
-    users,
-)
-from app.core.config import settings
-from app.core.database import Base, engine
+from .api import feedback  # NEW
+from .api import analysis, auth, chat, coaching, daily, stats, subscription, system, upload, users
+from .core.config import settings
+from .core.database import Base, engine
+from .core.limiter import limiter
+from .middleware.request_id import RequestIDMiddleware
 
 # Modelleri import et ki Base.metadata dolusun
-from app.services.ai_service import get_ai_service
+from .services.ai_service import get_ai_service
 
 
 # Lifespan manager for startup events
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # noqa: ARG001
     # Startup: Initialize logging
-    from app.core.logging import setup_logging
+    from .core.logging import setup_logging
 
     setup_logging()
 
     # Startup: Initialize Sentry
     try:
-        from app.core.sentry import init_sentry
+        from .core.sentry import init_sentry
 
         init_sentry()
     except ImportError:
@@ -58,19 +52,11 @@ app = FastAPI(
 )
 
 # Rate Limiter
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
-
-from app.core.limiter import limiter
-
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 # Request ID Middleware
-from app.middleware.request_id import RequestIDMiddleware
-
 app.add_middleware(RequestIDMiddleware)
 
 # CORS middleware
