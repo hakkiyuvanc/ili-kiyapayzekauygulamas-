@@ -26,6 +26,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+# OPTIONS handler for CORS preflight
+@router.options("/analyze")
+async def analyze_options():
+    """Handle CORS preflight for /analyze endpoint"""
+    return {}
+
+
 @router.post(
     "/analyze",
     response_model=AnalysisResponse,
