@@ -6,10 +6,10 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.api.auth import get_current_user
-from app.core.dependencies import get_feedback_repository
-from app.models.database import Feedback, User
-from app.repositories import FeedbackRepository
+from .auth import get_current_user
+from ..core.dependencies import get_feedback_repository
+from ..models.database import Feedback, User
+from ..repositories import FeedbackRepository
 
 router = APIRouter()
 

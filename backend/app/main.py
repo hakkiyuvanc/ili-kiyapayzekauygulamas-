@@ -1,5 +1,15 @@
 """FastAPI Ana Uygulama"""
 
+import sys
+from pathlib import Path
+
+# Fix: Add backend directory to sys.path to ensure 'app' package is resolvable
+# This addresses "ModuleNotFoundError: No module named 'app'" on Render environment
+backend_dir = Path(__file__).resolve().parent.parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
