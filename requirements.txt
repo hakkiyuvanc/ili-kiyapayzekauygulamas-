@@ -21,7 +21,7 @@ python-jose[cryptography]>=3.3.0
 passlib[argon2]>=1.7.4
 
 # AI Providers
-google-genai>=0.2.0
+google-generativeai>=0.8.0
 openai>=1.0.0
 anthropic>=0.7.0
 
