@@ -61,15 +61,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Rate Limiter
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIMiddleware)
-
-# Request ID Middleware
-app.add_middleware(RequestIDMiddleware)
-
-# CORS middleware
+# CORS middleware - MUST BE ADDED FIRST (so it executes before other middlewares)
+# In FastAPI, middlewares are executed in reverse order of addition
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -77,6 +70,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request ID Middleware
+app.add_middleware(RequestIDMiddleware)
+
+# Rate Limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 
 
 # Security Headers Middleware
