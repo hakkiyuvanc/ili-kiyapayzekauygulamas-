@@ -30,7 +30,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false  # Set manually
       - key: CORS_ORIGINS
-        value: '["http://localhost:3000","capacitor://localhost","http://localhost"]'
+        value: '["http://localhost:3000","capacitor://localhost","http://localhost","https://amorai-snowy.vercel.app"]'
     autoDeploy: true  # Auto-deploy on git push
 
 # Optional: PostgreSQL Database (Paid - $7/month)
