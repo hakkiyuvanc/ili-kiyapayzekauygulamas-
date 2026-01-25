@@ -10,7 +10,7 @@ from app.api.auth import get_optional_current_user
 from app.core.database import get_db
 from app.core.features import FREE_TIER_DAILY_ANALYSIS_LIMIT, PRO_ONLY_FEATURES
 from app.core.limiter import limiter
-from app.models.database import User
+from app.models.database import Analysis, User
 from app.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
@@ -63,7 +63,6 @@ async def analyze_text(
 
     from sqlalchemy import func
 
-    from app.models.database import Analysis
     from app.services.cache_service import cache_service
 
     if current_user and not current_user.is_pro:
