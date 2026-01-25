@@ -44,7 +44,7 @@ export const DailyPulse = () => {
         }
     };
 
-    if (!status) return <div className="animate-pulse h-40 bg-gray-100 dark:bg-slate-700 rounded-2xl"></div>;
+    if (!status) return <div className="animate-pulse h-40 ios-card"></div>;
 
     if (status.completed) {
         return (
@@ -67,7 +67,7 @@ export const DailyPulse = () => {
     const emojis = ['😭', '😕', '😐', '🙂', '😍'];
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+        <div className="ios-card p-6">
             <div className="flex items-center gap-2 mb-4">
                 <Calendar className="w-5 h-5 text-indigo-500" />
                 <h3 className="font-bold text-gray-900 dark:text-white">Günlük İlişki Nabzı</h3>
