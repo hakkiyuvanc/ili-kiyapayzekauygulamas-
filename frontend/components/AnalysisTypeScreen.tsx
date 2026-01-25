@@ -9,14 +9,14 @@ interface AnalysisTypeScreenProps {
 
 export function AnalysisTypeScreen({ onSelectType, onBack, isPro }: AnalysisTypeScreenProps) {
   return (
-    <div className="min-h-screen bg-romantic-gradient-soft flex flex-col safe-top safe-bottom px-4 py-6">
+    <div className="flex flex-col safe-top safe-bottom">
       {/* AMOR AI Header */}
       <div className="text-center mb-4 animate-fadeIn">
         <h1 className="amor-logo text-2xl mb-1">AMOR AI</h1>
         <p className="text-[#6B3F3F] text-sm">Analiz tipi seçimi 💕</p>
       </div>
 
-      <div className="ios-card-elevated p-6 flex-1 flex flex-col max-w-2xl w-full mx-auto">
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/20 dark:border-slate-700/50 flex-1 flex flex-col max-w-2xl w-full mx-auto">
         {/* Header with Back */}
         <div className="flex items-center mb-6">
           <button

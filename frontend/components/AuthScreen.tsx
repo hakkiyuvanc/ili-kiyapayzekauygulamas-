@@ -57,7 +57,7 @@ export function AuthScreen({ onLogin, onRegister, onContinueAsGuest, isLoading, 
   const displayError = error || localError;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center safe-top safe-bottom px-6 bg-romantic-gradient-soft">
+    <div className="flex flex-col items-center justify-center safe-top safe-bottom px-6 min-h-screen">
       {/* AMOR AI Logo */}
       <div className="mb-8 text-center animate-fadeIn">
         <div className="relative mb-4 inline-block">
@@ -73,7 +73,7 @@ export function AuthScreen({ onLogin, onRegister, onContinueAsGuest, isLoading, 
       </div>
 
       {/* Main Auth Card */}
-      <div className="ios-card-elevated max-w-md w-full p-8 animate-slideUp">
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl max-w-md w-full p-8 shadow-lg border border-white/20 dark:border-slate-700/50 animate-slideUp">
         {/* Mode Tabs */}
         <div className="flex gap-2 mb-6 p-1 bg-[#FFF0F5] rounded-xl">
           <button

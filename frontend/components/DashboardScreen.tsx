@@ -62,12 +62,12 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
     : 0;
 
   return (
-    <div className="space-y-6 safe-bottom bg-romantic-gradient-soft min-h-screen px-4 py-6">
+    <div className="space-y-6 safe-bottom">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="ios-card-elevated p-6 max-h-[90vh] overflow-y-auto ios-scroll"
+        className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/20 dark:border-slate-700/50"
       >
 
         {user && user.onboarding_completed === false && (
@@ -235,7 +235,7 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
         {analysisHistory.length > 0 && (
           <div className="grid md:grid-cols-2 gap-4 mb-6">
             {/* Trend Grafiği (Line) */}
-            <div className="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-gray-100 dark:border-slate-700">
+            <div className="ios-card p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Zamanla Değişim</h3>
               </div>
@@ -243,7 +243,7 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
             </div>
 
             {/* Son Analiz Detayı (Radar) */}
-            <div className="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-gray-100 dark:border-slate-700">
+            <div className="ios-card p-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Son Analiz Profili</h3>
               </div>
@@ -262,7 +262,7 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
         </h3>
 
         {analysisHistory.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 dark:bg-slate-700 rounded-xl">
+          <div className="text-center py-8 ios-card">
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-500 dark:text-gray-400">İlk analizinizi başlatın</p>
           </div>
@@ -272,7 +272,7 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
               <button
                 key={index}
                 onClick={() => onViewInsight(analysis)}
-                className="w-full bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-xl p-4 flex items-center gap-4 transition-colors text-left"
+                className="w-full ios-card hover:shadow-md p-4 flex items-center gap-4 transition-all text-left"
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${analysis.score >= 75 ? 'bg-green-100 dark:bg-green-900' :
                   analysis.score >= 50 ? 'bg-yellow-100 dark:bg-yellow-900' : 'bg-red-100 dark:bg-red-900'
@@ -309,7 +309,7 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
         !user && (
           <button
             onClick={onUpgrade}
-            className="w-full mt-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 border border-purple-200 dark:border-purple-700 rounded-2xl p-4 flex items-center gap-3"
+            className="w-full bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 border border-purple-200 dark:border-purple-700 rounded-2xl p-4 flex items-center gap-3"
           >
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
               <UserIcon className="w-5 h-5 text-white" />
@@ -329,7 +329,7 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
         user && !isPro && (
           <button
             onClick={onUpgrade}
-            className="w-full mt-6 ios-card-elevated p-4 flex items-center gap-3 border-2 border-[#FFB6C1]/30 active:scale-98 transition-transform"
+            className="w-full ios-card p-4 flex items-center gap-3 border-2 border-[#FFB6C1]/30 active:scale-98 transition-transform shadow-md"
           >
             <div className="w-10 h-10 bg-gradient-to-br from-[#FFB6C1] to-[#FF7F7F] rounded-xl flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white fill-white" />
