@@ -8,7 +8,6 @@ import { DashboardSkeleton } from '@/components/SkeletonLoader';
 import { DarkModeToggle } from '@/components/DarkModeToggle';
 import { TrendChart } from './charts/TrendChart';
 import { MetricRadarChart } from './charts/MetricRadarChart';
-import { DailyPulse } from '@/components/DailyPulse';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { ToneEditor } from '@/components/ToneEditor';
 import { WeeklyScoreCard } from './WeeklyScoreCard';
@@ -146,90 +145,94 @@ export function DashboardScreen({ isPro, user, aiAvailable = true, onStartAnalys
           </div>
         </div>
 
-        {/* Daily Pulse & Main Action */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="md:col-span-1">
-            <DailyPulse />
-          </div>
-          <div className="md:col-span-2 space-y-4">
-            {/* Start Analysis Button */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onStartAnalysis}
-              className="w-full bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white rounded-2xl p-6 shadow-xl group"
-            >
-              <div className="flex items-center justify-between">
-                <div className="text-left">
-                  <h3 className="text-2xl font-bold mb-1 group-hover:translate-x-1 transition-transform">Yeni Analiz Başlat 💕</h3>
-                  <p className="text-white/90 text-sm">Mesaj veya dosya yükle</p>
-                </div>
-                <div className="bg-white/20 p-3 rounded-xl group-hover:rotate-12 transition-transform backdrop-blur-sm">
-                  <Plus className="w-8 h-8" />
-                </div>
-              </div>
-            </motion.button>
-            {/* Checkup Banner */}
-            <CheckupWidget lastAnalysis={analysisHistory[0] || null} onStart={onStartAnalysis} />
-            <ConflictResolutionWidget />
-
-            <div className="h-full space-y-4">
-              <WeeklyScoreCard />
-              <GoalsWidget initialGoals={user?.goals || []} />
-              <LoveLanguageWidget currentLanguage={user?.love_language} />
-              <CoachingWidget latestAnalysis={analysisHistory[0] || null} />
-              <ConversationStartersWidget />
-              <DateIdeasWidget />
-              <ToneEditor />
+        {/* Main Action Button - Full Width */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onStartAnalysis}
+          className="w-full bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white rounded-2xl p-6 shadow-xl group mb-6"
+        >
+          <div className="flex items-center justify-between">
+            <div className="text-left">
+              <h3 className="text-2xl font-bold mb-1 group-hover:translate-x-1 transition-transform">Yeni Analiz Başlat 💕</h3>
+              <p className="text-white/90 text-sm">Mesaj veya dosya yükle</p>
             </div>
-
-            {/* AI Coach Card */}
-            {isPro ? (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onStartChat}
-                className="w-full bg-gradient-to-br from-[#FFB6C1] to-[#FF7F7F] text-white rounded-2xl p-6 shadow-xl group"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <h3 className="text-2xl font-bold mb-1 group-hover:translate-x-1 transition-transform">AMOR AI Koç 💬</h3>
-                    <p className="text-white/90 text-sm">Dertleş, soru sor, öğren</p>
-                  </div>
-                  <div className="bg-white/20 p-3 rounded-xl group-hover:-rotate-12 transition-transform backdrop-blur-sm">
-                    <Heart className="w-8 h-8 fill-white" />
-                  </div>
-                </div>
-              </motion.button>
-            ) : (
-              <div className="ios-card p-4 flex items-center justify-between opacity-75 border-2 border-[#FFB6C1]/30">
-                <div className="flex items-center gap-3">
-                  <div className="bg-[#FFF0F5] p-2.5 rounded-xl">
-                    <Heart className="w-6 h-6 text-[#B76E79]" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold text-[#331A1A]">AMOR AI Koç</h3>
-                    <p className="text-xs text-[#6B3F3F]">Sadece Pro üyeler için 💗</p>
-                  </div>
-                </div>
-                <button onClick={onUpgrade} className="text-xs bg-[#B76E79] text-white px-3 py-1.5 rounded-lg font-medium active:scale-95 transition-transform">
-                  Kilidi Aç
-                </button>
-              </div>
-            )}
-
-            {/* Pro Upsell Banner (if not pro) */}
-            {!isPro && (
-              <div onClick={onUpgrade} className="cursor-pointer bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold text-amber-800 dark:text-amber-200">Pro'ya Yükselt</h4>
-                  <p className="text-xs text-amber-700 dark:text-amber-300">Detaylı öneriler ve AI koç için</p>
-                </div>
-                <ArrowRight className="w-5 h-5 text-amber-500" />
-              </div>
-            )}
+            <div className="bg-white/20 p-3 rounded-xl group-hover:rotate-12 transition-transform backdrop-blur-sm">
+              <Plus className="w-8 h-8" />
+            </div>
           </div>
+        </motion.button>
+
+        {/* Widgets Grid - 2 columns on desktop, 1 on mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <CheckupWidget lastAnalysis={analysisHistory[0] || null} onStart={onStartAnalysis} />
+          <WeeklyScoreCard />
         </div>
+
+        {/* 3-column grid for smaller widgets */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <CoachingWidget latestAnalysis={analysisHistory[0] || null} />
+          <ConversationStartersWidget />
+          <DateIdeasWidget />
+        </div>
+
+        {/* 2-column grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <GoalsWidget initialGoals={user?.goals || []} />
+          <LoveLanguageWidget currentLanguage={user?.love_language} />
+        </div>
+
+        {/* Full width widgets */}
+        <div className="space-y-4 mb-6">
+          <ConflictResolutionWidget />
+          <ToneEditor />
+        </div>
+
+        {/* AI Coach Card */}
+        {isPro ? (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onStartChat}
+            className="w-full bg-gradient-to-br from-[#FFB6C1] to-[#FF7F7F] text-white rounded-2xl p-6 shadow-xl group mb-6"
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-left">
+                <h3 className="text-2xl font-bold mb-1 group-hover:translate-x-1 transition-transform">AMOR AI Koç 💬</h3>
+                <p className="text-white/90 text-sm">Dertleş, soru sor, öğren</p>
+              </div>
+              <div className="bg-white/20 p-3 rounded-xl group-hover:-rotate-12 transition-transform backdrop-blur-sm">
+                <Heart className="w-8 h-8 fill-white" />
+              </div>
+            </div>
+          </motion.button>
+        ) : (
+          <div className="ios-card p-4 flex items-center justify-between opacity-75 border-2 border-[#FFB6C1]/30 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-[#FFF0F5] p-2.5 rounded-xl">
+                <Heart className="w-6 h-6 text-[#B76E79]" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-[#331A1A]">AMOR AI Koç</h3>
+                <p className="text-xs text-[#6B3F3F]">Sadece Pro üyeler için 💗</p>
+              </div>
+            </div>
+            <button onClick={onUpgrade} className="text-xs bg-[#B76E79] text-white px-3 py-1.5 rounded-lg font-medium active:scale-95 transition-transform">
+              Kilidi Aç
+            </button>
+          </div>
+        )}
+
+        {/* Pro Upsell Banner (if not pro) */}
+        {!isPro && (
+          <div onClick={onUpgrade} className="cursor-pointer bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-center justify-between mb-6">
+            <div>
+              <h4 className="font-bold text-amber-800 dark:text-amber-200">Pro'ya Yükselt</h4>
+              <p className="text-xs text-amber-700 dark:text-amber-300">Detaylı öneriler ve AI koç için</p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-amber-500" />
+          </div>
+        )}
 
         {/* Grafikler Section */}
         {analysisHistory.length > 0 && (
