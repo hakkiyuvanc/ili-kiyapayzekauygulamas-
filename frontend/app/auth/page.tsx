@@ -116,8 +116,23 @@ export default function AuthPage() {
   };
 
   const handleContinueAsGuest = () => {
+    // Set guest user data in localStorage
+    const guestUser = {
+      id: 'guest',
+      email: 'guest@amor.ai',
+      full_name: 'Misafir Kullanıcı',
+      is_pro: false,
+      is_verified: false,
+      onboarding_completed: false,
+    };
+
+    localStorage.setItem('user', JSON.stringify(guestUser));
+    localStorage.setItem('token', 'guest-token');
+
     info("Misafir olarak devam ediyorsunuz");
-    router.push("/dashboard");
+
+    // Force page reload to update auth context
+    window.location.href = "/dashboard";
   };
 
   return (
