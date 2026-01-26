@@ -24,13 +24,21 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Check if user is guest
+    const isGuest =
+      typeof window !== "undefined" &&
+      localStorage.getItem("isGuest") === "true";
+
     // Log detailed error information
     if (error.response) {
       // Server responded with error status
-      console.error(
-        `[API Error] Status: ${error.response.status} URL: ${error.config?.url}`,
-        error.response.data,
-      );
+      // Don't log 401 errors for guest users (expected)
+      if (!(isGuest && error.response.status === 401)) {
+        console.error(
+          `[API Error] Status: ${error.response.status} URL: ${error.config?.url}`,
+          error.response.data,
+        );
+      }
     } else if (error.request) {
       // Request was made but no response received (network error)
       console.error(`[API Network Error] URL: ${error.config?.url}`, {
@@ -47,12 +55,14 @@ api.interceptors.response.use(
     // Don't redirect if it's a login attempt that failed (401 is expected for wrong password)
     const isLoginRequest = error.config?.url?.includes("/auth/login");
 
-    if (error.response?.status === 401 && !isLoginRequest) {
+    if (error.response?.status === 401 && !isLoginRequest && !isGuest) {
       console.warn("[API] 401 Unauthorized detected. Redirecting to login.");
       // Clear token and redirect to login
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/auth";
+    } else if (error.response?.status === 401 && isGuest) {
+      console.log("[API] 401 for guest user - this is expected, ignoring.");
     }
     return Promise.reject(error);
   },

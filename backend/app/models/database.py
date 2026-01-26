@@ -37,18 +37,23 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # İlişkiler
-    analyses = relationship("Analysis", back_populates="user", cascade="all, delete-orphan")
+    analyses = relationship(
+        "app.models.database.Analysis", back_populates="user", cascade="all, delete-orphan"
+    )
     coaching_status = relationship(
-        "CoachingStatus", back_populates="user", uselist=False, cascade="all, delete-orphan"
+        "app.models.database.CoachingStatus",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
     )
     subscriptions = relationship(
-        "Subscription", back_populates="user", cascade="all, delete-orphan"
+        "app.models.database.Subscription", back_populates="user", cascade="all, delete-orphan"
     )
     usage_tracking = relationship(
-        "UsageTracking", back_populates="user", cascade="all, delete-orphan"
+        "app.models.database.UsageTracking", back_populates="user", cascade="all, delete-orphan"
     )
     refresh_tokens = relationship(
-        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
+        "app.models.database.RefreshToken", back_populates="user", cascade="all, delete-orphan"
     )
 
 
@@ -67,7 +72,7 @@ class CoachingStatus(Base):
 
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    user = relationship("User", back_populates="coaching_status")
+    user = relationship("app.models.database.User", back_populates="coaching_status")
 
 
 class Analysis(Base):
@@ -106,7 +111,7 @@ class Analysis(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # İlişkiler
-    user = relationship("User", back_populates="analyses")
+    user = relationship("app.models.database.User", back_populates="analyses")
 
 
 class AnalysisHistory(Base):
@@ -161,7 +166,9 @@ class ChatSession(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # İlişkiler
-    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")
+    messages = relationship(
+        "app.models.database.ChatMessage", back_populates="session", cascade="all, delete-orphan"
+    )
 
 
 class ChatMessage(Base):
@@ -178,7 +185,7 @@ class ChatMessage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # İlişkiler
-    session = relationship("ChatSession", back_populates="messages")
+    session = relationship("app.models.database.ChatSession", back_populates="messages")
 
 
 class DailyPulse(Base):
@@ -253,7 +260,7 @@ class Subscription(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="subscriptions")
+    user = relationship("app.models.database.User", back_populates="subscriptions")
 
 
 class UsageTracking(Base):
@@ -283,7 +290,7 @@ class UsageTracking(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="usage_tracking")
+    user = relationship("app.models.database.User", back_populates="usage_tracking")
 
 
 class RefreshToken(Base):
@@ -309,4 +316,4 @@ class RefreshToken(Base):
     revoked_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    user = relationship("User", back_populates="refresh_tokens")
+    user = relationship("app.models.database.User", back_populates="refresh_tokens")

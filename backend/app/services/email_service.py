@@ -30,7 +30,7 @@ class EmailService:
         self.templates_dir = Path(__file__).parent / "email_templates"
 
     async def send_email(
-        self, to_email: str, subject: str, html_content: str, text_content: Optional[str] = None
+        self, to_email: str, subject: str, html_content: str, text_content: str | None = None
     ) -> bool:
         """
         Send an email via SMTP
@@ -114,6 +114,19 @@ class EmailService:
         Returns:
             bool: True if sent successfully
         """
+        if not self.enabled:
+            # Log verification code to console for development
+            logger.warning(
+                f"\n"
+                f"{'='*60}\n"
+                f"📧 EMAIL VERIFICATION CODE (Development Mode)\n"
+                f"{'='*60}\n"
+                f"Email: {to_email}\n"
+                f"Code:  {code}\n"
+                f"{'='*60}\n"
+            )
+            return False
+
         template = self._load_template("verification")
 
         html_content = self._render_template(

@@ -118,16 +118,17 @@ export default function AuthPage() {
   const handleContinueAsGuest = () => {
     // Set guest user data in localStorage
     const guestUser = {
-      id: 'guest',
-      email: 'guest@amor.ai',
-      full_name: 'Misafir Kullanıcı',
+      id: "guest",
+      email: "guest@amor.ai",
+      full_name: "Misafir Kullanıcı",
       is_pro: false,
       is_verified: false,
       onboarding_completed: false,
     };
 
-    localStorage.setItem('user', JSON.stringify(guestUser));
-    localStorage.setItem('token', 'guest-token');
+    localStorage.setItem("isGuest", "true"); // CRITICAL: This flag tells AuthProvider to skip backend verification
+    localStorage.setItem("user", JSON.stringify(guestUser));
+    localStorage.setItem("token", "guest-token");
 
     info("Misafir olarak devam ediyorsunuz");
 
