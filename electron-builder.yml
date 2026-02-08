@@ -1,0 +1,65 @@
+appId: com.amorai.app
+productName: AMOR AI
+copyright: Copyright © 2025 AMOR AI
+
+directories:
+  output: dist
+  buildResources: build
+
+# Auto-Updater Config
+publish:
+  provider: github
+  owner: hakkiyuvanc
+  repo: ili-kiyapayzekauygulamas-
+  token: ${GH_TOKEN}  # Github Access Token (Release access)
+  releaseType: release  # release | prerelease | draft
+
+mac:
+  category: public.app-category.lifestyle
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+  icon: build/icons/mac/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+win:
+  target:
+    - nsis
+  icon: build/icons/win/icon.ico
+  publisherName: AMOR AI
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: true
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Lifestyle
+
+files:
+  - "**/*"
+  - "!**/*.ts"
+  - "!**/*.tsx"
+  - "!**/*.map"
+  - "!backend/venv/**"
+  - "!**/.git/**"
+  - "!**/.github/**"
+
+extraResources:
+  - from: backend/dist/app
+    to: backend
+  - from: .env.production
+    to: .env
+
+# Build Scripts
+afterSign: scripts/notarize.js

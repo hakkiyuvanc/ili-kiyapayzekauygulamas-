@@ -164,6 +164,34 @@ export const analysisApi = {
     api.get<AnalysisResponse>(`/api/analysis/history/${id}`),
 
   deleteAnalysis: (id: number) => api.delete(`/api/analysis/history/${id}`),
+
+  // V2.0 Endpoints
+  analyzeScreenshot: (image: string, format = "png") =>
+    api.post("/api/analysis/analyze-screenshot", { image, format }),
+
+  analyzeV2: (text: string, model_preference = "fast", format_type = "auto") =>
+    api.post("/api/analysis/analyze-v2", {
+      text,
+      model_preference,
+      format_type,
+    }),
+
+  generateHeatmap: (messages: any[]) =>
+    api.post("/api/analysis/heatmap", { messages }),
+
+  shiftTone: (message: string, target_tone: string, context = "") =>
+    api.post("/api/analysis/tone-shift", {
+      message,
+      target_tone,
+      context,
+    }),
+
+  projectFuture: (metrics: any, timeframe_months = 6, gottman_report?: any) =>
+    api.post("/api/analysis/future-projection", {
+      metrics,
+      timeframe_months,
+      gottman_report,
+    }),
 };
 
 export const authApi = {
