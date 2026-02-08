@@ -423,3 +423,243 @@ async def rewrite_message(
         rewritten = prefixes.get(tone, "") + text
 
     return RewriteResponse(original_text=text, rewritten_text=rewritten, tone=tone)
+
+
+@router.post(
+    "/analyze-screenshot",
+    status_code=status.HTTP_200_OK,
+    summary="Screenshot Analizi (Vision API)",
+    description="Ekran görüntüsünden metin çıkarır ve duygusal analiz yapar (GPT-4o Vision)",
+)
+@limiter.limit("3/minute")
+async def analyze_screenshot(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """
+    Screenshot analizi endpoint'i (V2.0)
+    
+    - Kullanıcı base64 encoded image gönderir
+    - GPT-4o Vision ile OCR + duygusal analiz yapılır
+    - Çıkarılan metin otomatik olarak analiz edilir
+    """
+    from fastapi import File, UploadFile
+    import base64
+    
+    from app.services.vision_service import get_vision_service
+    
+    # Pro feature check
+    if not current_user or not current_user.is_pro:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Screenshot analizi özelliği sadece Pro üyeler içindir.",
+        )
+    
+    # Get image from request
+    try:
+        body = await request.json()
+        image_data_base64 = body.get("image")
+        image_format = body.get("format", "png")  # png, jpg, jpeg
+        
+        if not image_data_base64:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Image data is required (base64 encoded)",
+            )
+        
+        # Decode base64
+        # Remove data URL prefix if present (data:image/png;base64,...)
+        if "base64," in image_data_base64:
+            image_data_base64 = image_data_base64.split("base64,")[1]
+        
+        image_bytes = base64.b64decode(image_data_base64)
+        
+    except Exception as e:
+        logger.error(f"Failed to parse image data: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid image data: {str(e)}",
+        )
+    
+    # Analyze with Vision API
+    vision_service = get_vision_service()
+    
+    try:
+        vision_result = vision_service.analyze_screenshot(image_bytes, image_format)
+        
+        # Extract text from vision result
+        extracted_text = vision_result.get("cikarilan_metin", "")
+        
+        if not extracted_text or len(extracted_text) < 20:
+            return {
+                "status": "warning",
+                "message": "Ekran görüntüsünden yeterli metin çıkarılamadı",
+                "vision_analysis": vision_result,
+                "extracted_text": extracted_text,
+            }
+        
+        # Run full analysis on extracted text
+        service = get_analysis_service()
+        analysis_result = service.analyze_text(
+            text=extracted_text,
+            format_type="auto",
+            privacy_mode=True,
+        )
+        
+        # Combine vision + analysis results
+        combined_result = {
+            "status": "success",
+            "vision_analysis": vision_result,
+            "extracted_text": extracted_text,
+            "message_count": vision_result.get("mesaj_sayisi", 0),
+            "analysis": analysis_result,
+        }
+        
+        # Save to database
+        try:
+            db_analysis = AnalysisCRUD.create_analysis(
+                db=db,
+                report=combined_result,
+                user_id=current_user.id,
+                format_type="screenshot",
+                privacy_mode=True,
+            )
+            combined_result["analysis_id"] = db_analysis.id
+        except Exception as e:
+            logger.error(f"Failed to save screenshot analysis: {e}")
+            combined_result["db_save_error"] = str(e)
+        
+        logger.info(
+            "Screenshot analysis completed",
+            extra={
+                "user_id": current_user.id,
+                "extracted_length": len(extracted_text),
+                "message_count": vision_result.get("mesaj_sayisi", 0),
+            },
+        )
+        
+        return combined_result
+        
+    except Exception as e:
+        logger.error(
+            "Screenshot analysis failed",
+            extra={"error": str(e), "user_id": current_user.id},
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Screenshot analizi başarısız: {str(e)}",
+        )
+
+
+@router.post(
+    "/analyze-v2",
+    status_code=status.HTTP_200_OK,
+    summary="Gelişmiş İlişki Analizi (V2.0 - Gottman)",
+    description="Gottman metriklerini içeren kapsamlı ilişki raporu oluşturur",
+)
+@limiter.limit("5/minute")
+async def analyze_v2(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """
+    V2.0 Analiz endpoint'i - Gottman-based structured report
+    
+    Request body:
+    {
+        "text": "conversation text",
+        "model_preference": "fast" | "deep",
+        "format_type": "auto" | "whatsapp" | "telegram" | "instagram"
+    }
+    """
+    from app.services.ai_service import get_ai_service
+    
+    try:
+        body = await request.json()
+        text = body.get("text")
+        model_preference = body.get("model_preference", "fast")
+        format_type = body.get("format_type", "auto")
+        
+        if not text:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Text is required",
+            )
+        
+        # Validate text
+        service = get_analysis_service()
+        is_valid, error_msg = service.validate_text(text)
+        if not is_valid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_msg,
+            )
+        
+        # Run basic analysis first
+        basic_result = service.analyze_text(
+            text=text,
+            format_type=format_type,
+            privacy_mode=True,
+        )
+        
+        # Get AI service for Gottman report
+        ai_service = get_ai_service()
+        
+        # Generate comprehensive Gottman report
+        gottman_report = ai_service.generate_relationship_report(
+            conversation_text=text,
+            metrics=basic_result.get("metrics", {}),
+            model_preference=model_preference,
+        )
+        
+        # Combine results
+        v2_result = {
+            "status": "success",
+            "version": "2.0",
+            "basic_metrics": basic_result.get("metrics", {}),
+            "gottman_report": gottman_report,
+            "summary": basic_result.get("summary", ""),
+        }
+        
+        # Save to database
+        if current_user:
+            try:
+                db_analysis = AnalysisCRUD.create_analysis(
+                    db=db,
+                    report=v2_result,
+                    user_id=current_user.id,
+                    format_type=format_type,
+                    privacy_mode=True,
+                )
+                v2_result["analysis_id"] = db_analysis.id
+            except Exception as e:
+                logger.error(f"Failed to save V2 analysis: {e}")
+                v2_result["db_save_error"] = str(e)
+        
+        logger.info(
+            "V2 analysis completed",
+            extra={
+                "user_id": current_user.id if current_user else None,
+                "model_preference": model_preference,
+                "gottman_health": gottman_report.get("genel_karne", {}).get("iliskki_sagligi", 0),
+            },
+        )
+        
+        return v2_result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "V2 analysis failed",
+            extra={"error": str(e)},
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Analiz başarısız: {str(e)}",
+        )
+
