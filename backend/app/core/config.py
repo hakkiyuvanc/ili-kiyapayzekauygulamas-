@@ -42,12 +42,14 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # Refresh token expiration in days
 
     # CORS - Development (localhost only)
+    # For Electron app: file:// protocol is allowed
+    # For production: Override this in .env with your actual domain
     CORS_ORIGINS: list[str] = [
-        "http://localhost:3000",
-        "http://localhost:8000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:8000",
+        "http://localhost:3000",  # Next.js dev server
+        "http://localhost:8000",  # Backend dev server
+        "http://127.0.0.1:3000",  # Alternative localhost
+        "http://127.0.0.1:8000",  # Alternative localhost
+        "file://",  # Electron app (built version)
     ]
 
     # ML Settings
