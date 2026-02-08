@@ -703,6 +703,232 @@ Metrikler:
 
         return recommendations
 
+    def generate_relationship_report(
+        self,
+        conversation_text: str,
+        metrics: dict[str, Any],
+        model_preference: str = "fast",
+    ) -> dict[str, Any]:
+        """
+        Generate comprehensive relationship report with Gottman metrics (V2.0)
+
+        Args:
+            conversation_text: Full conversation text
+            metrics: Basic metrics from analysis
+            model_preference: 'fast' (GPT-4o-mini) or 'deep' (Claude-3.5-Sonnet)
+
+        Returns:
+            Structured relationship report (RelationshipReport schema)
+        """
+        start_time = time.time()
+
+        # Cache key
+        cache_key = self._get_cache_key("relationship_report_v2", metrics, conversation_text[:200])
+        cached = cache_service.get(cache_key)
+
+        if cached:
+            logger.info(
+                "Relationship report cache hit",
+                extra={"latency_ms": (time.time() - start_time) * 1000},
+            )
+            return cached
+
+        if not self._is_available():
+            return self._fallback_relationship_report(metrics)
+
+        try:
+            # Build Gottman-based prompt
+            prompt = self._build_gottman_report_prompt(conversation_text, metrics)
+
+            # Select model based on preference
+            if model_preference == "deep" and self.provider == "anthropic":
+                # Use Claude for deep analysis
+                max_tokens = 2500
+            else:
+                # Use faster model
+                max_tokens = 2000
+
+            # Call LLM
+            response = self._call_llm(prompt, max_tokens)
+
+            # Parse structured JSON
+            report = self._parse_relationship_report(response, metrics)
+
+            # Cache
+            cache_service.set(cache_key, report, ttl_seconds=7200)  # 2 hours
+
+            logger.info(
+                "Relationship report generated",
+                extra={
+                    "provider": self.provider,
+                    "model_preference": model_preference,
+                    "latency_ms": (time.time() - start_time) * 1000,
+                    "gottman_score": report.get("genel_karne", {}).get("iliskki_sagligi", 0),
+                },
+            )
+
+            return report
+
+        except Exception as e:
+            logger.error(
+                "Relationship report generation failed",
+                extra={"error": str(e), "provider": self.provider},
+                exc_info=True,
+            )
+            return self._fallback_relationship_report(metrics)
+
+    def _build_gottman_report_prompt(
+        self, conversation_text: str, metrics: dict[str, Any]
+    ) -> str:
+        """Build Gottman-based analysis prompt"""
+        return f"""Sen bir İlişki Psikoloğusun ve John Gottman'ın 7 Prensibine göre ilişkileri analiz ediyorsun.
+
+KONUŞMA METNİ:
+{conversation_text[:3000]}  # İlk 3000 karakter
+
+TEMEL METRİKLER:
+- Duygu Skoru: {metrics.get('sentiment', {}).get('score', 50)}
+- Empati Skoru: {metrics.get('empathy', {}).get('score', 50)}
+- Çatışma Skoru: {metrics.get('conflict', {}).get('score', 50)}
+
+GÖREV: Yukarıdaki konuşmayı Gottman'ın 7 Prensibi çerçevesinde analiz et ve aşağıdaki JSON formatında rapor oluştur.
+
+GOTTMAN'IN 7 PRENSİBİ:
+1. Sevgi Haritaları: Partnerini ne kadar iyi tanıyorsun?
+2. Hayranlık Paylaşımı: Birbirinize saygı ve hayranlık var mı?
+3. Yakınlaşma Çabaları: Küçük jestlere olumlu yanıt veriyor musunuz?
+4. Olumlu Perspektif: İlişkiye genel bakış pozitif mi?
+5. Çatışma Yönetimi: Anlaşmazlıkları nasıl çözüyorsunuz?
+6. Hayat Hayalleri: Birbirinizin hayallerini destekliyor musunuz?
+7. Ortak Anlam: Paylaşılan değerler ve ritüeller var mı?
+
+JSON ÇIKTI FORMATI:
+{{
+  "genel_karne": {{
+    "iliskki_sagligi": <0-100>,
+    "baskin_dinamik": "<Kısa açıklama>",
+    "risk_seviyesi": "<Düşük|Orta|Yüksek|Kritik>"
+  }},
+  "gottman_bilesenleri": {{
+    "sevgi_haritalari": {{"skor": <0-100>, "durum": "<Kritik|Geliştirilmeli|Orta|İyi|Mükemmel>", "aciklama": "..."}},
+    "hayranlik_paylasimi": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}},
+    "yakinlasma_cabalari": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}},
+    "olumlu_perspektif": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}},
+    "catisma_yonetimi": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}},
+    "hayat_hayalleri": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}},
+    "ortak_anlam": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}}
+  }},
+  "duygusal_analiz": {{
+    "iletisim_tonu": "<Destekleyici|Nötr|Defansif|Saldırgan>",
+    "toksisite_seviyesi": <0-100>,
+    "yakinlik": <0-100>,
+    "duygu_ifadesi": "<Açık|Kapalı|Karışık>"
+  }},
+  "tespit_edilen_kaliplar": [
+    {{
+      "kalip": "<Kalıp adı>",
+      "ornekler": ["Örnek mesaj 1", "Örnek mesaj 2"],
+      "frekans": "<Düşük|Orta|Yüksek>",
+      "etki": "<Pozitif|Nötr|Negatif>"
+    }}
+  ],
+  "aksiyon_onerileri": [
+    {{
+      "baslik": "<Öneri başlığı>",
+      "ornek_cumle": "<Kullanılabilir örnek cümle>",
+      "oncelik": "<Düşük|Orta|Yüksek>",
+      "kategori": "<İletişim|Empati|Çatışma|Bağ>"
+    }}
+  ],
+  "ozel_notlar": ["<Önemli uyarı veya not>"]
+}}
+
+Lütfen sadece JSON çıktısını ver, başka açıklama ekleme."""
+
+    def _parse_relationship_report(
+        self, response: str, metrics: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Parse AI response into structured report"""
+        try:
+            # Extract JSON
+            start = response.find("{")
+            end = response.rfind("}") + 1
+            if start != -1 and end > start:
+                json_str = response[start:end]
+                report_data = json.loads(json_str)
+
+                # Add metadata
+                report_data["meta_data"] = {
+                    "analiz_tarihi": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                    "model": self.provider,
+                    "mesaj_sayisi": metrics.get("total_messages", 0),
+                    "platform": metrics.get("platform", "unknown"),
+                }
+
+                return report_data
+
+        except Exception as e:
+            logger.error(f"Report parsing failed: {e}")
+
+        return self._fallback_relationship_report(metrics)
+
+    def _fallback_relationship_report(self, metrics: dict[str, Any]) -> dict[str, Any]:
+        """Fallback report when AI is unavailable"""
+        sentiment_score = metrics.get("sentiment", {}).get("score", 50)
+        empathy_score = metrics.get("empathy", {}).get("score", 50)
+        conflict_score = metrics.get("conflict", {}).get("score", 50)
+
+        # Calculate overall health
+        overall_health = int((sentiment_score + empathy_score + (100 - conflict_score)) / 3)
+
+        return {
+            "meta_data": {
+                "analiz_tarihi": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "model": "fallback",
+                "mesaj_sayisi": metrics.get("total_messages", 0),
+                "platform": "unknown",
+            },
+            "genel_karne": {
+                "iliskki_sagligi": overall_health,
+                "baskin_dinamik": "Standart Analiz (AI Kullanılamıyor)",
+                "risk_seviyesi": "Orta" if overall_health < 50 else "Düşük",
+            },
+            "gottman_bilesenleri": {
+                "sevgi_haritalari": {"skor": 50, "durum": "Orta", "aciklama": "AI analizi gerekli"},
+                "hayranlik_paylasimi": {"skor": empathy_score, "durum": "Orta", "aciklama": "Empati skoruna dayalı"},
+                "yakinlasma_cabalari": {"skor": 50, "durum": "Orta", "aciklama": "AI analizi gerekli"},
+                "olumlu_perspektif": {"skor": sentiment_score, "durum": "Orta", "aciklama": "Duygu skoruna dayalı"},
+                "catisma_yonetimi": {"skor": 100 - conflict_score, "durum": "Orta", "aciklama": "Çatışma skoruna dayalı"},
+                "hayat_hayalleri": {"skor": 50, "durum": "Orta", "aciklama": "AI analizi gerekli"},
+                "ortak_anlam": {"skor": 50, "durum": "Orta", "aciklama": "AI analizi gerekli"},
+            },
+            "duygusal_analiz": {
+                "iletisim_tonu": "Nötr",
+                "toksisite_seviyesi": conflict_score,
+                "yakinlik": empathy_score,
+                "duygu_ifadesi": "Karışık",
+            },
+            "tespit_edilen_kaliplar": [
+                {
+                    "kalip": "Standart İletişim",
+                    "ornekler": ["AI analizi için API key gerekli"],
+                    "frekans": "Orta",
+                    "etki": "Nötr",
+                }
+            ],
+            "aksiyon_onerileri": [
+                {
+                    "baslik": "AI Analizi Aktifleştirin",
+                    "ornek_cumle": "Daha detaylı analiz için AI API key'i ekleyin",
+                    "oncelik": "Yüksek",
+                    "kategori": "Sistem",
+                }
+            ],
+            "ozel_notlar": ["AI servisi kullanılamıyor, temel metrikler gösteriliyor"],
+        }
+
+
+
 
 # Singleton instance
 _ai_service_instance = None

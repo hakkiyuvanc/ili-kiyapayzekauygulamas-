@@ -1,90 +1,108 @@
-"""Pydantic Schemas - Request/Response modelleri"""
+"""Pydantic Schemas for Relationship Analysis V2.0
 
-from typing import Any, Optional
+Structured output schemas for comprehensive relationship reports
+based on Gottman Method and scientific relationship psychology.
+"""
+
+from datetime import datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 
-# Analysis Request/Response
+class GottmanComponent(BaseModel):
+    """Gottman Method component score"""
+
+    skor: int = Field(..., ge=0, le=100, description="Score 0-100")
+    durum: Literal["Kritik", "Geliştirilmeli", "Orta", "İyi", "Mükemmel"] = Field(
+        ..., description="Status category"
+    )
+    aciklama: str = Field(..., description="Brief explanation")
+
+
+class GottmanMetrics(BaseModel):
+    """Gottman's 7 Principles"""
+
+    sevgi_haritalari: GottmanComponent = Field(..., description="Love Maps")
+    hayranlik_paylasimi: GottmanComponent = Field(..., description="Fondness & Admiration")
+    yakinlasma_cabalari: GottmanComponent = Field(..., description="Turn Towards")
+    olumlu_perspektif: GottmanComponent = Field(..., description="Positive Perspective")
+    catisma_yonetimi: GottmanComponent = Field(..., description="Manage Conflict")
+    hayat_hayalleri: GottmanComponent = Field(..., description="Life Dreams")
+    ortak_anlam: GottmanComponent = Field(..., description="Shared Meaning")
+
+
+class EmotionalAnalysis(BaseModel):
+    """Emotional tone analysis"""
+
+    iletisim_tonu: str = Field(..., description="Communication tone")
+    toksisite_seviyesi: int = Field(..., ge=0, le=100, description="Toxicity level 0-100")
+    yakinlik: int = Field(..., ge=0, le=100, description="Intimacy level 0-100")
+    duygu_ifadesi: str = Field(..., description="Emotion expression quality")
+
+
+class DetectedPattern(BaseModel):
+    """Detected communication pattern"""
+
+    kalip: str = Field(..., description="Pattern name")
+    ornekler: list[str] = Field(..., description="Example messages")
+    frekans: Literal["Düşük", "Orta", "Yüksek"] = Field(..., description="Frequency")
+    etki: Literal["Pozitif", "Nötr", "Negatif"] = Field(..., description="Impact on relationship")
+
+
+class ActionRecommendation(BaseModel):
+    """Actionable recommendation"""
+
+    baslik: str = Field(..., description="Recommendation title")
+    ornek_cumle: str = Field(..., description="Example sentence to use")
+    oncelik: Literal["Düşük", "Orta", "Yüksek"] = Field(..., description="Priority level")
+    kategori: str = Field(..., description="Category (e.g., Communication, Empathy)")
+
+
+class MetaData(BaseModel):
+    """Analysis metadata"""
+
+    analiz_tarihi: datetime = Field(default_factory=datetime.now)
+    model: str = Field(..., description="AI model used")
+    mesaj_sayisi: int = Field(..., description="Number of messages analyzed")
+    platform: str = Field(default="unknown", description="Message platform")
+
+
+class GeneralScore(BaseModel):
+    """Overall relationship health score"""
+
+    iliskki_sagligi: int = Field(..., ge=0, le=100, description="Overall health 0-100")
+    baskin_dinamik: str = Field(..., description="Dominant dynamic description")
+    risk_seviyesi: Literal["Düşük", "Orta", "Yüksek", "Kritik"] = Field(
+        ..., description="Risk level"
+    )
+
+
+class RelationshipReport(BaseModel):
+    """Complete relationship analysis report (V2.0)"""
+
+    meta_data: MetaData
+    genel_karne: GeneralScore
+    gottman_bilesenleri: GottmanMetrics
+    duygusal_analiz: EmotionalAnalysis
+    tespit_edilen_kaliplar: list[DetectedPattern] = Field(
+        ..., max_items=10, description="Max 10 patterns"
+    )
+    aksiyon_onerileri: list[ActionRecommendation] = Field(
+        ..., max_items=8, description="Max 8 recommendations"
+    )
+    ozel_notlar: list[str] = Field(
+        default=[], description="Special notes or warnings"
+    )
+
+
 class AnalysisRequest(BaseModel):
-    """Analiz isteği"""
+    """Request for relationship analysis"""
 
-    text: str = Field(..., min_length=10, max_length=50000, description="Analiz edilecek metin")
-    format_type: str = Field(
-        default="auto", description="Metin formatı: auto, whatsapp, simple, plain"
+    conversation_text: str = Field(..., min_length=50)
+    model_preference: Literal["fast", "deep"] = Field(
+        default="fast", description="fast=GPT-4o-mini, deep=Claude-3.5-Sonnet"
     )
-    privacy_mode: bool = Field(default=True, description="PII maskeleme aktif mi")
-
-
-class MetricResult(BaseModel):
-    """Metrik sonucu"""
-
-    score: float = Field(..., ge=0, le=100, description="Metrik skoru (0-100)")
-    label: str = Field(..., description="Metrik etiketi")
-
-
-class AnalysisResponse(BaseModel):
-    """Analiz yanıtı"""
-
-    status: str = Field(..., description="Analiz durumu")
-    overall_score: float = Field(..., ge=0, le=100, description="Genel skor")
-    summary: str = Field(..., description="Analiz özeti")
-    metrics: dict[str, Any] = Field(..., description="Metrikler")
-    conversation_stats: Optional[dict[str, Any]] = Field(
-        default=None, description="Konuşma istatistikleri"
+    include_examples: bool = Field(
+        default=True, description="Include example messages in patterns"
     )
-    insights: list[dict[str, str]] = Field(..., description="İçgörüler")
-    recommendations: list[dict[str, str]] = Field(..., description="Öneriler")
-    reply_suggestions: Optional[list[str]] = Field(
-        default=[], description="AI tarafından önerilen cevap seçenekleri"
-    )
-    generated_at: str = Field(..., description="Oluşturulma zamanı")
-    analysis_id: Optional[int] = Field(default=None, description="Veritabanı ID")
-
-
-class QuickScoreRequest(BaseModel):
-    """Hızlı skor isteği"""
-
-    text: str = Field(..., min_length=10, max_length=10000)
-
-
-class QuickScoreResponse(BaseModel):
-    """Hızlı skor yanıtı"""
-
-    score: float = Field(..., ge=0, le=100)
-    status: str = Field(default="success")
-
-
-# Health Check
-class HealthResponse(BaseModel):
-    """Sağlık kontrolü yanıtı"""
-
-    status: str = Field(default="healthy")
-    service: str = Field(default="iliski-analiz-ai")
-    version: str = Field(...)
-
-
-# Error Response
-class ErrorResponse(BaseModel):
-    """Hata yanıtı"""
-
-    status: str = Field(default="error")
-    message: str = Field(...)
-    detail: Optional[str] = None
-
-
-class RewriteRequest(BaseModel):
-    """Yeniden yazma isteği"""
-
-    text: str = Field(..., min_length=1, max_length=1000, description="Dönüştürülecek metin")
-    target_tone: str = Field(
-        ..., description="Hedef ton: polite, professional, romantic, assertive"
-    )
-
-
-class RewriteResponse(BaseModel):
-    """Yeniden yazma yanıtı"""
-
-    original_text: str = Field(...)
-    rewritten_text: str = Field(...)
-    tone: str = Field(...)
