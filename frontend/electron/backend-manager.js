@@ -26,7 +26,8 @@ class BackendManager {
       'python3',
       'python',
       // Production: bundled Python
-      !isDev && path.join(process.resourcesPath, 'backend/python'),
+      !isDev && path.join(process.resourcesPath, 'backend/backend'),
+      !isDev && path.join(process.resourcesPath, 'backend/backend.exe'),
     ].filter(Boolean);
 
     for (const candidate of candidates) {
@@ -68,7 +69,7 @@ class BackendManager {
 
     const isDev = require('electron-is-dev');
     const backendDir = path.join(__dirname, '../../backend');
-    
+
     log.info('Starting backend...');
     log.info('Backend directory:', backendDir);
     log.info('Port:', this.port);
@@ -116,7 +117,7 @@ class BackendManager {
         log.info(`Backend process exited with code ${code} and signal ${signal}`);
         this.isRunning = false;
         this.process = null;
-        
+
         if (this.healthCheckInterval) {
           clearInterval(this.healthCheckInterval);
           this.healthCheckInterval = null;
@@ -134,14 +135,14 @@ class BackendManager {
 
       // Wait for backend to be healthy
       const healthy = await this.waitForHealthy();
-      
+
       if (healthy) {
         this.isRunning = true;
         log.info('✅ Backend started successfully');
-        
+
         // Start periodic health checks
         this.startHealthChecks();
-        
+
         return true;
       } else {
         throw new Error('Backend failed to become healthy');
@@ -156,19 +157,19 @@ class BackendManager {
 
   async waitForHealthy() {
     log.info('Waiting for backend to be healthy...');
-    
+
     for (let i = 0; i < this.maxRetries; i++) {
       const healthy = await this.checkHealth();
-      
+
       if (healthy) {
         log.info(`Backend healthy after ${i + 1} attempts`);
         return true;
       }
-      
+
       log.info(`Health check ${i + 1}/${this.maxRetries}...`);
       await this.sleep(1000);
     }
-    
+
     log.error('Backend failed to become healthy after max retries');
     return false;
   }
@@ -178,11 +179,11 @@ class BackendManager {
       const req = http.get(`http://localhost:${this.port}/health`, (res) => {
         resolve(res.statusCode === 200);
       });
-      
+
       req.on('error', () => {
         resolve(false);
       });
-      
+
       req.setTimeout(2000, () => {
         req.destroy();
         resolve(false);
@@ -194,11 +195,11 @@ class BackendManager {
     // Check every 30 seconds
     this.healthCheckInterval = setInterval(async () => {
       const healthy = await this.checkHealth();
-      
+
       if (!healthy && this.isRunning) {
         log.error('Backend health check failed, process may have crashed');
         this.isRunning = false;
-        
+
         // Attempt restart
         log.info('Attempting to restart backend...');
         try {
@@ -218,10 +219,10 @@ class BackendManager {
 
     if (this.process) {
       log.info('Stopping backend...');
-      
+
       // Try graceful shutdown first
       this.process.kill('SIGTERM');
-      
+
       // Force kill after 5 seconds
       setTimeout(() => {
         if (this.process) {
@@ -229,7 +230,7 @@ class BackendManager {
           this.process.kill('SIGKILL');
         }
       }, 5000);
-      
+
       this.process = null;
       this.isRunning = false;
     }

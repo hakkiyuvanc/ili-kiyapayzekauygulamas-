@@ -780,70 +780,102 @@ Metrikler:
     def _build_gottman_report_prompt(
         self, conversation_text: str, metrics: dict[str, Any]
     ) -> str:
-        """Build Gottman-based analysis prompt"""
+        """Build Gottman-based analysis prompt (Enforcing JSON Schema)"""
         return f"""Sen bir İlişki Psikoloğusun ve John Gottman'ın 7 Prensibine göre ilişkileri analiz ediyorsun.
 
-KONUŞMA METNİ:
-{conversation_text[:3000]}  # İlk 3000 karakter
+GÖREV: Aşağıdaki konuşma metnini ve temel metrikleri kullanarak, Gottman Metodu çerçevesinde derinlemesine bir ilişki analizi yap.
 
-TEMEL METRİKLER:
+GİRDİLER:
+1. KONUŞMA METNİ:
+{conversation_text[:3000]}... (devamı var ama bağlam için bu kadarı yeterli)
+
+2. TEMEL METRİKLER:
 - Duygu Skoru: {metrics.get('sentiment', {}).get('score', 50)}
 - Empati Skoru: {metrics.get('empathy', {}).get('score', 50)}
 - Çatışma Skoru: {metrics.get('conflict', {}).get('score', 50)}
 
-GÖREV: Yukarıdaki konuşmayı Gottman'ın 7 Prensibi çerçevesinde analiz et ve aşağıdaki JSON formatında rapor oluştur.
+ÇIKTI FORMATI (KESİNLİKLE JSON OLMALI):
+Aşağıdaki JSON şemasına BİREBİR uyan bir yanıt ver. Sadece JSON döndür, markdown veya açıklama ekleme.
 
-GOTTMAN'IN 7 PRENSİBİ:
-1. Sevgi Haritaları: Partnerini ne kadar iyi tanıyorsun?
-2. Hayranlık Paylaşımı: Birbirinize saygı ve hayranlık var mı?
-3. Yakınlaşma Çabaları: Küçük jestlere olumlu yanıt veriyor musunuz?
-4. Olumlu Perspektif: İlişkiye genel bakış pozitif mi?
-5. Çatışma Yönetimi: Anlaşmazlıkları nasıl çözüyorsunuz?
-6. Hayat Hayalleri: Birbirinizin hayallerini destekliyor musunuz?
-7. Ortak Anlam: Paylaşılan değerler ve ritüeller var mı?
-
-JSON ÇIKTI FORMATI:
 {{
+  "meta_data": {{
+    "analiz_tarihi": "{datetime.now().isoformat()}",
+    "model": "{self.provider}",
+    "mesaj_sayisi": {len(conversation_text) // 50}, // Tahmini
+    "platform": "generic"
+  }},
   "genel_karne": {{
-    "iliskki_sagligi": <0-100>,
-    "baskin_dinamik": "<Kısa açıklama>",
-    "risk_seviyesi": "<Düşük|Orta|Yüksek|Kritik>"
+    "iliskki_sagligi": 0-100 arası bir puan,
+    "baskin_dinamik": "Örn: Tutkulu ama Çatışmalı",
+    "risk_seviyesi": "Düşük" | "Orta" | "Yüksek" | "Kritik"
   }},
   "gottman_bilesenleri": {{
-    "sevgi_haritalari": {{"skor": <0-100>, "durum": "<Kritik|Geliştirilmeli|Orta|İyi|Mükemmel>", "aciklama": "..."}},
-    "hayranlik_paylasimi": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}},
-    "yakinlasma_cabalari": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}},
-    "olumlu_perspektif": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}},
-    "catisma_yonetimi": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}},
-    "hayat_hayalleri": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}},
-    "ortak_anlam": {{"skor": <0-100>, "durum": "...", "aciklama": "..."}}
+    "sevgi_haritalari": {{ "skor": 0-100, "durum": "İyi", "aciklama": "Partnerini tanıma düzeyi..." }},
+    "hayranlik_paylasimi": {{ "skor": 0-100, "durum": "Orta", "aciklama": "Takdir ve saygı..." }},
+    "yakinlasma_cabalari": {{ "skor": 0-100, "durum": "Kritik", "aciklama": "İlgi gösterme..." }},
+    "olumlu_perspektif": {{ "skor": 0-100, "durum": "İyi", "aciklama": "Genel bakış..." }},
+    "catisma_yonetimi": {{ "skor": 0-100, "durum": "Geliştirilmeli", "aciklama": "Kavga yönetimi..." }},
+    "hayat_hayalleri": {{ "skor": 0-100, "durum": "Orta", "aciklama": "Ortak hedefler..." }},
+    "ortak_anlam": {{ "skor": 0-100, "durum": "İyi", "aciklama": "Ritüeller ve anlam..." }}
   }},
   "duygusal_analiz": {{
-    "iletisim_tonu": "<Destekleyici|Nötr|Defansif|Saldırgan>",
-    "toksisite_seviyesi": <0-100>,
-    "yakinlik": <0-100>,
-    "duygu_ifadesi": "<Açık|Kapalı|Karışık>"
+    "iletisim_tonu": "Örn: Savunmacı / Açık / Pasif-Agresif",
+    "toksisite_seviyesi": 0-100,
+    "yakinlik": 0-100,
+    "duygu_ifadesi": "Örn: Duygular bastırılıyor / Açıkça ifade ediliyor",
+    "empati_puani": 0-100
   }},
   "tespit_edilen_kaliplar": [
     {{
-      "kalip": "<Kalıp adı>",
-      "ornekler": ["Örnek mesaj 1", "Örnek mesaj 2"],
-      "frekans": "<Düşük|Orta|Yüksek>",
-      "etki": "<Pozitif|Nötr|Negatif>"
+      "kalip": "Örn: Mahşerin 4 Atlısı - Aşağılama",
+      "ornekler": ["Mesajdan alıntı 1", "Mesajdan alıntı 2"],
+      "frekans": "Düşük" | "Orta" | "Yüksek",
+      "etki": "Pozitif" | "Nötr" | "Negatif"
     }}
   ],
   "aksiyon_onerileri": [
     {{
-      "baslik": "<Öneri başlığı>",
-      "ornek_cumle": "<Kullanılabilir örnek cümle>",
-      "oncelik": "<Düşük|Orta|Yüksek>",
-      "kategori": "<İletişim|Empati|Çatışma|Bağ>"
+      "baslik": "Örn: Mola Verin",
+      "ornek_cumle": "Şu an çok gerginim, 20 dakika sonra konuşalım mı?",
+      "oncelik": "Yüksek" | "Orta" | "Düşük",
+      "kategori": "Çatışma Yönetimi"
     }}
   ],
-  "ozel_notlar": ["<Önemli uyarı veya not>"]
+  "ozel_notlar": ["Gözlem 1", "Gözlem 2"]
 }}
+"""
 
-Lütfen sadece JSON çıktısını ver, başka açıklama ekleme."""
+    def _parse_relationship_report(self, response: str, metrics: dict[str, Any]) -> dict[str, Any]:
+        """Parse relationship report using Pydantic validation"""
+        from app.schemas.analysis import RelationshipReport
+
+        try:
+            # Clean response (remove markdown if present)
+            cleaned_response = response.strip()
+            if cleaned_response.startswith("```json"):
+                cleaned_response = cleaned_response[7:]
+            if cleaned_response.endswith("```"):
+                cleaned_response = cleaned_response[:-3]
+
+            cleaned_response = cleaned_response.strip()
+
+            # Parse JSON
+            # First try direct parsing
+            report_data = json.loads(cleaned_response)
+
+            # Validate with Pydantic
+            validated_report = RelationshipReport(**report_data)
+
+            return validated_report.dict()
+
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON Decode Error in Relationship Report: {e}")
+            logger.debug(f"Raw Response: {response[:500]}...")
+            return self._fallback_relationship_report(metrics)
+        except Exception as e:
+            logger.error(f"Validation Error in Relationship Report: {e}")
+            return self._fallback_relationship_report(metrics)
+
 
     def _parse_relationship_report(
         self, response: str, metrics: dict[str, Any]

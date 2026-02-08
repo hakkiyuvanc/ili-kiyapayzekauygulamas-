@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Backend UserResponse doesn't have is_pro, so we add it
           const freshUser: User = {
             ...response.data,
-            is_pro: false, // Default to false until backend supports it
+            is_pro: response.data.is_pro || false,
           };
           setUser(freshUser);
           localStorage.setItem("user", JSON.stringify(freshUser));

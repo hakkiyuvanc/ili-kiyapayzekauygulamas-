@@ -13,31 +13,30 @@ import {
   YAxis,
 } from "recharts";
 import { analysisApi } from "@/lib/api";
+import { type HeatmapData } from "@/types";
 import { GlassCard } from "@/components/LottieAnimation";
 
-interface HeatmapData {
-  hourly_tension: { hour: number; tension: number; message_count: number }[];
-  topic_tension: {
-    topic: string;
-    tension: number;
-    risk_level: string;
-    mention_count: number;
-  }[];
-  overall_tension_score: number;
-}
-
-export default function HeatmapChart({ messages }: { messages: any[] }) {
-  const [data, setData] = useState<HeatmapData | null>(null);
+export default function HeatmapChart({
+  messages,
+  initialData,
+}: {
+  messages?: any[];
+  initialData?: HeatmapData;
+}) {
+  const [data, setData] = useState<HeatmapData | null>(initialData || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (messages && messages.length > 0) {
+    if (initialData) {
+      setData(initialData);
+    } else if (messages && messages.length > 0) {
       loadHeatmap();
     }
-  }, [messages]);
+  }, [messages, initialData]);
 
   const loadHeatmap = async () => {
+    if (!messages) return;
     setLoading(true);
     try {
       const response = await analysisApi.generateHeatmap(messages);
@@ -52,7 +51,7 @@ export default function HeatmapChart({ messages }: { messages: any[] }) {
     }
   };
 
-  if (!messages || messages.length === 0) {
+  if ((!messages || messages.length === 0) && !initialData) {
     return (
       <GlassCard className="p-6 text-center text-gray-500">
         <p>Analiz için yeterli mesaj yok.</p>
@@ -163,13 +162,12 @@ export default function HeatmapChart({ messages }: { messages: any[] }) {
                   {topic.topic}
                 </span>
                 <span
-                  className={`px-2 py-1 rounded text-xs font-bold ${
-                    topic.risk_level === "Yüksek"
-                      ? "bg-red-100 text-red-600"
-                      : topic.risk_level === "Orta"
-                        ? "bg-yellow-100 text-yellow-600"
-                        : "bg-green-100 text-green-600"
-                  }`}
+                  className={`px-2 py-1 rounded text-xs font-bold ${topic.risk_level === "Yüksek"
+                    ? "bg-red-100 text-red-600"
+                    : topic.risk_level === "Orta"
+                      ? "bg-yellow-100 text-yellow-600"
+                      : "bg-green-100 text-green-600"
+                    }`}
                 >
                   {topic.risk_level} Risk
                 </span>

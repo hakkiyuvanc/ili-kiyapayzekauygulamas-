@@ -69,7 +69,14 @@ api.interceptors.response.use(
 );
 
 // Types
-import { AnalysisResult, InsightData, Stats, User } from "@/types";
+import {
+  InsightData,
+  User,
+  V2AnalysisResult,
+  RelationshipAnalysis as V1RelationshipAnalysis
+} from "@/types";
+
+export type { User };
 
 export interface AnalysisRequest {
   text: string;
@@ -112,6 +119,10 @@ export interface AnalysisResponse {
   };
 }
 
+// Re-export types for component usage
+export type RelationshipAnalysis = AnalysisResponse;
+export type { V2AnalysisResult };
+
 export interface MetricData {
   score: number;
   label: string;
@@ -142,6 +153,15 @@ export const analysisApi = {
     formData.append("file", file);
     return api.post<AnalysisResponse>(
       `/api/upload/upload-and-analyze?privacy_mode=${privacyMode}&save_to_db=true`,
+      formData,
+    );
+  },
+
+  uploadAndAnalyzeV2: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post<V2AnalysisResult>(
+      "/api/upload/upload-and-analyze-v2?save_to_db=true",
       formData,
     );
   },

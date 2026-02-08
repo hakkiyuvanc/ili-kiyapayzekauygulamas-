@@ -95,6 +95,7 @@ class Settings(BaseSettings):
     STRIPE_API_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
     FRONTEND_URL: str = "http://localhost:3000"
+    MOCK_PAYMENTS: bool = True  # Enable mock payments for testing/demo
 
     # Redis Cache (Optional - falls back to in-memory if not configured)
     REDIS_URL: str = ""  # e.g., "redis://localhost:6379/0"

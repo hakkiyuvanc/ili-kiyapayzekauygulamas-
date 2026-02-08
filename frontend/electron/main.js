@@ -5,6 +5,7 @@ const log = require('electron-log');
 const AutoUpdater = require('./updater');
 const { initSentry, captureError } = require('./sentry');
 const BackendManager = require('./backend-manager');
+const localDb = require('./database');
 
 // Configure logging
 log.transports.file.level = 'info';
@@ -42,8 +43,8 @@ function createWindow() {
   });
 
   // URL yükle
-  const startUrl = isDev 
-    ? 'http://localhost:3000' 
+  const startUrl = isDev
+    ? 'http://localhost:3000'
     : `file://${path.join(__dirname, '../out/index.html')}`;
 
   mainWindow.loadURL(startUrl);
@@ -62,19 +63,22 @@ function createWindow() {
 // App hazır olduğunda
 app.whenReady().then(async () => {
   try {
+    // Initialize database
+    localDb.init();
+
     // Initialize backend manager
     backendManager = new BackendManager();
-    
+
     // Backend'i başlat
     await backendManager.start();
-    
+
     // Pencereyi oluştur
     await createWindow();
-    
+
     // Initialize auto-updater (production only)
     if (!isDev) {
       const updater = new AutoUpdater(mainWindow);
-      
+
       // Add "Check for Updates" to menu
       const template = [
         {
@@ -140,10 +144,10 @@ app.whenReady().then(async () => {
           ]
         }
       ];
-      
+
       const menu = Menu.buildFromTemplate(template);
       Menu.setApplicationMenu(menu);
-      
+
       log.info('Auto-updater initialized');
     } else {
       log.info('Skipping auto-updater in development mode');
@@ -188,4 +192,41 @@ ipcMain.handle('check-backend-health', async () => {
     return await backendManager.checkHealth();
   }
   return false;
+});
+
+// Database IPC handlers
+ipcMain.handle('save-analysis', (event, data) => {
+  try {
+    return localDb.saveAnalysis(data);
+  } catch (error) {
+    log.error('IPC save-analysis error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-history', (event, limit, offset) => {
+  try {
+    return localDb.getHistory(limit, offset);
+  } catch (error) {
+    log.error('IPC get-history error:', error);
+    return [];
+  }
+});
+
+ipcMain.handle('get-analysis-detail', (event, id) => {
+  try {
+    return localDb.getAnalysis(id);
+  } catch (error) {
+    log.error('IPC get-analysis-detail error:', error);
+    return null;
+  }
+});
+
+ipcMain.handle('delete-analysis', (event, id) => {
+  try {
+    return localDb.deleteAnalysis(id);
+  } catch (error) {
+    log.error('IPC delete-analysis error:', error);
+    return false;
+  }
 });

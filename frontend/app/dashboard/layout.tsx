@@ -26,7 +26,7 @@ export default function DashboardLayout({
     }
 
     // 2. Guest user -> Allow
-    if (user.email === "guest@amor.ai" || user.id === "guest") {
+    if (user.email === "guest@amor.ai" || user.id === 0) {
       setIsAuthorized(true);
       return;
     }

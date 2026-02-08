@@ -18,6 +18,17 @@ PRO_PRICE_ID = "price_H5ggYJDqNyV7kU"  # Example, replace with real one later or
 def create_checkout_session(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
+    # DEVELOPMENT / DEMO MODE: Mock Payment
+    if settings.MOCK_PAYMENTS and settings.ENVIRONMENT != "production":
+        # Simulate successful subscription immediately
+        current_user.is_pro = True
+        current_user.stripe_customer_id = "cus_mock_12345"
+        current_user.stripe_subscription_id = "sub_mock_123456"
+        db.commit()
+
+        # Return success URL directly
+        return {"url": f"{settings.FRONTEND_URL}/dashboard?checkout_success=true"}
+
     try:
         # Create user in Stripe if not exists
         if not current_user.stripe_customer_id:
@@ -39,11 +50,17 @@ def create_checkout_session(
 
 
 @router.post("/portal")
-def customer_portal(
-    current_user: User = Depends(get_current_user),
-):
+def customer_portal(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not current_user.stripe_customer_id:
         raise HTTPException(status_code=404, detail="No billing account found")
+
+    # DEVELOPMENT / DEMO MODE: Mock Portal
+    if settings.MOCK_PAYMENTS and "cus_mock" in current_user.stripe_customer_id:
+        # Simulate cancellation/downgrade for demo
+        current_user.is_pro = False
+        current_user.stripe_subscription_id = None
+        db.commit()
+        return {"url": f"{settings.FRONTEND_URL}/subscription?downgraded=true"}
 
     try:
         session = StripeService.create_portal_session(

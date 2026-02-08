@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import AnalysisForm from '@/components/AnalysisForm';
 import AnalysisResult from '@/components/AnalysisResult';
-import { type AnalysisResponse } from '@/lib/api';
+import { type AnalysisResponse, type V2AnalysisResult } from '@/lib/api';
 import { Heart, Sparkles, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdvancedAnalysisPage() {
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | V2AnalysisResult | null>(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -16,7 +16,7 @@ export default function AdvancedAnalysisPage() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center gap-4">
-            <Link 
+            <Link
               href="/"
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
             >

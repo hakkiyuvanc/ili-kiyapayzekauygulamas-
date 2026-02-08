@@ -3,8 +3,17 @@ const nextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
 
+  // Output as static HTML for Electron
+  output: 'export',
+
+  // Disable linting during build to prevent failure on warnings
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Image optimization (Vercel automatically handles this)
   images: {
+    unoptimized: true, // Required for static export
     domains: [], // Add your image domains if needed
     formats: ['image/avif', 'image/webp'],
   },

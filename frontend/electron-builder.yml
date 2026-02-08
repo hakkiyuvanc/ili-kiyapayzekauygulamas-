@@ -14,17 +14,16 @@ files:
   - node_modules/**/*
   - package.json
 
-# Backend resources
+# Protocol Handler
+protocols:
+  - name: Amor AI
+    schemes:
+      - amorai
+
+# Backend resources (Compiled executable)
 extraResources:
-  - from: ../backend
+  - from: backend_dist
     to: backend
-    filter:
-      - '**/*'
-      - '!venv/**/*'
-      - '!__pycache__/**/*'
-      - '!*.pyc'
-      - '!.pytest_cache/**/*'
-      - '!tests/**/*'
 
 # macOS Configuration
 mac:
@@ -73,7 +72,6 @@ win:
       arch:
         - x64
   icon: build/icon.ico
-  publisherName: İlişki Analiz AI
   verifyUpdateCodeSignature: false  # Will enable after code signing
 
 # NSIS Installer (Windows)

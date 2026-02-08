@@ -1,257 +1,238 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { type AnalysisResponse } from '@/lib/api';
-import { Heart, AlertTriangle, Users, Scale, Download, Sparkles, MessageCircleHeart } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { type V2AnalysisResult, type RelationshipAnalysis, chatApi } from '@/lib/api';
+import { generatePDF } from '@/lib/pdf';
+import { useAuth } from '@/app/providers';
+import { Heart, AlertTriangle, Users, Scale, Download, Sparkles, MessageCircleHeart, Info, Lock } from 'lucide-react';
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
-import OutcomeCharts from './OutcomeCharts';
-import { generatePDF } from '@/lib/pdfGenerator';
-import { useState } from 'react';
+import RelationshipHealthPanel from './dashboard/RelationshipHealthPanel';
+import HeatmapChart from './magic/HeatmapChart';
+import { GlassCard } from './LottieAnimation';
 
 interface AnalysisResultProps {
-  result: AnalysisResponse;
+  result: V2AnalysisResult | RelationshipAnalysis;
 }
 
 export default function AnalysisResult({ result }: AnalysisResultProps) {
+  const router = useRouter();
+  const { user } = useAuth();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+
+  const handleChatWithCoach = async () => {
+    if (!user?.is_pro) {
+      router.push('/subscription');
+      return;
+    }
+
+    setIsCreatingChat(true);
+    try {
+      const analysisId = 'analysis_id' in result ? result.analysis_id : undefined;
+      const response = await chatApi.createSession({
+        title: `Analiz Sohbeti - ${new Date().toLocaleDateString('tr-TR')}`,
+        analysis_id: analysisId
+      });
+      router.push(`/chat/${response.data.id}`);
+    } catch (error) {
+      console.error('Failed to create chat session:', error);
+      setIsCreatingChat(false);
+    }
+  };
+
+  // Type guard to check if it's V2 result
+  const isV2 = (res: any): res is V2AnalysisResult => {
+    return 'gottman_report' in res;
+  };
+
+  const overallScore = isV2(result)
+    ? result.gottman_report.genel_karne.iliskki_sagligi
+    : result.overall_score * 10; // Convert 0-10 to 0-100
+
+  const summary = isV2(result)
+    ? result.gottman_report.genel_karne.baskin_dinamik
+    : result.summary || "İlişki analizi tamamlandı.";
 
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      await generatePDF(result);
+      const date = new Date().toISOString().split('T')[0];
+      await generatePDF('analysis-report', `amor-ai-report-${date}`);
     } catch (error) {
-      console.error('PDF generation failed', error);
+      console.error('Download failed', error);
     } finally {
       setIsDownloading(false);
     }
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 7) return 'text-[#22C55E]'; // Green for high
-    if (score >= 5) return 'text-[#FF7F7F]'; // Coral for medium
-    return 'text-[#B76E79]'; // Rose gold for needs work
-  };
-
-  const getMetricIcon = (metricName: string) => {
-    switch (metricName) {
-      case 'sentiment':
-        return <Heart className="w-5 h-5" />;
-      case 'empathy':
-        return <Users className="w-5 h-5" />;
-      case 'conflict':
-        return <AlertTriangle className="w-5 h-5" />;
-      case 'we_language':
-        return <Sparkles className="w-5 h-5" />;
-      case 'communication_balance':
-        return <Scale className="w-5 h-5" />;
-      default:
-        return null;
-    }
-  };
-
-  const getMetricTitle = (metricName: string) => {
-    const titles: Record<string, string> = {
-      sentiment: 'Duygu Durumu 💕',
-      empathy: 'Empati 🤗',
-      conflict: 'Çatışma ⚡',
-      we_language: 'Biz-dili 💬',
-      communication_balance: 'İletişim Dengesi ⚖️',
-    };
-    return titles[metricName] || metricName;
+    if (score >= 70) return 'text-[#22C55E]';
+    if (score >= 50) return 'text-[#FF7F7F]';
+    return 'text-[#B76E79]';
   };
 
   const chartData = [
     {
       name: 'Genel Skor',
-      score: result.overall_score * 10,
-      fill: result.overall_score >= 7 ? '#22c55e' : result.overall_score >= 5 ? '#FF7F7F' : '#B76E79',
+      score: overallScore,
+      fill: overallScore >= 70 ? '#22c55e' : overallScore >= 50 ? '#FF7F7F' : '#B76E79',
     },
   ];
 
   const chartFillColor = chartData[0]?.fill ?? '#B76E79';
 
+  const chartMetrics = isV2(result) ? {
+    sevgi_haritalari: result.gottman_report.gottman_bilesenleri.sevgi_haritalari.skor,
+    hayranlik_paylasimi: result.gottman_report.gottman_bilesenleri.hayranlik_paylasimi.skor,
+    yakinlasma_cabalari: result.gottman_report.gottman_bilesenleri.yakinlasma_cabalari.skor,
+    olumlu_perspektif: result.gottman_report.gottman_bilesenleri.olumlu_perspektif.skor,
+    catisma_yonetimi: result.gottman_report.gottman_bilesenleri.catisma_yonetimi.skor,
+    hayat_hayalleri: result.gottman_report.gottman_bilesenleri.hayat_hayalleri.skor,
+    ortak_anlam: result.gottman_report.gottman_bilesenleri.ortak_anlam.skor,
+  } : null;
+
   return (
-    <div className="space-y-6 safe-bottom px-4 bg-romantic-gradient-soft min-h-screen py-8">
-      {/* AMOR AI Header */}
+    <div id="analysis-report" className="space-y-6 safe-bottom px-4 bg-romantic-gradient-soft min-h-screen py-8">
+      {/* Header */}
       <div className="text-center mb-6 animate-fadeIn">
         <h1 className="amor-logo text-2xl mb-1">AMOR AI</h1>
-        <p className="text-[#6B3F3F] text-sm">İlişki Analiz Raporu</p>
+        <p className="text-[#6B3F3F] text-sm">İlişki Analiz Raporu V2.0</p>
       </div>
 
-      {/* Overall Score */}
+      {/* Overall Score Card */}
       <div className="ios-card-elevated animate-slideUp">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-[#331A1A]">Genel İlişki Skoru 💗</h2>
+            <h2 className="text-xl font-bold text-[#331A1A]">İlişki Sağlığı 💗</h2>
             <button
               onClick={handleDownload}
               disabled={isDownloading}
-              className="p-2 bg-[#FFF0F5] hover:bg-[#FFB6C1]/30 rounded-xl transition-colors disabled:opacity-50 active:scale-95"
-              title="Raporu İndir (PDF)"
+              className="p-2 bg-[#FFF0F5] hover:bg-[#FFB6C1]/30 rounded-xl transition-colors disabled:opacity-50"
             >
               <Download className={`w-5 h-5 text-[#B76E79] ${isDownloading ? 'animate-pulse' : ''}`} />
             </button>
           </div>
-          <div className="flex flex-col items-center">
-            <ResponsiveContainer width="100%" height={200}>
-              <RadialBarChart
-                cx="50%"
-                cy="50%"
-                innerRadius="60%"
-                outerRadius="80%"
-                data={chartData}
-                startAngle={180}
-                endAngle={0}
-              >
-                <RadialBar
-                  dataKey="score"
-                  cornerRadius={10}
-                  fill={chartFillColor}
-                />
-              </RadialBarChart>
-            </ResponsiveContainer>
-            <div className="text-center -mt-12">
-              <div className={`text-6xl font-bold ${getScoreColor(result.overall_score)}`}>
-                {result.overall_score.toFixed(1)}
+
+          <div className="flex flex-col items-center relative">
+            <div className="h-48 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadialBarChart
+                  cx="50%" cy="50%"
+                  innerRadius="60%" outerRadius="80%"
+                  barSize={10}
+                  data={chartData}
+                  startAngle={180} endAngle={0}
+                >
+                  <RadialBar
+                    background
+                    dataKey="score"
+                    cornerRadius={10}
+                  />
+                </RadialBarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/4 text-center">
+              <div className={`text-5xl font-bold ${getScoreColor(overallScore)}`}>
+                {overallScore.toFixed(0)}
               </div>
-              <div className="text-[#6B3F3F] text-sm mt-1">/ 10</div>
+              <div className="text-[#6B3F3F] text-xs mt-1">/ 100</div>
             </div>
           </div>
-          <p className="text-center text-[#331A1A] mt-6 leading-relaxed">{result.summary}</p>
+
+          <p className="text-center text-[#331A1A] mt-2 font-medium bg-white/50 py-2 px-4 rounded-xl border border-pink-200">
+            {summary}
+          </p>
         </div>
       </div>
 
-      {/* Outcome Charts */}
-      <div className="animate-fadeIn" style={{ animationDelay: '0.1s' }}>
-        <OutcomeCharts
-          stats={result.conversation_stats}
-          metrics={{
-            sentiment: result.metrics.sentiment,
-            empathy: result.metrics.empathy,
-            conflict: result.metrics.conflict,
-            we_language: result.metrics.we_language,
-            communication_balance: result.metrics.communication_balance,
-          }}
-        />
-      </div>
+      {/* V2 Specific Components */}
+      {isV2(result) && chartMetrics && (
+        <>
+          {/* Heatmap (Stage 4) */}
+          {result.heatmap && (
+            <div className="animate-fadeIn delay-50 mb-6">
+              <HeatmapChart initialData={result.heatmap} />
+            </div>
+          )}
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn" style={{ animationDelay: '0.2s' }}>
-        {Object.entries(result.metrics).map(([key, metric], index) => (
-          <div key={key} className="ios-card p-4 animate-slideUp" style={{ animationDelay: `${0.3 + index * 0.05}s` }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-[#FFF0F5] rounded-xl text-[#B76E79]">
-                  {getMetricIcon(key)}
-                </div>
-                <span className="font-semibold text-[#331A1A]">{getMetricTitle(key)}</span>
-              </div>
-              <span className="text-xl font-bold text-[#B76E79]">{metric.score.toFixed(0)}</span>
-            </div>
-            <div className="w-full bg-[#FFF0F5] rounded-full h-2.5 mb-2">
-              <div
-                className={`h-2.5 rounded-full transition-all duration-500 ${metric.score >= 70
-                  ? 'bg-gradient-to-r from-[#22C55E] to-[#10B981]'
-                  : metric.score >= 40
-                    ? 'bg-gradient-to-r from-[#FF7F7F] to-[#FFB6C1]'
-                    : 'bg-gradient-to-r from-[#B76E79] to-[#FFB6C1]'
-                  }`}
-                style={{ width: `${metric.score}%` }}
-              />
-            </div>
-            <span className="text-sm text-[#6B3F3F]">{metric.label}</span>
+          {/* Gottman Radar Chart */}
+          <div className="animate-fadeIn delay-100">
+            <RelationshipHealthPanel metrics={chartMetrics} />
           </div>
-        ))}
-      </div>
 
-      {/* Insights */}
-      <div className="ios-card-elevated animate-fadeIn" style={{ animationDelay: '0.4s' }}>
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-[#331A1A] mb-4 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#FFB6C1]" />
-            İçgörüler
-          </h3>
-          <div className="space-y-3">
-            {result.insights.map((insight, index) => (
-              <div key={index} className="flex gap-3 p-4 bg-[#FFF0F5] rounded-xl border border-[#FFB6C1]/20">
-                <div className="text-2xl">{insight.icon}</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="font-semibold text-[#331A1A]">{insight.title}</span>
-                    <span className="text-xs px-2 py-1 bg-white text-[#B76E79] rounded-lg border border-[#FFB6C1]/30">
-                      {insight.category}
+          {/* Detailed Metrics Grid */}
+          <div className="grid grid-cols-2 gap-4 animate-fadeIn delay-200">
+            <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
+              <Heart className="w-8 h-8 text-rose-500 mb-2" />
+              <div className="text-2xl font-bold text-gray-800">{result.gottman_report.duygusal_analiz.yakinlik}</div>
+              <div className="text-xs text-gray-500">Yakınlık</div>
+            </GlassCard>
+            <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
+              <Users className="w-8 h-8 text-purple-500 mb-2" />
+              <div className="text-2xl font-bold text-gray-800">{result.gottman_report.duygusal_analiz.empati_puani}</div>
+              <div className="text-xs text-gray-500">Empati</div>
+            </GlassCard>
+            <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
+              <AlertTriangle className="w-8 h-8 text-orange-500 mb-2" />
+              <div className="text-2xl font-bold text-gray-800">{result.gottman_report.duygusal_analiz.toksisite_seviyesi}</div>
+              <div className="text-xs text-gray-500">Toksisite</div>
+            </GlassCard>
+            <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
+              <Scale className="w-8 h-8 text-blue-500 mb-2" />
+              <div className="text-sm font-bold text-gray-800 line-clamp-2">{result.gottman_report.duygusal_analiz.iletisim_tonu}</div>
+              <div className="text-xs text-gray-500">İletişim Tonu</div>
+            </GlassCard>
+          </div>
+
+          {/* Action Recommendations */}
+          <div className="animate-fadeIn delay-300">
+            <h3 className="text-lg font-bold text-[#331A1A] mb-3 ml-1 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-yellow-500" />
+              Koç Önerileri
+            </h3>
+            <div className="space-y-3">
+              {result.gottman_report.aksiyon_onerileri.map((rec, idx) => (
+                <GlassCard key={idx} className="p-4 border-l-4 border-l-pink-500">
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="font-bold text-gray-800">{rec.baslik}</h4>
+                    <span className="text-[10px] uppercase tracking-wider bg-pink-100 text-pink-600 px-2 py-1 rounded-full">
+                      {rec.oncelik}
                     </span>
                   </div>
-                  <p className="text-sm text-[#6B3F3F] leading-relaxed">{insight.description}</p>
-                </div>
-              </div>
-            ))}
+                  <p className="text-sm text-gray-600 mb-2">{rec.ornek_cumle}</p>
+                  <div className="text-xs text-gray-400 flex items-center gap-1">
+                    <Info className="w-3 h-3" /> {rec.kategori}
+                  </div>
+                </GlassCard>
+              ))}
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Recommendations */}
-      <div className="ios-card-elevated animate-fadeIn" style={{ animationDelay: '0.5s' }}>
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-[#331A1A] mb-4 flex items-center gap-2">
-            <Heart className="w-5 h-5 text-[#FFB6C1] fill-[#FFB6C1]" />
-            Öneriler
-          </h3>
-          <div className="space-y-4">
-            {result.recommendations.map((rec, index) => (
-              <div key={index} className="p-4 border-2 border-[#FFB6C1]/30 rounded-xl bg-white">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-[#331A1A]">{rec.title}</h4>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-lg ${rec.priority === 'high'
-                      ? 'bg-[#FFB6C1] text-white'
-                      : rec.priority === 'medium'
-                        ? 'bg-[#FFF0F5] text-[#B76E79]'
-                        : 'bg-white text-[#6B3F3F] border border-[#FFB6C1]/30'
-                      }`}
-                  >
-                    {rec.priority === 'high'
-                      ? '🌹 Yüksek'
-                      : rec.priority === 'medium'
-                        ? '💗 Orta'
-                        : '💕 Düşük'}
-                  </span>
-                </div>
-                <p className="text-sm text-[#6B3F3F] mb-3 leading-relaxed">{rec.description}</p>
-                <div className="bg-[#FFF0F5] p-3 rounded-xl text-sm border border-[#FFB6C1]/20">
-                  <strong className="text-[#B76E79]">Egzersiz:</strong>{' '}
-                  <span className="text-[#331A1A]">{rec.exercise}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* AI Coach CTA */}
-      <div className="ios-card-elevated bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white border-none animate-fadeIn" style={{ animationDelay: '0.6s' }}>
-        <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-              <MessageCircleHeart className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-                <span className="amor-logo">AMOR AI</span> Koçuna Danış
-              </h3>
-              <p className="text-white/90 text-sm">
-                Bu analiz hakkında detaylı sorular sor ve kişisel tavsiyeler al 💬
-              </p>
-            </div>
-          </div>
-          <a
-            href={`/chat?analysis_id=${result.analysis_id || ''}`}
-            className="ios-button bg-white text-[#B76E79] hover:bg-white/90 px-6 py-3 font-semibold shadow-xl whitespace-nowrap"
+      <GlassCard className="bg-gradient-to-r from-rose-400 to-pink-500 text-white border-none animate-fadeIn delay-500">
+        <div className="p-4 flex flex-col items-center text-center">
+          <MessageCircleHeart className="w-10 h-10 mb-2 text-white/90" />
+          <h3 className="text-lg font-bold mb-1">AI İlişki Koçuna Danış</h3>
+          <p className="text-white/80 text-sm mb-3">Bu rapor hakkında daha fazla detay öğrenmek ister misin?</p>
+          <button
+            onClick={handleChatWithCoach}
+            disabled={isCreatingChat}
+            className="w-full bg-white text-pink-500 py-3 rounded-xl font-bold hover:bg-white/90 transition-colors shadow-lg flex items-center justify-center gap-2"
           >
-            Koç ile Konuş 💗
-          </a>
+            {isCreatingChat ? (
+              <span className="animate-pulse">Oluşturuluyor...</span>
+            ) : (
+              <>
+                {!user?.is_pro && <Lock className="w-4 h-4" />}
+                {user?.is_pro ? "Sohbete Başla" : "Pro'ya Yükseltip Başla"}
+              </>
+            )}
+          </button>
         </div>
-      </div>
+      </GlassCard>
     </div>
   );
 }

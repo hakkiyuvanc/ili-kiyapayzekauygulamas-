@@ -143,9 +143,19 @@ app.include_router(feedback.router, prefix="/api/feedback", tags=["Feedback"])  
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(
-        "app.main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
-    )
+    if getattr(sys, "frozen", False):
+        # Frozen (PyInstaller)
+        uvicorn.run(
+            app,
+            host=settings.HOST,
+            port=settings.PORT,
+            reload=False,
+        )
+    else:
+        # Dev (Reload supported)
+        uvicorn.run(
+            "app.main:app",
+            host=settings.HOST,
+            port=settings.PORT,
+            reload=settings.DEBUG,
+        )

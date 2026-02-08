@@ -439,58 +439,57 @@ async def analyze_screenshot(
 ):
     """
     Screenshot analizi endpoint'i (V2.0)
-    
+
     - Kullanıcı base64 encoded image gönderir
     - GPT-4o Vision ile OCR + duygusal analiz yapılır
     - Çıkarılan metin otomatik olarak analiz edilir
     """
-    from fastapi import File, UploadFile
     import base64
-    
+
     from app.services.vision_service import get_vision_service
-    
+
     # Pro feature check
     if not current_user or not current_user.is_pro:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Screenshot analizi özelliği sadece Pro üyeler içindir.",
         )
-    
+
     # Get image from request
     try:
         body = await request.json()
         image_data_base64 = body.get("image")
         image_format = body.get("format", "png")  # png, jpg, jpeg
-        
+
         if not image_data_base64:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Image data is required (base64 encoded)",
             )
-        
+
         # Decode base64
         # Remove data URL prefix if present (data:image/png;base64,...)
         if "base64," in image_data_base64:
             image_data_base64 = image_data_base64.split("base64,")[1]
-        
+
         image_bytes = base64.b64decode(image_data_base64)
-        
+
     except Exception as e:
         logger.error(f"Failed to parse image data: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid image data: {str(e)}",
         )
-    
+
     # Analyze with Vision API
     vision_service = get_vision_service()
-    
+
     try:
         vision_result = vision_service.analyze_screenshot(image_bytes, image_format)
-        
+
         # Extract text from vision result
         extracted_text = vision_result.get("cikarilan_metin", "")
-        
+
         if not extracted_text or len(extracted_text) < 20:
             return {
                 "status": "warning",
@@ -498,7 +497,7 @@ async def analyze_screenshot(
                 "vision_analysis": vision_result,
                 "extracted_text": extracted_text,
             }
-        
+
         # Run full analysis on extracted text
         service = get_analysis_service()
         analysis_result = service.analyze_text(
@@ -506,7 +505,7 @@ async def analyze_screenshot(
             format_type="auto",
             privacy_mode=True,
         )
-        
+
         # Combine vision + analysis results
         combined_result = {
             "status": "success",
@@ -515,7 +514,7 @@ async def analyze_screenshot(
             "message_count": vision_result.get("mesaj_sayisi", 0),
             "analysis": analysis_result,
         }
-        
+
         # Save to database
         try:
             db_analysis = AnalysisCRUD.create_analysis(
@@ -529,7 +528,7 @@ async def analyze_screenshot(
         except Exception as e:
             logger.error(f"Failed to save screenshot analysis: {e}")
             combined_result["db_save_error"] = str(e)
-        
+
         logger.info(
             "Screenshot analysis completed",
             extra={
@@ -538,9 +537,9 @@ async def analyze_screenshot(
                 "message_count": vision_result.get("mesaj_sayisi", 0),
             },
         )
-        
+
         return combined_result
-        
+
     except Exception as e:
         logger.error(
             "Screenshot analysis failed",
@@ -567,7 +566,7 @@ async def analyze_v2(
 ):
     """
     V2.0 Analiz endpoint'i - Gottman-based structured report
-    
+
     Request body:
     {
         "text": "conversation text",
@@ -576,19 +575,19 @@ async def analyze_v2(
     }
     """
     from app.services.ai_service import get_ai_service
-    
+
     try:
         body = await request.json()
         text = body.get("text")
         model_preference = body.get("model_preference", "fast")
         format_type = body.get("format_type", "auto")
-        
+
         if not text:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Text is required",
             )
-        
+
         # Validate text
         service = get_analysis_service()
         is_valid, error_msg = service.validate_text(text)
@@ -597,24 +596,40 @@ async def analyze_v2(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=error_msg,
             )
-        
+
         # Run basic analysis first
         basic_result = service.analyze_text(
             text=text,
             format_type=format_type,
             privacy_mode=True,
         )
-        
+
+        # 1. Generate Heatmap (Stage 4)
+        from app.services.heatmap_service import get_heatmap_service
+        from backend.ml.preprocessing.conversation_parser import ConversationParser
+
+        heatmap_data = None
+        try:
+            parser = ConversationParser()
+            parsed = parser.parse(text, format_type=format_type)
+            messages = parsed.get("messages", [])
+
+            if messages:
+                heatmap_service = get_heatmap_service()
+                heatmap_data = heatmap_service.analyze_heatmap(messages)
+        except Exception as e:
+            logger.warning(f"Heatmap generation failed: {e}")
+
         # Get AI service for Gottman report
         ai_service = get_ai_service()
-        
+
         # Generate comprehensive Gottman report
         gottman_report = ai_service.generate_relationship_report(
             conversation_text=text,
             metrics=basic_result.get("metrics", {}),
             model_preference=model_preference,
         )
-        
+
         # Combine results
         v2_result = {
             "status": "success",
@@ -622,8 +637,9 @@ async def analyze_v2(
             "basic_metrics": basic_result.get("metrics", {}),
             "gottman_report": gottman_report,
             "summary": basic_result.get("summary", ""),
+            "heatmap": heatmap_data,
         }
-        
+
         # Save to database
         if current_user:
             try:
@@ -638,7 +654,7 @@ async def analyze_v2(
             except Exception as e:
                 logger.error(f"Failed to save V2 analysis: {e}")
                 v2_result["db_save_error"] = str(e)
-        
+
         logger.info(
             "V2 analysis completed",
             extra={
@@ -647,9 +663,9 @@ async def analyze_v2(
                 "gottman_health": gottman_report.get("genel_karne", {}).get("iliskki_sagligi", 0),
             },
         )
-        
+
         return v2_result
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -668,6 +684,7 @@ async def analyze_v2(
 # MAGIC FEATURES (V2.0 - Stage 3)
 # ============================================================================
 
+
 @router.post(
     "/heatmap",
     status_code=status.HTTP_200_OK,
@@ -680,20 +697,20 @@ async def generate_heatmap(
 ):
     """Conversation heatmap endpoint"""
     from app.services.heatmap_service import get_heatmap_service
-    
+
     try:
         body = await request.json()
         messages = body.get("messages", [])
-        
+
         if not messages:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Messages are required",
             )
-        
+
         heatmap_service = get_heatmap_service()
         heatmap_data = heatmap_service.analyze_heatmap(messages)
-        
+
         return {"status": "success", "heatmap": heatmap_data}
     except Exception as e:
         logger.error(f"Heatmap failed: {e}")
@@ -708,16 +725,14 @@ async def shift_message_tone(
 ):
     """Tone shifter endpoint (Pro only)"""
     from app.services.tone_shifter import get_tone_shifter
-    
+
     if not current_user or not current_user.is_pro:
         raise HTTPException(status_code=403, detail="Pro only")
-    
+
     body = await request.json()
     tone_shifter = get_tone_shifter()
     result = tone_shifter.shift_tone(
-        body.get("message"),
-        body.get("target_tone", "yaratici"),
-        body.get("context", "")
+        body.get("message"), body.get("target_tone", "yaratici"), body.get("context", "")
     )
     return {"status": "success", **result}
 
@@ -730,15 +745,13 @@ async def project_future(
 ):
     """Future projection endpoint (Pro only)"""
     from app.services.ai_projection import get_ai_projection
-    
+
     if not current_user or not current_user.is_pro:
         raise HTTPException(status_code=403, detail="Pro only")
-    
+
     body = await request.json()
     projection_service = get_ai_projection()
     projection = projection_service.project_future(
-        body.get("metrics", {}),
-        body.get("gottman_report"),
-        body.get("timeframe_months", 6)
+        body.get("metrics", {}), body.get("gottman_report"), body.get("timeframe_months", 6)
     )
     return {"status": "success", "projection": projection}

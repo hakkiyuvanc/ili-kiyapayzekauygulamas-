@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardScreen } from "@/components/DashboardScreen";
-import { analysisApi, systemApi } from "@/lib/api";
+import { analysisApi, systemApi, authApi } from "@/lib/api";
 import { useAuth, useToastContext } from "../providers";
 
 import { InsightData, AnalysisType } from "@/types";
@@ -70,6 +70,28 @@ export default function DashboardPage() {
       loadAnalysisHistory();
     }
   }, [user, authLoading]);
+
+  // Handle Subscription Success
+  const searchParams = useSearchParams();
+  const { updateUser, success: showSuccess } = useAuth() as any; // Temporaryany cast or update interface
+  // Wait, useToastContext provides success toast.
+  const { success } = useToastContext();
+
+  useEffect(() => {
+    const checkoutSuccess = searchParams.get('checkout_success');
+    if (checkoutSuccess && user && !user.is_pro) {
+      // Refresh profile to get updated is_pro status
+      authApi.getProfile().then(res => {
+        const updatedUser = { ...res.data, is_pro: true }; // Backend might take a second, optimistically set true
+        updateUser(updatedUser);
+        success("🎉 Tebrikler! Pro üyeliğiniz aktifleşti.");
+        // Clear param
+        router.replace('/dashboard');
+      }).catch(err => {
+        console.error("Failed to refresh profile after checkout", err);
+      });
+    }
+  }, [searchParams, user]);
 
   const handleStartAnalysis = () => {
     router.push("/analysis/new"); // New route for selecting analysis type

@@ -18,24 +18,39 @@ export default function AssessmentPage() {
             .join('\n');
 
         try {
-            const response = await analysisApi.analyze({
-                text: text,
-                format_type: 'plain',
-                privacy_mode: true,
-            });
-
+            // Use V2 Analysis
+            const response = await analysisApi.analyzeV2(text);
             const result = response.data;
 
-            if (result.analysis_id) {
+            let analysisId = result.analysis_id;
+            let source = 'remote';
+
+            // Save locally if in Electron
+            if (window.electronAPI) {
+                try {
+                    const saved = await window.electronAPI.saveAnalysis(result);
+                    if (saved && saved.success) {
+                        analysisId = saved.id;
+                        source = 'local';
+                    }
+                } catch (e) {
+                    console.error('Failed to save to local DB', e);
+                }
+            }
+
+            if (analysisId) {
                 success('Değerlendirme tamamlandı!');
-                router.push(`/analysis/result?id=${result.analysis_id}`);
+                router.push(`/analysis/result?id=${analysisId}&source=${source}`);
             } else {
+                // If no ID (guest + no local DB), pass result via state? 
+                // Router push doesn't support state easily. 
+                // For now, require ID. Guest users on web might fail if backend doesn't return ID.
+                // But backend returns ID for guests too (create_analysis uses user_id=None).
+                // Wait, backend create_analysis allows user_id=None.
                 error('Analiz ID alınamadı');
             }
         } catch (err) {
             console.error('Assessment failed:', err);
-            // Removed mock fallback for proper error handling, or implementation plan should be followed.
-            // Assuming consistent API behavior for now.
             error('Analiz başarısız oldu');
         }
     };

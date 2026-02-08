@@ -118,7 +118,7 @@ export default function AuthPage() {
   const handleContinueAsGuest = () => {
     // Set guest user data in localStorage
     const guestUser = {
-      id: "guest",
+      id: 0,
       email: "guest@amor.ai",
       full_name: "Misafir Kullanıcı",
       is_pro: false,
