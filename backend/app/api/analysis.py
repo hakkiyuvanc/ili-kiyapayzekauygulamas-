@@ -66,7 +66,7 @@ async def analyze_text(
     from app.services.cache_service import cache_service
 
     if current_user and not current_user.is_pro:
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
 
         # Cache key for daily count (per user, per day)
         cache_key = f"daily_analysis_count:{current_user.id}:{today.isoformat()}"

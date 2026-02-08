@@ -30,6 +30,7 @@ import { ConversationStartersWidget } from "@/components/ConversationStartersWid
 import { CheckupWidget } from "@/components/CheckupWidget";
 import { LoveLanguageWidget } from "@/components/LoveLanguageWidget";
 import { ConflictResolutionWidget } from "@/components/ConflictResolutionWidget";
+import { WelcomeScreen } from "@/components/WelcomeScreen";
 
 interface DashboardScreenProps {
   isPro: boolean;
@@ -77,14 +78,30 @@ export function DashboardScreen({
   analysisHistory,
 }: DashboardScreenProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
+    // Show welcome screen for guest users or first time visitors
+    const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
+    if (!user || !hasSeenWelcome) {
+      setShowWelcome(true);
+    }
     const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [user]);
+
+  const handleWelcomeStart = () => {
+    localStorage.setItem("hasSeenWelcome", "true");
+    setShowWelcome(false);
+  };
 
   if (isLoading) {
     return <DashboardSkeleton />;
+  }
+
+  // Show welcome screen for first-time users
+  if (showWelcome) {
+    return <WelcomeScreen onStart={handleWelcomeStart} />;
   }
 
   const avgScore =

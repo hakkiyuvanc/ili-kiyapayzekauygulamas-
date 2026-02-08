@@ -30,7 +30,7 @@ class EmailService:
         self.templates_dir = Path(__file__).parent / "email_templates"
 
     async def send_email(
-        self, to_email: str, subject: str, html_content: str, text_content: str | None = None
+        self, to_email: str, subject: str, html_content: str, text_content: Optional[str] = None
     ) -> bool:
         """
         Send an email via SMTP

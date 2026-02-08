@@ -72,7 +72,7 @@ class CoachingStatus(Base):
 
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    user = relationship("app.models.database.User", back_populates="coaching_status")
+    user = relationship("User", back_populates="coaching_status")
 
 
 class Analysis(Base):
@@ -111,7 +111,7 @@ class Analysis(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # İlişkiler
-    user = relationship("app.models.database.User", back_populates="analyses")
+    user = relationship("User", back_populates="analyses")
 
 
 class AnalysisHistory(Base):
@@ -185,7 +185,7 @@ class ChatMessage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # İlişkiler
-    session = relationship("app.models.database.ChatSession", back_populates="messages")
+    session = relationship("ChatSession", back_populates="messages")
 
 
 class DailyPulse(Base):
@@ -245,7 +245,7 @@ class Subscription(Base):
 
     # Stripe integration
     stripe_subscription_id = Column(String(255), unique=True, index=True, nullable=True)
-    stripe_customer_id = Column(String(255), index=True, nullable=True)
+    stripe_customer_id = Column(String(255), nullable=True)
 
     # Billing period
     current_period_start = Column(DateTime(timezone=True), nullable=True)
@@ -260,7 +260,7 @@ class Subscription(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    user = relationship("app.models.database.User", back_populates="subscriptions")
+    user = relationship("User", back_populates="subscriptions")
 
 
 class UsageTracking(Base):
@@ -290,7 +290,7 @@ class UsageTracking(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    user = relationship("app.models.database.User", back_populates="usage_tracking")
+    user = relationship("User", back_populates="usage_tracking")
 
 
 class RefreshToken(Base):
@@ -316,4 +316,4 @@ class RefreshToken(Base):
     revoked_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    user = relationship("app.models.database.User", back_populates="refresh_tokens")
+    user = relationship("User", back_populates="refresh_tokens")

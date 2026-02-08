@@ -59,7 +59,7 @@ def create_session(
     """Start a new chat session"""
     # Free tier limit check
     if not current_user.is_pro:
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         # Count sessions created today
         # Note: created_at is datetime, so we need to filter
         daily_count = (
@@ -185,7 +185,7 @@ def send_message(
     db.add(ai_msg)
 
     # Update session timestamp
-    session.updated_at = datetime.utcnow()
+    session.updated_at = datetime.now(timezone.utc)
 
     db.commit()
     db.refresh(ai_msg)

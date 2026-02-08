@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # Refresh token expiration in days
 
-    # CORS
+    # CORS - Development (localhost only)
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://localhost:8000",
@@ -141,9 +141,7 @@ class Settings(BaseSettings):
 
             # Production'da Sentry önerilir ama zorunlu değil
             if not self.SENTRY_DSN:
-                print(
-                    "⚠️ WARNING: SENTRY_DSN not set in production. Error tracking disabled."
-                )
+                print("⚠️ WARNING: SENTRY_DSN not set in production. Error tracking disabled.")
 
         # Email servisi aktifse SMTP ayarları kontrolü
         if self.EMAIL_ENABLED:

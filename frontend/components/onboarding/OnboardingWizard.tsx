@@ -9,7 +9,7 @@ import { useAuth, useToastContext } from "@/app/providers";
 
 export function OnboardingWizard() {
   const { success, error } = useToastContext();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [step, setStep] = useState(0);
   const [data, setData] = useState({
     fullName: user?.full_name || "",
@@ -38,8 +38,18 @@ export function OnboardingWizard() {
       typeof window !== "undefined" &&
       localStorage.getItem("isGuest") === "true";
     if (isGuest) {
+      // Update guest user data in localStorage
+      if (user) {
+        const updatedUser = {
+          ...user,
+          full_name: finalData.fullName,
+          goals: finalData.goals,
+          onboarding_completed: true, // Critical: Mark onboarding as complete
+        };
+        updateUser(updatedUser); // This updates both state and localStorage
+      }
       success("Profil oluşturuldu!");
-      window.location.reload();
+      // No need to reload, state update will close the wizard
       return;
     }
 

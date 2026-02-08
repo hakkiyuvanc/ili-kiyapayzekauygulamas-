@@ -1,3 +1,4 @@
+import logging
 import random
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
@@ -15,6 +16,8 @@ from app.models.database import User
 from app.repositories import UserRepository
 from app.schemas.user import Token, TokenData, UserCreate, UserResponse, UserVerify
 from app.services.email_service import email_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -56,30 +59,49 @@ async def register(user: UserCreate, repo: UserRepository = Depends(get_user_rep
 
 @router.post("/verify")
 def verify_email(verify_data: UserVerify, repo: UserRepository = Depends(get_user_repository)):
-    # Find user by email
-    user = repo.get_by_email(verify_data.email)
-    if not user:
-        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    try:
+        logger.info(f"Verify request for: {verify_data.email}")
 
-    if user.is_verified:
-        return {"message": "Email zaten doğrulanmış"}
+        # Find user by email
+        user = repo.get_by_email(verify_data.email)
+        if not user:
+            logger.warning("User not found")
+            raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
 
-    # Validate verification code
-    if not user.verification_code or user.verification_code != verify_data.code:
-        raise HTTPException(status_code=400, detail="Geçersiz doğrulama kodu")
+        if user.is_verified:
+            logger.info("Already verified")
+            return {"message": "Email zaten doğrulanmış"}
 
-    if user.verification_code_expires_at and user.verification_code_expires_at < datetime.now(
-        timezone.utc
-    ):
-        raise HTTPException(status_code=400, detail="Doğrulama kodunun süresi dolmuş")
+        # Validate verification code
+        if not user.verification_code or user.verification_code != verify_data.code:
+            logger.warning(f"Invalid code for {verify_data.email}")
+            raise HTTPException(status_code=400, detail="Geçersiz doğrulama kodu")
 
-    # Mark as verified
-    user.is_verified = True
-    user.verification_code = None
-    user.verification_code_expires_at = None
-    repo.update(user)
+        # Check expiration with timezone-aware comparison
+        if user.verification_code_expires_at and user.verification_code_expires_at < datetime.now(
+            timezone.utc
+        ):
+            logger.warning(f"Code expired for {verify_data.email}")
+            raise HTTPException(status_code=400, detail="Doğrulama kodunun süresi dolmuş")
 
-    return {"message": "Email başarıyla doğrulandı"}
+        # Mark as verified
+        user.is_verified = True
+        user.verification_code = None
+        user.verification_code_expires_at = None
+        repo.update(user)
+        logger.info(f"Verification success for {verify_data.email}")
+
+        return {"message": "Email başarıyla doğrulandı"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+
+        logger.error(f"Error in verify: {str(e)}\n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Sunucu hatası: Doğrulama yapılamadı",
+        )
 
 
 @router.post("/login", response_model=Token)

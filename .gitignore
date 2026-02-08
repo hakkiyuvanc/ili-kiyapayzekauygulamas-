@@ -42,6 +42,10 @@ env/
 .env
 .env.local
 .env.*.local
+.env.production  # SECURITY: Never commit production secrets
+.env.bak
+.env.bak2
+.env.backup.*
 
 # Database
 *.db

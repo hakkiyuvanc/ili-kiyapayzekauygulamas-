@@ -93,7 +93,7 @@ class AnalysisCRUD:
         total_analyses = db.query(Analysis).filter(Analysis.user_id == user_id).count()
 
         # 2. Haftalık Ortalama Skor
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
         weekly_score = (
             db.query(func.avg(Analysis.overall_score))
             .filter(Analysis.user_id == user_id, Analysis.created_at >= seven_days_ago)
@@ -106,7 +106,7 @@ class AnalysisCRUD:
         # Burada basitçe son 7 günde kaç gün aktivite var onu sayalım (Weekly Consistency)
 
         # Son 30 gündeki aktivite günlerini çek
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
         active_days = (
             db.query(func.date(Analysis.created_at))
             .filter(Analysis.user_id == user_id, Analysis.created_at >= thirty_days_ago)
@@ -115,7 +115,7 @@ class AnalysisCRUD:
         )
 
         streak = 0
-        current_date = datetime.utcnow().date()
+        current_date = datetime.now(timezone.utc).date()
 
         # Basit streak mantığı: Bugün veya dün işlem yaptıysa seriyi koru
         # active_days is list of tuples like [(date(2023,1,1)), ...]

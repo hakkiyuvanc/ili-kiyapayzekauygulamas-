@@ -52,7 +52,7 @@ async def upload_file(
         text = WhatsAppFileParser.clean_whatsapp_metadata(text)
 
     # Parse to get message count
-    from ml.preprocessing.conversation_parser import ConversationParser
+    from backend.ml.preprocessing.conversation_parser import ConversationParser
 
     parser = ConversationParser()
     parsed = parser.parse(text, format_type=format_detected)

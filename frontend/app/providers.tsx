@@ -55,6 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log(
             "Auth: Guest user detected, skipping backend verification",
           );
+          // Ensure user is set for guest
+          if (!user && savedUser) {
+            try {
+              setUser(JSON.parse(savedUser));
+            } catch (e) {
+              console.error("Failed to parse guest user", e);
+            }
+          }
           setIsLoading(false);
           return;
         }

@@ -1,21 +1,8 @@
 """Analiz Servisi - Business Logic"""
 
-import os
-import sys
 from typing import Any
 
-# ml modülü backend dizininin bir üstündeki ml/ klasöründe
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-import sys
-from pathlib import Path
-
-# Add parent directory to path for ml module
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-
-from ml.analyzer import get_analyzer
+from backend.ml.analyzer import get_analyzer
 
 
 class AnalysisService:
