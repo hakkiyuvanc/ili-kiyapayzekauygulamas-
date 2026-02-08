@@ -663,3 +663,82 @@ async def analyze_v2(
             detail=f"Analiz başarısız: {str(e)}",
         )
 
+
+# ============================================================================
+# MAGIC FEATURES (V2.0 - Stage 3)
+# ============================================================================
+
+@router.post(
+    "/heatmap",
+    status_code=status.HTTP_200_OK,
+    summary="Tansiyon Haritası (Heatmap)",
+    description="Konuşmanın hangi saatlerde ve konularda gerildiğini analiz eder",
+)
+async def generate_heatmap(
+    request: Request,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """Conversation heatmap endpoint"""
+    from app.services.heatmap_service import get_heatmap_service
+    
+    try:
+        body = await request.json()
+        messages = body.get("messages", [])
+        
+        if not messages:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Messages are required",
+            )
+        
+        heatmap_service = get_heatmap_service()
+        heatmap_data = heatmap_service.analyze_heatmap(messages)
+        
+        return {"status": "success", "heatmap": heatmap_data}
+    except Exception as e:
+        logger.error(f"Heatmap failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/tone-shift", status_code=status.HTTP_200_OK)
+@limiter.limit("10/minute")
+async def shift_message_tone(
+    request: Request,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """Tone shifter endpoint (Pro only)"""
+    from app.services.tone_shifter import get_tone_shifter
+    
+    if not current_user or not current_user.is_pro:
+        raise HTTPException(status_code=403, detail="Pro only")
+    
+    body = await request.json()
+    tone_shifter = get_tone_shifter()
+    result = tone_shifter.shift_tone(
+        body.get("message"),
+        body.get("target_tone", "yaratici"),
+        body.get("context", "")
+    )
+    return {"status": "success", **result}
+
+
+@router.post("/future-projection", status_code=status.HTTP_200_OK)
+@limiter.limit("3/minute")
+async def project_future(
+    request: Request,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """Future projection endpoint (Pro only)"""
+    from app.services.ai_projection import get_ai_projection
+    
+    if not current_user or not current_user.is_pro:
+        raise HTTPException(status_code=403, detail="Pro only")
+    
+    body = await request.json()
+    projection_service = get_ai_projection()
+    projection = projection_service.project_future(
+        body.get("metrics", {}),
+        body.get("gottman_report"),
+        body.get("timeframe_months", 6)
+    )
+    return {"status": "success", "projection": projection}
