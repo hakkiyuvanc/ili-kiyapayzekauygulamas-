@@ -5,13 +5,22 @@ import json
 import logging
 import os
 import time
+from datetime import datetime
 from typing import Any, Optional
 
 import google.generativeai as genai
 from anthropic import Anthropic
 from openai import OpenAI
+from pydantic import ValidationError
 
 from app.core.config import settings
+from app.schemas.ai_responses import (
+    Insight,
+    InsightsResponse,
+    Recommendation,
+    RecommendationsResponse,
+    RelationshipReport,
+)
 from app.services.cache_service import cache_service
 from app.services.knowledge_base import format_knowledge_context, get_relevant_knowledge
 
@@ -21,7 +30,7 @@ logger = logging.getLogger(__name__)
 class AIService:
     """Yapay zeka servisi - OpenAI/Anthropic/Gemini entegrasyonu"""
 
-    PROMPT_VERSION = "v2.1"  # Prompt versioning
+    PROMPT_VERSION = "v3.0"  # Prompt versioning - Strict JSON with Pydantic
 
     def __init__(self):
         self.openai_client = None
@@ -61,10 +70,10 @@ class AIService:
             )
 
     def generate_insights(
-        self, metrics: dict[str, Any], conversation_summary: str, max_tokens: int = 1000
+        self, metrics: dict[str, Any], conversation_summary: str, max_tokens: int = 1200
     ) -> list[dict[str, str]]:
         """
-        AI ile derinlemesine içgörüler oluştur (with caching & monitoring)
+        AI ile derinlemesine içgörüler oluştur (V3.0 - Strict JSON with Pydantic)
 
         Args:
             metrics: Hesaplanmış metrikler
@@ -72,12 +81,12 @@ class AIService:
             max_tokens: Maksimum token sayısı
 
         Returns:
-            İçgörü listesi
+            İçgörü listesi (dict format for backward compatibility)
         """
         start_time = time.time()
 
         # Check cache first
-        cache_key = self._get_cache_key("insights", metrics, conversation_summary)
+        cache_key = self._get_cache_key("insights_v3", metrics, conversation_summary)
         cached = cache_service.get(cache_key)
 
         if cached:
@@ -96,40 +105,32 @@ class AIService:
             return fallback
 
         try:
-            # First attempt with enhanced prompt
-            prompt = self._build_insights_prompt(metrics, conversation_summary)
-            response = self._call_llm(prompt, max_tokens)
-            insights = self._parse_insights_response(response)
+            # Build prompt for structured output
+            prompt = self._build_insights_prompt_v3(metrics, conversation_summary)
 
-            if insights:
-                # Cache successful response
-                cache_service.set(cache_key, insights, ttl_seconds=3600)  # 1 hour
+            # Call with Pydantic validation
+            validated_response = self._call_llm_structured(
+                prompt=prompt, response_model=InsightsResponse, max_tokens=max_tokens
+            )
 
-                # Log success with metrics
-                logger.info(
-                    "AI insights generated successfully",
-                    extra={
-                        "provider": self.provider,
-                        "insights_count": len(insights),
-                        "latency_ms": (time.time() - start_time) * 1000,
-                        "cache_miss": True,
-                        "prompt_version": self.PROMPT_VERSION,
-                    },
-                )
-                return insights
+            # Convert Pydantic models to dict for backward compatibility
+            insights = [insight.model_dump() for insight in validated_response.insights]
 
-            # Retry with simplified prompt on parsing failure
-            logger.warning("Retrying with simplified prompt", extra={"reason": "parsing_failure"})
-            simple_prompt = self._build_simple_insights_prompt(metrics)
-            response = self._call_llm(simple_prompt, max_tokens)
-            insights = self._parse_insights_response(response)
+            # Cache successful response
+            cache_service.set(cache_key, insights, ttl_seconds=3600)
 
-            if insights:
-                cache_service.set(cache_key, insights, ttl_seconds=1800)  # 30 min (lower quality)
+            # Log success
+            logger.info(
+                "AI insights generated successfully (V3.0)",
+                extra={
+                    "provider": self.provider,
+                    "insights_count": len(insights),
+                    "latency_ms": (time.time() - start_time) * 1000,
+                    "prompt_version": self.PROMPT_VERSION,
+                },
+            )
 
-            result = insights if insights else self._fallback_insights(metrics)
-            cache_service.set(cache_key, result, ttl_seconds=3600)
-            return result
+            return insights
 
         except Exception as e:
             logger.error(
@@ -480,6 +481,148 @@ Metrikler:
             return response.text.strip()
 
         raise Exception("AI provider yapılandırılmamış")
+
+    def _call_llm_structured(
+        self, prompt: str, response_model: type, max_tokens: int, max_retries: int = 2
+    ):
+        """
+        LLM çağrısı yap ve Pydantic modeli ile validate et (V3.0)
+
+        Args:
+            prompt: System + user prompt
+            response_model: Pydantic model class (e.g., InsightsResponse)
+            max_tokens: Max token count
+            max_retries: Retry count on validation failure
+
+        Returns:
+            Validated Pydantic model instance
+
+        Raises:
+            ValidationError: If JSON doesn't match schema after retries
+        """
+        for attempt in range(max_retries + 1):
+            try:
+                # Get JSON schema from Pydantic model
+                schema = response_model.model_json_schema()
+
+                # Enhanced prompt with schema
+                structured_prompt = f"""{prompt}
+
+CRITICAL: Your response MUST be valid JSON matching this exact schema:
+{json.dumps(schema, indent=2, ensure_ascii=False)}
+
+Rules:
+- Return ONLY the JSON object, no markdown, no explanations
+- All required fields must be present
+- Follow min/max constraints exactly
+- Use Turkish language for text fields"""
+
+                # Call LLM
+                if self.provider == "openai" and self.openai_client:
+                    # Try to use JSON mode if available
+                    try:
+                        response = self.openai_client.chat.completions.create(
+                            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": "Sen Türkçe konuşan profesyonel bir ilişki terapistisin. Sadece geçerli JSON döndür.",
+                                },
+                                {"role": "user", "content": structured_prompt},
+                            ],
+                            max_tokens=max_tokens,
+                            temperature=0.7,
+                            response_format={"type": "json_object"},  # JSON mode
+                        )
+                        raw_response = response.choices[0].message.content.strip()
+                    except Exception:
+                        # Fallback without JSON mode
+                        response = self.openai_client.chat.completions.create(
+                            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": "Sen Türkçe konuşan profesyonel bir ilişki terapistisin.",
+                                },
+                                {"role": "user", "content": structured_prompt},
+                            ],
+                            max_tokens=max_tokens,
+                            temperature=0.7,
+                        )
+                        raw_response = response.choices[0].message.content.strip()
+
+                elif self.provider == "anthropic" and self.anthropic_client:
+                    response = self.anthropic_client.messages.create(
+                        model=os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022"),
+                        max_tokens=max_tokens,
+                        temperature=0.7,
+                        messages=[{"role": "user", "content": structured_prompt}],
+                    )
+                    raw_response = response.content[0].text.strip()
+
+                elif self.provider == "gemini" and self.gemini_client:
+                    model = genai.GenerativeModel(
+                        model_name=settings.GEMINI_MODEL,
+                        generation_config=genai.GenerationConfig(
+                            response_mime_type="application/json",
+                            max_output_tokens=max_tokens,
+                            temperature=0.7,
+                        ),
+                    )
+                    response = model.generate_content(structured_prompt)
+                    raw_response = response.text.strip()
+                else:
+                    raise Exception("AI provider yapılandırılmamış")
+
+                # Extract JSON if wrapped in markdown
+                if "```json" in raw_response:
+                    start = raw_response.find("```json") + 7
+                    end = raw_response.rfind("```")
+                    raw_response = raw_response[start:end].strip()
+                elif "```" in raw_response:
+                    start = raw_response.find("```") + 3
+                    end = raw_response.rfind("```")
+                    raw_response = raw_response[start:end].strip()
+
+                # Parse and validate with Pydantic
+                parsed_data = json.loads(raw_response)
+                validated = response_model.model_validate(parsed_data)
+
+                logger.info(
+                    "Structured LLM call successful",
+                    extra={
+                        "model": response_model.__name__,
+                        "attempt": attempt + 1,
+                        "provider": self.provider,
+                    },
+                )
+
+                return validated
+
+            except (json.JSONDecodeError, ValidationError) as e:
+                logger.warning(
+                    f"Structured LLM validation failed (attempt {attempt + 1}/{max_retries + 1})",
+                    extra={"error": str(e), "model": response_model.__name__},
+                )
+
+                if attempt == max_retries:
+                    # Final attempt failed
+                    logger.error(
+                        "Structured LLM call failed after all retries",
+                        extra={
+                            "model": response_model.__name__,
+                            "raw_response": raw_response[:200],
+                        },
+                    )
+                    raise
+
+                # Add error feedback to next attempt
+                prompt = f"""{prompt}
+
+PREVIOUS ATTEMPT FAILED with error: {str(e)}
+Please fix the JSON structure and try again."""
+
+        raise Exception("Structured LLM call failed")
 
     def _parse_insights_response(self, response: str) -> list[dict[str, str]]:
         """AI yanıtından içgörüleri parse et"""
