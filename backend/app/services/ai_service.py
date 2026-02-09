@@ -777,9 +777,7 @@ Metrikler:
             )
             return self._fallback_relationship_report(metrics)
 
-    def _build_gottman_report_prompt(
-        self, conversation_text: str, metrics: dict[str, Any]
-    ) -> str:
+    def _build_gottman_report_prompt(self, conversation_text: str, metrics: dict[str, Any]) -> str:
         """Build Gottman-based analysis prompt (Enforcing JSON Schema)"""
         return f"""Sen bir İlişki Psikoloğusun ve John Gottman'ın 7 Prensibine göre ilişkileri analiz ediyorsun.
 
@@ -876,10 +874,7 @@ Aşağıdaki JSON şemasına BİREBİR uyan bir yanıt ver. Sadece JSON döndür
             logger.error(f"Validation Error in Relationship Report: {e}")
             return self._fallback_relationship_report(metrics)
 
-
-    def _parse_relationship_report(
-        self, response: str, metrics: dict[str, Any]
-    ) -> dict[str, Any]:
+    def _parse_relationship_report(self, response: str, metrics: dict[str, Any]) -> dict[str, Any]:
         """Parse AI response into structured report"""
         try:
             # Extract JSON
@@ -927,10 +922,26 @@ Aşağıdaki JSON şemasına BİREBİR uyan bir yanıt ver. Sadece JSON döndür
             },
             "gottman_bilesenleri": {
                 "sevgi_haritalari": {"skor": 50, "durum": "Orta", "aciklama": "AI analizi gerekli"},
-                "hayranlik_paylasimi": {"skor": empathy_score, "durum": "Orta", "aciklama": "Empati skoruna dayalı"},
-                "yakinlasma_cabalari": {"skor": 50, "durum": "Orta", "aciklama": "AI analizi gerekli"},
-                "olumlu_perspektif": {"skor": sentiment_score, "durum": "Orta", "aciklama": "Duygu skoruna dayalı"},
-                "catisma_yonetimi": {"skor": 100 - conflict_score, "durum": "Orta", "aciklama": "Çatışma skoruna dayalı"},
+                "hayranlik_paylasimi": {
+                    "skor": empathy_score,
+                    "durum": "Orta",
+                    "aciklama": "Empati skoruna dayalı",
+                },
+                "yakinlasma_cabalari": {
+                    "skor": 50,
+                    "durum": "Orta",
+                    "aciklama": "AI analizi gerekli",
+                },
+                "olumlu_perspektif": {
+                    "skor": sentiment_score,
+                    "durum": "Orta",
+                    "aciklama": "Duygu skoruna dayalı",
+                },
+                "catisma_yonetimi": {
+                    "skor": 100 - conflict_score,
+                    "durum": "Orta",
+                    "aciklama": "Çatışma skoruna dayalı",
+                },
                 "hayat_hayalleri": {"skor": 50, "durum": "Orta", "aciklama": "AI analizi gerekli"},
                 "ortak_anlam": {"skor": 50, "durum": "Orta", "aciklama": "AI analizi gerekli"},
             },
@@ -958,8 +969,6 @@ Aşağıdaki JSON şemasına BİREBİR uyan bir yanıt ver. Sadece JSON döndür
             ],
             "ozel_notlar": ["AI servisi kullanılamıyor, temel metrikler gösteriliyor"],
         }
-
-
 
 
 # Singleton instance
