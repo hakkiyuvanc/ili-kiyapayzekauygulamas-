@@ -74,6 +74,132 @@ class AnalysisService:
 
         return True, ""
 
+    # ==================== Stage 2: Local Persistence ====================
+
+    def save_analysis(
+        self,
+        db,
+        user_id: int,
+        conversation_text: str,
+        analysis_result: dict[str, Any],
+        privacy_mode: bool = True
+    ) -> int:
+        """Save analysis to local database
+        
+        Args:
+            db: Database session
+            user_id: User ID
+            conversation_text: Original conversation
+            analysis_result: Analysis results
+            privacy_mode: Whether to mask data
+            
+        Returns:
+            Analysis ID
+        """
+        from app.models.database import Analysis
+        from app.utils.data_masking import mask_conversation
+
+        # Mask conversation if privacy mode enabled
+        masked_text = conversation_text
+        name_mapping = {}
+        if privacy_mode:
+            masked_text, name_mapping = mask_conversation(conversation_text)
+
+        # Extract scores from result
+        gottman_report = analysis_result.get("gottman_report", {})
+        genel_karne = gottman_report.get("genel_karne", {})
+
+        # Create analysis record
+        analysis = Analysis(
+            user_id=user_id,
+            privacy_mode=privacy_mode,
+            text_length=len(conversation_text),
+            overall_score=genel_karne.get("overall_score", 0.0),
+            sentiment_score=analysis_result.get("metrics", {}).get("sentiment", {}).get("score", 0.0),
+            empathy_score=analysis_result.get("metrics", {}).get("empathy", {}).get("score", 0.0),
+            conflict_score=analysis_result.get("metrics", {}).get("conflict", {}).get("score", 0.0),
+            we_language_score=analysis_result.get("metrics", {}).get("we_language", {}).get("score", 0.0),
+            full_report=analysis_result,
+            summary=analysis_result.get("summary", ""),
+            message_count=analysis_result.get("metrics", {}).get("total_messages", 0),
+            participant_count=2  # Default for now
+        )
+
+        db.add(analysis)
+        db.commit()
+        db.refresh(analysis)
+
+        return analysis.id
+
+    def load_analysis(self, db, analysis_id: int) -> dict[str, Any] | None:
+        """Load analysis from database
+        
+        Args:
+            db: Database session
+            analysis_id: Analysis ID
+            
+        Returns:
+            Analysis result or None
+        """
+        from app.models.database import Analysis
+
+        analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+        if not analysis:
+            return None
+
+        return {
+            "id": analysis.id,
+            "created_at": analysis.created_at.isoformat() if analysis.created_at else None,
+            "overall_score": analysis.overall_score,
+            "sentiment_score": analysis.sentiment_score,
+            "empathy_score": analysis.empathy_score,
+            "conflict_score": analysis.conflict_score,
+            "we_language_score": analysis.we_language_score,
+            "full_report": analysis.full_report,
+            "summary": analysis.summary,
+            "privacy_mode": analysis.privacy_mode
+        }
+
+    def list_user_analyses(
+        self,
+        db,
+        user_id: int,
+        limit: int = 10,
+        offset: int = 0
+    ) -> list[dict[str, Any]]:
+        """List user's analysis history
+        
+        Args:
+            db: Database session
+            user_id: User ID
+            limit: Max results
+            offset: Pagination offset
+            
+        Returns:
+            List of analysis summaries
+        """
+        from app.models.database import Analysis
+
+        analyses = (
+            db.query(Analysis)
+            .filter(Analysis.user_id == user_id)
+            .order_by(Analysis.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        return [
+            {
+                "id": a.id,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "overall_score": a.overall_score,
+                "summary": a.summary[:200] if a.summary else "",
+                "privacy_mode": a.privacy_mode
+            }
+            for a in analyses
+        ]
+
 
 # Singleton instance
 _service_instance = None

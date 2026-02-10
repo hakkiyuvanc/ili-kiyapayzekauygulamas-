@@ -317,3 +317,83 @@ class RefreshToken(Base):
 
     # Relationships
     user = relationship("User", back_populates="refresh_tokens")
+
+
+# ==================== Stage 2: Local Privacy & Persistence ====================
+
+class UserGoals(Base):
+    """User relationship goals (Stage 2)"""
+
+    __tablename__ = "user_goals"
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
+    # Goals
+    goal_type = Column(String(100), nullable=False)  # Communication, Conflict, Intimacy, etc.
+    description = Column(Text, nullable=True)
+    priority = Column(String(20), default="medium")  # low, medium, high
+    status = Column(String(20), default="active")  # active, completed, archived
+
+    # Progress tracking
+    progress_percentage = Column(Integer, default=0)  # 0-100
+    milestones = Column(JSON, default=list)  # List of milestone objects
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class LoveLanguageTest(Base):
+    """Love language test results (Stage 2)"""
+
+    __tablename__ = "love_language_tests"
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
+    # Test results
+    primary_language = Column(String(50), nullable=False)  # Words, Time, Gifts, Service, Touch
+    secondary_language = Column(String(50), nullable=True)
+    scores = Column(JSON, nullable=False)  # {"Words": 85, "Time": 72, ...}
+
+    # Test metadata
+    test_version = Column(String(20), default="v1.0")
+    answers = Column(JSON, nullable=True)  # Store raw answers for analysis
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class AppSettings(Base):
+    """User app settings (Stage 2)"""
+
+    __tablename__ = "app_settings"
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False, index=True)
+
+    # Privacy settings
+    data_masking_enabled = Column(Boolean, default=True)
+    local_storage_only = Column(Boolean, default=True)
+    auto_delete_after_days = Column(Integer, default=30)  # 0 = never
+
+    # UI preferences
+    theme = Column(String(20), default="romantic")  # romantic, dark, light
+    language = Column(String(10), default="tr")  # tr, en
+    notifications_enabled = Column(Boolean, default=True)
+
+    # Analysis preferences
+    default_analysis_depth = Column(String(20), default="standard")  # quick, standard, deep
+    auto_summarize_long_chats = Column(Boolean, default=True)
+
+    # Advanced settings
+    settings_json = Column(JSON, default=dict)  # Additional custom settings
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
