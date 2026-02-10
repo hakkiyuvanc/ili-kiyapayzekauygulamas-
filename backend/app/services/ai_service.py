@@ -1277,6 +1277,154 @@ KISA ÖZET (max 500 kelime):"""
         
         return conversation_text
 
+    # ==================== Stage 3: Module Functionality ====================
+
+    def tone_shift(
+        self,
+        message: str,
+        target_tone: str = "polite",
+        max_tokens: int = 200
+    ) -> dict[str, Any]:
+        """Rewrite message in a different tone (Tone Shifter)
+        
+        Args:
+            message: Original message
+            target_tone: Target tone (polite, empathetic, assertive, calm)
+            max_tokens: Max tokens for response
+            
+        Returns:
+            Dict with rewritten message and explanation
+        """
+        if not self._is_available():
+            return {
+                "original": message,
+                "rewritten": message,
+                "tone": target_tone,
+                "explanation": "AI servisi kullanılamıyor"
+            }
+
+        tone_instructions = {
+            "polite": "Kibarca ve saygılı bir şekilde, 'Ben dili' kullanarak",
+            "empathetic": "Empatik ve anlayışlı bir şekilde, karşı tarafın duygularını dikkate alarak",
+            "assertive": "Net ve kendinden emin ama saygılı bir şekilde",
+            "calm": "Sakin ve duygusal olmayan, yapıcı bir şekilde"
+        }
+
+        instruction = tone_instructions.get(target_tone, tone_instructions["polite"])
+
+        prompt = f"""Aşağıdaki mesajı {instruction} yeniden yaz.
+
+ORIJINAL MESAJ:
+"{message}"
+
+KURALLAR:
+1. 'Ben dili' kullan (Ben hissediyorum, Ben düşünüyorum)
+2. Suçlayıcı ifadelerden kaçın
+3. Somut ve yapıcı ol
+4. Kısa ve öz tut (max 2-3 cümle)
+
+YENİDEN YAZILMIŞ MESAJ:"""
+
+        try:
+            rewritten = self._call_llm(
+                prompt=prompt,
+                max_tokens=max_tokens,
+                temperature=0.7
+            )
+
+            # Extract just the message (remove any extra explanation)
+            rewritten = rewritten.strip().strip('"').strip()
+
+            return {
+                "original": message,
+                "rewritten": rewritten,
+                "tone": target_tone,
+                "explanation": f"{target_tone.capitalize()} tonda yeniden yazıldı"
+            }
+
+        except Exception as e:
+            logger.error(f"Tone shift failed: {e}")
+            return {
+                "original": message,
+                "rewritten": message,
+                "tone": target_tone,
+                "explanation": f"Hata: {str(e)}"
+            }
+
+    def suggest_conflict_action(
+        self,
+        conversation_text: str,
+        max_tokens: int = 300
+    ) -> dict[str, Any]:
+        """Suggest immediate action for conflict resolution
+        
+        Args:
+            conversation_text: Recent conversation showing conflict
+            max_tokens: Max tokens for response
+            
+        Returns:
+            Dict with action suggestion
+        """
+        if not self._is_available():
+            return {
+                "action": "Mola verin",
+                "reason": "Gerginlik yüksek görünüyor",
+                "how": "20 dakika ara verin ve sakinleşin",
+                "priority": "high"
+            }
+
+        prompt = f"""Aşağıdaki çatışmalı konuşmaya bakarak ANLİK bir aksiyon önerisi sun.
+
+KONUŞMA:
+{conversation_text[:1000]}
+
+GÖREV: Tek bir somut aksiyon öner. JSON formatında döndür:
+
+{{
+  "action": "Örn: Mola Verin",
+  "reason": "Neden bu aksiyonu öneriyorsun (1 cümle)",
+  "how": "Nasıl yapılacağı (somut adımlar, 1-2 cümle)",
+  "priority": "high|medium|low"
+}}
+
+Sadece JSON döndür, başka açıklama ekleme."""
+
+        try:
+            response = self._call_llm(
+                prompt=prompt,
+                max_tokens=max_tokens,
+                temperature=0.5
+            )
+
+            # Parse JSON
+            import json
+            # Clean response
+            cleaned = response.strip()
+            if cleaned.startswith("```json"):
+                cleaned = cleaned[7:]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+
+            suggestion = json.loads(cleaned)
+
+            return {
+                "action": suggestion.get("action", "Mola verin"),
+                "reason": suggestion.get("reason", ""),
+                "how": suggestion.get("how", ""),
+                "priority": suggestion.get("priority", "medium")
+            }
+
+        except Exception as e:
+            logger.error(f"Conflict action suggestion failed: {e}")
+            return {
+                "action": "Mola Verin",
+                "reason": "Gerginliği azaltmak için",
+                "how": "20 dakika ara verin, sakinleşin ve sonra konuşmaya devam edin",
+                "priority": "high"
+            }
+
+
 
 # Singleton instance
 _ai_service_instance = None

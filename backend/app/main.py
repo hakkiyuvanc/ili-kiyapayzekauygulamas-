@@ -20,7 +20,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from .api import feedback  # NEW
-from .api import analysis, auth, chat, coaching, daily, stats, subscription, system, upload, users
+from .api import analysis, auth, chat, coaching, daily, modules, stats, subscription, system, upload, users
 from .core.config import settings
 from .core.database import Base, engine
 from .core.limiter import limiter
@@ -137,6 +137,7 @@ app.include_router(chat.router, prefix="/api/chat", tags=["AI Coach"])
 app.include_router(daily.router, prefix="/api/daily", tags=["Daily Pulse"])
 app.include_router(stats.router, prefix="/api/stats", tags=["User Stats"])
 app.include_router(coaching.router, prefix="/api/coaching", tags=["Coaching"])
+app.include_router(modules.router, prefix="/api", tags=["Modules"])  # Stage 3
 app.include_router(feedback.router, prefix="/api/feedback", tags=["Feedback"])  # NEW
 
 
