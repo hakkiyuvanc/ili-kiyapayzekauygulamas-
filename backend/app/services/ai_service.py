@@ -887,8 +887,11 @@ Please fix the JSON structure and try again."""
             return self._fallback_relationship_report(metrics)
 
         try:
-            # Build Gottman-based prompt
-            prompt = self._build_gottman_report_prompt(conversation_text, metrics)
+            # Context Management: Prepare conversation (summarize if too long)
+            prepared_context = self._prepare_context(conversation_text, max_tokens=3000)
+            
+            # Build Gottman-based prompt with prepared context
+            prompt = self._build_gottman_report_prompt(prepared_context, metrics)
 
             # Select model based on preference
             if model_preference == "deep" and self.provider == "anthropic":
@@ -1196,6 +1199,83 @@ KURALLAR:
     }}
   ]
 }}"""
+
+    # ==================== Context Management (Stage 1) ====================
+
+    def _estimate_tokens(self, text: str) -> int:
+        """Estimate token count (rough approximation: 1 token ≈ 4 chars)"""
+        return len(text) // 4
+
+    def _should_summarize(self, conversation_text: str, max_tokens: int = 3000) -> bool:
+        """Check if conversation needs summarization"""
+        estimated_tokens = self._estimate_tokens(conversation_text)
+        return estimated_tokens > max_tokens
+
+    def _summarize_conversation(self, conversation_text: str, max_summary_tokens: int = 1000) -> str:
+        """Summarize long conversations to fit within token limits
+        
+        Args:
+            conversation_text: Full conversation text
+            max_summary_tokens: Maximum tokens for summary
+            
+        Returns:
+            Summarized conversation text
+        """
+        if not self._is_available():
+            # Fallback: truncate to first and last parts
+            max_chars = max_summary_tokens * 4
+            if len(conversation_text) <= max_chars:
+                return conversation_text
+            
+            half = max_chars // 2
+            return f"{conversation_text[:half]}\n\n[...özetlendi...]}\n\n{conversation_text[-half:]}"
+
+        try:
+            prompt = f"""Aşağıdaki ilişki konuşmasını özetle. Önemli duygusal tonları, çatışma noktalarını ve olumlu anları koru.
+
+KONUŞMA:
+{conversation_text[:12000]}  # Limit input to ~3000 tokens
+
+KISA ÖZET (max 500 kelime):"""
+
+            summary = self._call_llm(
+                prompt=prompt,
+                max_tokens=max_summary_tokens,
+                temperature=0.3  # Lower temperature for factual summarization
+            )
+
+            logger.info(
+                "Conversation summarized",
+                extra={
+                    "original_tokens": self._estimate_tokens(conversation_text),
+                    "summary_tokens": self._estimate_tokens(summary),
+                    "compression_ratio": round(len(summary) / len(conversation_text), 2)
+                }
+            )
+
+            return summary
+
+        except Exception as e:
+            logger.error(f"Summarization failed: {e}")
+            # Fallback to truncation
+            max_chars = max_summary_tokens * 4
+            return conversation_text[:max_chars]
+
+    def _prepare_context(self, conversation_text: str, max_tokens: int = 3000) -> str:
+        """Prepare conversation context with automatic summarization if needed
+        
+        Args:
+            conversation_text: Full conversation text
+            max_tokens: Maximum tokens allowed
+            
+        Returns:
+            Prepared context (original or summarized)
+        """
+        if self._should_summarize(conversation_text, max_tokens):
+            logger.info("Conversation exceeds token limit, summarizing...")
+            return self._summarize_conversation(conversation_text, max_summary_tokens=max_tokens)
+        
+        return conversation_text
 
 
 # Singleton instance
