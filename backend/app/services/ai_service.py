@@ -928,7 +928,7 @@ Please fix the JSON structure and try again."""
             return self._fallback_relationship_report(metrics)
 
     def _build_gottman_report_prompt(self, conversation_text: str, metrics: dict[str, Any]) -> str:
-        """Build Gottman-based analysis prompt (Enforcing JSON Schema)"""
+        """Build Gottman-based analysis prompt (Enforcing JSON Schema) - V3.0 Enhanced"""
         return f"""Sen bir İlişki Psikoloğusun ve John Gottman'ın 7 Prensibine göre ilişkileri analiz ediyorsun.
 
 GÖREV: Aşağıdaki konuşma metnini ve temel metrikleri kullanarak, Gottman Metodu çerçevesinde derinlemesine bir ilişki analizi yap.
@@ -954,8 +954,12 @@ Aşağıdaki JSON şemasına BİREBİR uyan bir yanıt ver. Sadece JSON döndür
   }},
   "genel_karne": {{
     "iliskki_sagligi": 0-100 arası bir puan,
+    "overall_score": 0-10 arası bir puan (iliskki_sagligi / 10),
     "baskin_dinamik": "Örn: Tutkulu ama Çatışmalı",
-    "risk_seviyesi": "Düşük" | "Orta" | "Yüksek" | "Kritik"
+    "risk_seviyesi": "Düşük" | "Orta" | "Yüksek" | "Kritik",
+    "love_language_guess": "Onaylayıcı Sözler" | "Kaliteli Zaman" | "Hediye Almak" | "Hizmet Eylemleri" | "Fiziksel Temas" | null,
+    "red_flags": ["Uyarı işareti 1", "Uyarı işareti 2"],
+    "positive_traits": ["Pozitif özellik 1", "Pozitif özellik 2"]
   }},
   "gottman_bilesenleri": {{
     "sevgi_haritalari": {{ "skor": 0-100, "durum": "İyi", "aciklama": "Partnerini tanıma düzeyi..." }},
@@ -989,8 +993,24 @@ Aşağıdaki JSON şemasına BİREBİR uyan bir yanıt ver. Sadece JSON döndür
       "kategori": "Çatışma Yönetimi"
     }}
   ],
-  "ozel_notlar": ["Gözlem 1", "Gözlem 2"]
+  "ozel_notlar": ["Gözlem 1", "Gözlem 2"],
+  "chart_data": {{
+    "weekly_emotions": [
+      {{ "label": "Pazartesi", "value": 65.5, "category": "positive" }},
+      {{ "label": "Salı", "value": 72.0, "category": "positive" }}
+    ],
+    "gottman_radar": [
+      {{ "label": "Sevgi Haritaları", "value": 75 }},
+      {{ "label": "Hayranlık", "value": 68 }}
+    ]
+  }}
 }}
+
+ÖNEMLİ NOTLAR:
+1. love_language_guess: Konuşmadan çıkarım yaparak en uygun sevgi dilini tahmin et
+2. red_flags: Dikkat edilmesi gereken uyarı işaretlerini listele (max 5)
+3. positive_traits: İlişkinin güçlü yönlerini listele (max 5)
+4. chart_data: Görselleştirme için veri sağla (weekly_emotions simüle edilebilir)
 """
 
     def _parse_relationship_report(self, response: str, metrics: dict[str, Any]) -> dict[str, Any]:
