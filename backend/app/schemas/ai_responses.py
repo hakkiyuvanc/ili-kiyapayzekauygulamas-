@@ -126,12 +126,45 @@ class ActionItem(BaseModel):
     kategori: str = Field(..., description="İletişim|Empati|Çatışma|Bağ")
 
 
+class ChartDataPoint(BaseModel):
+    """Single data point for charts"""
+    
+    label: str = Field(..., max_length=50, description="Data point label")
+    value: float = Field(..., description="Numeric value")
+    category: Optional[str] = Field(None, description="Optional category")
+
+
+class ChartData(BaseModel):
+    """Chart data for visualizations"""
+    
+    weekly_emotions: List[ChartDataPoint] = Field(
+        default_factory=list, max_items=7, description="Weekly emotion trend"
+    )
+    gottman_radar: List[ChartDataPoint] = Field(
+        default_factory=list, max_items=7, description="Gottman principles for radar chart"
+    )
+
+
+class LoveLanguage(str, Enum):
+    """5 Love Languages"""
+    
+    WORDS_OF_AFFIRMATION = "Onaylayıcı Sözler"
+    QUALITY_TIME = "Kaliteli Zaman"
+    RECEIVING_GIFTS = "Hediye Almak"
+    ACTS_OF_SERVICE = "Hizmet Eylemleri"
+    PHYSICAL_TOUCH = "Fiziksel Temas"
+
+
 class GeneralReport(BaseModel):
     """Overall relationship health report"""
 
     iliskki_sagligi: int = Field(..., ge=0, le=100, description="Overall health score")
+    overall_score: float = Field(..., ge=0, le=10, description="Overall score 0-10 format")
     baskin_dinamik: str = Field(..., max_length=100, description="Dominant dynamic")
     risk_seviyesi: str = Field(..., description="Düşük|Orta|Yüksek|Kritik")
+    love_language_guess: Optional[LoveLanguage] = Field(None, description="Predicted love language")
+    red_flags: List[str] = Field(default_factory=list, max_items=5, description="Warning signs")
+    positive_traits: List[str] = Field(default_factory=list, max_items=5, description="Positive aspects")
 
 
 class RelationshipReport(BaseModel):
@@ -149,6 +182,7 @@ class RelationshipReport(BaseModel):
     ozel_notlar: List[str] = Field(
         default_factory=list, max_items=3, description="Special notes"
     )
+    chart_data: Optional[ChartData] = Field(None, description="Data for charts and visualizations")
 
     class Config:
         json_schema_extra = {
