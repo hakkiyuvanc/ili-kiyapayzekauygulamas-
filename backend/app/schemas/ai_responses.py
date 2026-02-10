@@ -1,7 +1,7 @@
 """Pydantic models for AI service responses - Strict JSON Schema Enforcement"""
 
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -79,9 +79,7 @@ class GottmanComponent(BaseModel):
     """Single Gottman principle component"""
 
     skor: int = Field(..., ge=0, le=100, description="Score 0-100")
-    durum: str = Field(
-        ..., description="Status: Kritik|Geliştirilmeli|Orta|İyi|Mükemmel"
-    )
+    durum: str = Field(..., description="Status: Kritik|Geliştirilmeli|Orta|İyi|Mükemmel")
     aciklama: str = Field(..., max_length=300, description="Explanation")
 
 
@@ -100,9 +98,7 @@ class GottmanMetrics(BaseModel):
 class EmotionalAnalysis(BaseModel):
     """Emotional tone analysis"""
 
-    iletisim_tonu: str = Field(
-        ..., description="Destekleyici|Nötr|Defansif|Saldırgan"
-    )
+    iletisim_tonu: str = Field(..., description="Destekleyici|Nötr|Defansif|Saldırgan")
     toksisite_seviyesi: int = Field(..., ge=0, le=100, description="Toxicity level")
     yakinlik: int = Field(..., ge=0, le=100, description="Intimacy level")
     duygu_ifadesi: str = Field(..., description="Açık|Kapalı|Karışık")
@@ -112,7 +108,7 @@ class DetectedPattern(BaseModel):
     """Communication pattern detected in conversation"""
 
     kalip: str = Field(..., max_length=50, description="Pattern name")
-    ornekler: List[str] = Field(..., max_items=3, description="Example messages")
+    ornekler: list[str] = Field(..., max_items=3, description="Example messages")
     frekans: str = Field(..., description="Düşük|Orta|Yüksek")
     etki: str = Field(..., description="Pozitif|Nötr|Negatif")
 
@@ -128,7 +124,7 @@ class ActionItem(BaseModel):
 
 class ChartDataPoint(BaseModel):
     """Single data point for charts"""
-    
+
     label: str = Field(..., max_length=50, description="Data point label")
     value: float = Field(..., description="Numeric value")
     category: Optional[str] = Field(None, description="Optional category")
@@ -136,18 +132,18 @@ class ChartDataPoint(BaseModel):
 
 class ChartData(BaseModel):
     """Chart data for visualizations"""
-    
-    weekly_emotions: List[ChartDataPoint] = Field(
+
+    weekly_emotions: list[ChartDataPoint] = Field(
         default_factory=list, max_items=7, description="Weekly emotion trend"
     )
-    gottman_radar: List[ChartDataPoint] = Field(
+    gottman_radar: list[ChartDataPoint] = Field(
         default_factory=list, max_items=7, description="Gottman principles for radar chart"
     )
 
 
 class LoveLanguage(str, Enum):
     """5 Love Languages"""
-    
+
     WORDS_OF_AFFIRMATION = "Onaylayıcı Sözler"
     QUALITY_TIME = "Kaliteli Zaman"
     RECEIVING_GIFTS = "Hediye Almak"
@@ -163,8 +159,10 @@ class GeneralReport(BaseModel):
     baskin_dinamik: str = Field(..., max_length=100, description="Dominant dynamic")
     risk_seviyesi: str = Field(..., description="Düşük|Orta|Yüksek|Kritik")
     love_language_guess: Optional[LoveLanguage] = Field(None, description="Predicted love language")
-    red_flags: List[str] = Field(default_factory=list, max_items=5, description="Warning signs")
-    positive_traits: List[str] = Field(default_factory=list, max_items=5, description="Positive aspects")
+    red_flags: list[str] = Field(default_factory=list, max_items=5, description="Warning signs")
+    positive_traits: list[str] = Field(
+        default_factory=list, max_items=5, description="Positive aspects"
+    )
 
 
 class RelationshipReport(BaseModel):
@@ -173,15 +171,13 @@ class RelationshipReport(BaseModel):
     genel_karne: GeneralReport = Field(..., description="Overall report card")
     gottman_bilesenleri: GottmanMetrics = Field(..., description="Gottman components")
     duygusal_analiz: EmotionalAnalysis = Field(..., description="Emotional analysis")
-    tespit_edilen_kaliplar: List[DetectedPattern] = Field(
+    tespit_edilen_kaliplar: list[DetectedPattern] = Field(
         ..., max_items=5, description="Detected patterns"
     )
-    aksiyon_onerileri: List[ActionItem] = Field(
+    aksiyon_onerileri: list[ActionItem] = Field(
         ..., max_items=6, description="Action recommendations"
     )
-    ozel_notlar: List[str] = Field(
-        default_factory=list, max_items=3, description="Special notes"
-    )
+    ozel_notlar: list[str] = Field(default_factory=list, max_items=3, description="Special notes")
     chart_data: Optional[ChartData] = Field(None, description="Data for charts and visualizations")
 
     class Config:
@@ -215,10 +211,10 @@ class RelationshipReport(BaseModel):
 class InsightsResponse(BaseModel):
     """Response model for insights generation"""
 
-    insights: List[Insight] = Field(..., min_items=3, max_items=6)
+    insights: list[Insight] = Field(..., min_items=3, max_items=6)
 
 
 class RecommendationsResponse(BaseModel):
     """Response model for recommendations generation"""
 
-    recommendations: List[Recommendation] = Field(..., min_items=3, max_items=5)
+    recommendations: list[Recommendation] = Field(..., min_items=3, max_items=5)
