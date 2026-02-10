@@ -10,6 +10,7 @@ import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
 import RelationshipHealthPanel from './dashboard/RelationshipHealthPanel';
 import HeatmapChart from './magic/HeatmapChart';
 import { GlassCard } from './LottieAnimation';
+import { GottmanRadarChart, MetricCards } from './charts';
 
 interface AnalysisResultProps {
   result: V2AnalysisResult | RelationshipAnalysis;
@@ -156,8 +157,21 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
             </div>
           )}
 
-          {/* Gottman Radar Chart */}
-          <div className="animate-fadeIn delay-100">
+          {/* New V3.0 Metric Cards */}
+          <div className="animate-fadeIn delay-75 mb-6">
+            <MetricCards
+              generalReport={result.gottman_report.genel_karne as any}
+              emotionalAnalysis={result.gottman_report.duygusal_analiz as any}
+            />
+          </div>
+
+          {/* New V3.0 Gottman Radar Chart */}
+          <div className="animate-fadeIn delay-100 mb-6">
+            <GottmanRadarChart metrics={result.gottman_report.gottman_bilesenleri as any} />
+          </div>
+
+          {/* Legacy Gottman Panel */}
+          <div className="animate-fadeIn delay-150">
             <RelationshipHealthPanel metrics={chartMetrics} />
           </div>
 
