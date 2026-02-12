@@ -17,7 +17,7 @@ interface TrendChartProps {
     data: InsightData[];
 }
 
-export function TrendChart({ data }: TrendChartProps) {
+export default function TrendChart({ data }: TrendChartProps) {
     // Veriyi formatla: Tarihe göre sırala ve grafik için hazırla
     const chartData = [...data]
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())

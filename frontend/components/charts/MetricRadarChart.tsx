@@ -14,7 +14,7 @@ interface MetricRadarChartProps {
     metrics: InsightData['metrics'];
 }
 
-export function MetricRadarChart({ metrics }: MetricRadarChartProps) {
+export default function MetricRadarChart({ metrics }: MetricRadarChartProps) {
     const data = [
         { subject: 'İletişim', A: metrics.communication, fullMark: 100 },
         { subject: 'Duygusal', A: metrics.emotional, fullMark: 100 },

@@ -10,7 +10,10 @@ import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
 import RelationshipHealthPanel from './dashboard/RelationshipHealthPanel';
 import HeatmapChart from './magic/HeatmapChart';
 import { GlassCard } from './LottieAnimation';
-import { GottmanRadarChart, MetricCards } from './charts';
+import { GottmanRadarChart, MetricCards, CircularProgress, MultiCircularProgress } from './charts';
+import { StreamingInsightsList } from './StreamingUI';
+import { ProGate } from './ProGate';
+import { FEATURE_NAMES } from '@/lib/proMemberCheck';
 
 interface AnalysisResultProps {
   result: V2AnalysisResult | RelationshipAnalysis;
@@ -54,6 +57,10 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
   const summary = isV2(result)
     ? result.gottman_report.genel_karne.baskin_dinamik
     : result.summary || "İlişki analizi tamamlandı.";
+
+  const riskLevel = isV2(result)
+    ? result.gottman_report.genel_karne.risk_seviyesi
+    : "";
 
   const handleDownload = async () => {
     setIsDownloading(true);
@@ -118,26 +125,25 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
           <div className="flex flex-col items-center relative">
             <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <RadialBarChart
-                  cx="50%" cy="50%"
-                  innerRadius="60%" outerRadius="80%"
-                  barSize={10}
-                  data={chartData}
-                  startAngle={180} endAngle={0}
-                >
-                  <RadialBar
-                    background
-                    dataKey="score"
-                    cornerRadius={10}
+                {/* Replaced RadialBar with CircularProgress for a cleaner look if preferred, but keeping compatible styling for now. 
+                     Actually, let's use the new CircularProgress here to demonstrate Stage 4 update */}
+                <div className="flex items-center justify-center p-4">
+                  <CircularProgress
+                    value={overallScore}
+                    size={180}
+                    strokeWidth={15}
+                    color={overallScore >= 70 ? '#22c55e' : overallScore >= 50 ? '#FF7F7F' : '#B76E79'}
+                    showPercentage={false} // We show custom center
                   />
-                </RadialBarChart>
+                </div>
               </ResponsiveContainer>
             </div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/4 text-center">
-              <div className={`text-5xl font-bold ${getScoreColor(overallScore)}`}>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+              <div className={`text-4xl font-bold ${getScoreColor(overallScore)}`}>
                 {overallScore.toFixed(0)}
               </div>
               <div className="text-[#6B3F3F] text-xs mt-1">/ 100</div>
+              <div className="text-[#6B3F3F] text-xs mt-1 font-semibold">{riskLevel}</div>
             </div>
           </div>
 
@@ -170,55 +176,57 @@ export default function AnalysisResult({ result }: AnalysisResultProps) {
             <GottmanRadarChart metrics={result.gottman_report.gottman_bilesenleri as any} />
           </div>
 
-          {/* Legacy Gottman Panel */}
-          <div className="animate-fadeIn delay-150">
-            <RelationshipHealthPanel metrics={chartMetrics} />
-          </div>
-
-          {/* Detailed Metrics Grid */}
-          <div className="grid grid-cols-2 gap-4 animate-fadeIn delay-200">
-            <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
-              <Heart className="w-8 h-8 text-rose-500 mb-2" />
-              <div className="text-2xl font-bold text-gray-800">{result.gottman_report.duygusal_analiz.yakinlik}</div>
-              <div className="text-xs text-gray-500">Yakınlık</div>
-            </GlassCard>
-            <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
-              <Users className="w-8 h-8 text-purple-500 mb-2" />
-              <div className="text-2xl font-bold text-gray-800">{result.gottman_report.duygusal_analiz.empati_puani}</div>
-              <div className="text-xs text-gray-500">Empati</div>
-            </GlassCard>
-            <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
-              <AlertTriangle className="w-8 h-8 text-orange-500 mb-2" />
-              <div className="text-2xl font-bold text-gray-800">{result.gottman_report.duygusal_analiz.toksisite_seviyesi}</div>
-              <div className="text-xs text-gray-500">Toksisite</div>
-            </GlassCard>
-            <GlassCard className="p-4 flex flex-col items-center justify-center text-center">
-              <Scale className="w-8 h-8 text-blue-500 mb-2" />
-              <div className="text-sm font-bold text-gray-800 line-clamp-2">{result.gottman_report.duygusal_analiz.iletisim_tonu}</div>
-              <div className="text-xs text-gray-500">İletişim Tonu</div>
+          {/* New Stage 4: Circular Progress for Key Metrics */}
+          <div className="mb-6 animate-fadeIn delay-150">
+            <GlassCard className="p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-500" />
+                Duygusal Zeka Göstergeleri
+              </h3>
+              <MultiCircularProgress
+                size={90}
+                metrics={[
+                  { label: 'Yakınlık', value: result.gottman_report.duygusal_analiz.yakinlik || 0, color: '#F472B6' },
+                  { label: 'Empati', value: result.gottman_report.duygusal_analiz.empati_puani || 0, color: '#A78BFA' },
+                  { label: 'Pozitiflik', value: 100 - (result.gottman_report.duygusal_analiz.toksisite_seviyesi || 0), color: '#34D399' },
+                  { label: 'İletişim', value: result.gottman_report.gottman_bilesenleri.sevgi_haritalari.skor || 0, color: '#60A5FA' },
+                ]}
+              />
             </GlassCard>
           </div>
 
-          {/* Action Recommendations */}
-          <div className="animate-fadeIn delay-300">
-            <h3 className="text-lg font-bold text-[#331A1A] mb-3 ml-1 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-yellow-500" />
-              Koç Önerileri
-            </h3>
+          {/* Streaming Patterns (Stage 4) */}
+          <div className="mb-6 animate-fadeIn delay-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 ml-1">Tespit Edilen Kalıplar</h3>
+            <StreamingInsightsList
+              insights={result.gottman_report.tespit_edilen_kaliplar.map(p => ({
+                category: p.etki || 'Analiz',
+                title: p.kalip,
+                description: `Frekans: ${p.frekans} - ${p.ornekler.join(', ')}`,
+                icon: p.etki === 'Negatif' ? '⚠️' : '💡'
+              }))}
+            />
+          </div>
+
+          {/* Advanced V2 Components - Gated (Stage 4) */}
+          <ProGate feature={FEATURE_NAMES.HISTORY} user={user} showUpgradePrompt={false}>
+            <div className="animate-fadeIn delay-300">
+              <RelationshipHealthPanel metrics={chartMetrics} />
+            </div>
+          </ProGate>
+
+          {/* Action Items */}
+          <div className="mb-6 animate-fadeIn delay-300">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 ml-1">Aksiyon Önerileri</h3>
             <div className="space-y-3">
-              {result.gottman_report.aksiyon_onerileri.map((rec, idx) => (
-                <GlassCard key={idx} className="p-4 border-l-4 border-l-pink-500">
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className="font-bold text-gray-800">{rec.baslik}</h4>
-                    <span className="text-[10px] uppercase tracking-wider bg-pink-100 text-pink-600 px-2 py-1 rounded-full">
-                      {rec.oncelik}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{rec.ornek_cumle}</p>
-                  <div className="text-xs text-gray-400 flex items-center gap-1">
-                    <Info className="w-3 h-3" /> {rec.kategori}
-                  </div>
-                </GlassCard>
+              {result.gottman_report.aksiyon_onerileri.map((action, idx) => (
+                <div key={idx} className="bg-white p-4 rounded-xl border-l-4 border-l-green-400 shadow-sm">
+                  <h4 className="font-bold text-gray-800 flex justify-between">
+                    {action.baslik}
+                    <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500 font-normal">{action.kategori}</span>
+                  </h4>
+                  <p className="text-sm text-gray-600 mt-1 italic">"{action.ornek_cumle}"</p>
+                </div>
               ))}
             </div>
           </div>
