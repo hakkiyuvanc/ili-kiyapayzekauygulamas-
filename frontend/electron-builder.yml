@@ -1,6 +1,6 @@
-appId: com.iliskianaliz.app
+appId: com.hakkiyuvanc.iliski-analiz-ai
 productName: İlişki Analiz AI
-copyright: Copyright © 2025 İlişki Analiz AI
+copyright: Copyright © 2026 İlişki Analiz AI
 
 # Directories
 directories:
@@ -13,6 +13,7 @@ files:
   - electron/**/*
   - node_modules/**/*
   - package.json
+  - public/**/*
 
 # Protocol Handler
 protocols:
@@ -37,7 +38,7 @@ mac:
       arch:
         - x64
         - arm64
-  icon: build/icon.icns
+  icon: public/icons/icon-512x512.png
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
@@ -47,7 +48,7 @@ mac:
 # DMG Configuration
 dmg:
   title: ${productName} ${version}
-  icon: build/icon.icns
+  icon: public/icons/icon-512x512.png
   background: build/background.png
   window:
     width: 540
@@ -71,7 +72,7 @@ win:
     - target: portable
       arch:
         - x64
-  icon: build/icon.ico
+  icon: public/icons/icon-512x512.png
   verifyUpdateCodeSignature: false  # Will enable after code signing
 
 # NSIS Installer (Windows)
@@ -82,8 +83,8 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: ${productName}
-  installerIcon: build/icon.ico
-  uninstallerIcon: build/icon.ico
+  installerIcon: public/icons/icon-512x512.png
+  uninstallerIcon: public/icons/icon-512x512.png
 
 # Linux Configuration
 linux:
@@ -91,7 +92,7 @@ linux:
     - AppImage
     - deb
   category: Utility
-  icon: build/icon.png
+  icon: public/icons/icon-512x512.png
   synopsis: AI-powered relationship analysis tool
   description: >
     İlişki Analiz AI, yapay zeka destekli ilişki analizi ve 
