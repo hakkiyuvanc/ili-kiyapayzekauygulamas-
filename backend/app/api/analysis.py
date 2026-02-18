@@ -354,6 +354,59 @@ async def export_pdf(
     )
 
 
+@router.get(
+    "/history/{analysis_id}/html",
+    summary="HTML Rapor İndir",
+    description="Analiz sonucunu HTML olarak indir",
+)
+async def export_html(
+    analysis_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_optional_current_user),
+):
+    """Analizi HTML olarak indir"""
+    from fastapi.responses import HTMLResponse
+
+    from app.services.report_service import get_report_service
+
+    analysis = AnalysisCRUD.get_analysis_by_id(db, analysis_id)
+    if not analysis:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Analiz bulunamadı",
+        )
+
+    report_service = get_report_service()
+    analysis_data = {
+        "score": analysis.overall_score,
+        "metrics": {
+            "sentiment": {"score": analysis.sentiment_score},
+            "empathy": {"score": analysis.empathy_score},
+            "we_language": {"score": analysis.we_language_score},
+        },
+        "insights": analysis.full_report.get("insights", []) if analysis.full_report else [],
+        "recommendations": (
+            analysis.full_report.get("recommendations", []) if analysis.full_report else []
+        ),
+        "psychology_profile": (
+            analysis.full_report.get("psychology_profile") if analysis.full_report else None
+        ),
+        "gottman_report": (
+            analysis.full_report.get("gottman_report") if analysis.full_report else None
+        ),
+    }
+
+    html_content = report_service.generate_html_report(
+        analysis_data,
+        user_name=current_user.full_name if current_user else "Değerli Kullanıcımız",
+    )
+
+    return HTMLResponse(
+        content=html_content,
+        headers={"Content-Disposition": f"attachment; filename=AMOR_Report_{analysis_id}.html"},
+    )
+
+
 @router.delete(
     "/history/{analysis_id}",
     summary="Analiz Sil",
@@ -574,7 +627,6 @@ async def analyze_v2(
         "format_type": "auto" | "whatsapp" | "telegram" | "instagram"
     }
     """
-    from app.services.ai_service import get_ai_service
 
     try:
         body = await request.json()
@@ -620,8 +672,26 @@ async def analyze_v2(
         except Exception as e:
             logger.warning(f"Heatmap generation failed: {e}")
 
-        # Get AI service for Gottman report
-        ai_service = get_ai_service()
+        # 2. Psychological Profile (Attachment Style + Love Language)
+        from app.services.psychology_service import get_psychology_service
+
+        psychology_profile = None
+        try:
+            psych_service = get_psychology_service()
+            psychology_profile = psych_service.analyze(
+                conversation_text=text,
+                ai_service=ai_service,
+            )
+            logger.info(
+                "Psychology profile generated",
+                extra={
+                    "attachment_style": psychology_profile["attachment_style"]["style"],
+                    "love_language": psychology_profile["love_language"]["primary"],
+                    "ai_enriched": psychology_profile["ai_enriched"],
+                },
+            )
+        except Exception as e:
+            logger.warning(f"Psychology profile generation failed: {e}")
 
         # Generate comprehensive Gottman report
         gottman_report = ai_service.generate_relationship_report(
@@ -638,6 +708,7 @@ async def analyze_v2(
             "gottman_report": gottman_report,
             "summary": basic_result.get("summary", ""),
             "heatmap": heatmap_data,
+            "psychology_profile": psychology_profile,
         }
 
         # Save to database
@@ -755,3 +826,73 @@ async def project_future(
         body.get("metrics", {}), body.get("gottman_report"), body.get("timeframe_months", 6)
     )
     return {"status": "success", "projection": projection}
+
+
+@router.post(
+    "/response-assistant",
+    status_code=status.HTTP_200_OK,
+    summary="Yanıt Asistanı",
+    description="Gelen bir mesaja 3 farklı tonda (Yapıcı, Sınır Koyucu, Romantik) alternatif yanıtlar üretir",
+)
+@limiter.limit("10/minute")
+async def response_assistant(
+    request: Request,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """
+    Yanıt Asistanı endpoint'i (Shadowing Feature)
+
+    Request body:
+    {
+        "received_message": "Neden beni hiç aramıyorsun?",
+        "context": "3 yıllık ilişki, son hafta gergin" (opsiyonel)
+    }
+    """
+    from app.services.ai_service import get_ai_service
+    from app.services.response_assistant import get_response_generator
+
+    try:
+        body = await request.json()
+        received_message = body.get("received_message", "").strip()
+        context = body.get("context", "").strip()
+
+        if not received_message:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="received_message alanı zorunludur",
+            )
+
+        if len(received_message) > 1000:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Mesaj 1000 karakterden uzun olamaz",
+            )
+
+        generator = get_response_generator()
+        ai_service = get_ai_service()
+
+        result = generator.generate(
+            received_message=received_message,
+            context=context,
+            ai_service=ai_service,
+        )
+
+        logger.info(
+            "Response assistant completed",
+            extra={
+                "user_id": current_user.id if current_user else None,
+                "ai_generated": result.get("ai_generated"),
+                "message_length": len(received_message),
+            },
+        )
+
+        return {"status": "success", **result}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Response assistant failed", extra={"error": str(e)}, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Yanıt üretimi başarısız: {str(e)}",
+        )

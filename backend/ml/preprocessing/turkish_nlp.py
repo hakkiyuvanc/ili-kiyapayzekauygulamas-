@@ -1,31 +1,48 @@
 """Türkçe Metin Ön İşleme Modülü"""
 
+import logging
 import re
 
 import spacy
+
+logger = logging.getLogger(__name__)
 
 
 class TurkishPreprocessor:
     """Türkçe metin ön işleme ve temizleme"""
 
-    def __init__(self, model_name: str = "tr_core_news_lg"):
+    def __init__(self, model_name: str = "tr_core_news_md"):
         """
         Args:
-            model_name: spaCy Türkçe model adı
+            model_name: spaCy Türkçe model adı (varsayılan: md - hafif ve hızlı)
         """
-        try:
-            self.nlp = spacy.load(model_name)
-            print(f"✅ Loaded spaCy Turkish model: {model_name}")
-        except OSError:
-            print(
-                f"⚠️ Turkish model '{model_name}' not found. Using blank Turkish model (limited features)"
+        # Önce istenen modeli dene, sonra alternatifleri
+        model_candidates = [model_name]
+        if model_name == "tr_core_news_md":
+            model_candidates.append("tr_core_news_lg")  # md yoksa lg dene
+        elif model_name == "tr_core_news_lg":
+            model_candidates.insert(0, "tr_core_news_md")  # lg istense de md'yi önce dene
+
+        loaded = False
+        for candidate in model_candidates:
+            try:
+                self.nlp = spacy.load(candidate)
+                logger.info("SpaCy Türkçe modeli yüklendi: %s", candidate)
+                loaded = True
+                break
+            except OSError:
+                logger.debug("Model bulunamadı: %s", candidate)
+                continue
+
+        if not loaded:
+            logger.warning(
+                "Türkçe SpaCy modeli bulunamadı. Boş model kullanılıyor.\n"
+                "Tam model için: python -m spacy download tr_core_news_md"
             )
-            print("💡 To install full model: python -m spacy download tr_core_news_lg")
             self.nlp = spacy.blank("tr")
-            # Add basic sentence segmentation
             if "sentencizer" not in self.nlp.pipe_names:
                 self.nlp.add_pipe("sentencizer")
-            print("✅ Created blank Turkish spaCy model with sentencizer")
+            logger.info("Boş Türkçe spaCy modeli oluşturuldu (sentencizer ile)")
 
         # Türkçe stopwords
         self.stopwords = self._load_turkish_stopwords()

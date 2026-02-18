@@ -78,18 +78,21 @@ export default function DashboardPage() {
   const { success } = useToastContext();
 
   useEffect(() => {
-    const checkoutSuccess = searchParams.get('checkout_success');
+    const checkoutSuccess = searchParams.get("checkout_success");
     if (checkoutSuccess && user && !user.is_pro) {
       // Refresh profile to get updated is_pro status
-      authApi.getProfile().then(res => {
-        const updatedUser = { ...res.data, is_pro: true }; // Backend might take a second, optimistically set true
-        updateUser(updatedUser);
-        success("🎉 Tebrikler! Pro üyeliğiniz aktifleşti.");
-        // Clear param
-        router.replace('/dashboard');
-      }).catch(err => {
-        console.error("Failed to refresh profile after checkout", err);
-      });
+      authApi
+        .getProfile()
+        .then((res) => {
+          const updatedUser = { ...res.data, is_pro: true }; // Backend might take a second, optimistically set true
+          updateUser(updatedUser);
+          success("🎉 Tebrikler! Pro üyeliğiniz aktifleşti.");
+          // Clear param
+          router.replace("/dashboard");
+        })
+        .catch((err) => {
+          console.error("Failed to refresh profile after checkout", err);
+        });
     }
   }, [searchParams, user]);
 
@@ -113,6 +116,10 @@ export default function DashboardPage() {
 
   const handleStartChat = () => {
     router.push("/chat");
+  };
+
+  const handleOpenAssistant = () => {
+    router.push("/assistant");
   };
 
   const handleLogout = () => {
@@ -140,6 +147,7 @@ export default function DashboardPage() {
           onUpgrade={handleUpgrade}
           onLogout={handleLogout}
           onStartChat={handleStartChat}
+          onOpenAssistant={handleOpenAssistant}
           analysisHistory={analysisHistory}
         />
       </div>

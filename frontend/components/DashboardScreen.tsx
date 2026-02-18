@@ -13,13 +13,14 @@ import {
   AlertTriangle,
   Heart,
   Sparkles,
+  MessageCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { InsightData, User } from "@/types";
 import { DashboardSkeleton } from "@/components/SkeletonLoader";
 import { DarkModeToggle } from "@/components/DarkModeToggle";
-import { TrendChart } from "./charts/TrendChart";
-import { MetricRadarChart } from "./charts/MetricRadarChart";
+import TrendChart from "./charts/TrendChart";
+import MetricRadarChart from "./charts/MetricRadarChart";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { ToneEditor } from "@/components/ToneEditor";
 import { WeeklyScoreCard } from "./WeeklyScoreCard";
@@ -41,6 +42,7 @@ interface DashboardScreenProps {
   onUpgrade: () => void;
   onLogout: () => void;
   onStartChat: () => void;
+  onOpenAssistant?: () => void;
   analysisHistory: InsightData[];
 }
 
@@ -75,6 +77,7 @@ export function DashboardScreen({
   onUpgrade,
   onLogout,
   onStartChat,
+  onOpenAssistant,
   analysisHistory,
 }: DashboardScreenProps) {
   const [isLoading, setIsLoading] = useState(true);
@@ -220,25 +223,49 @@ export function DashboardScreen({
           </div>
         </div>
 
-        {/* Main Action Button - Full Width */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onStartAnalysis}
-          className="w-full bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white rounded-xl p-4 shadow-lg group mb-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="text-left">
-              <h3 className="text-lg font-bold mb-0.5 group-hover:translate-x-1 transition-transform">
-                Yeni Analiz Başlat 💕
+        {/* Action Buttons - 2 column grid */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* Main Analysis Button */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onStartAnalysis}
+            className="bg-gradient-to-br from-[#B76E79] to-[#FF7F7F] text-white rounded-xl p-4 shadow-lg group"
+          >
+            <div className="flex flex-col items-start">
+              <div className="bg-white/20 p-2 rounded-lg mb-2 group-hover:rotate-12 transition-transform">
+                <Plus className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold leading-tight">
+                Yeni Analiz 💕
               </h3>
-              <p className="text-white/90 text-xs">Mesaj veya dosya yükle</p>
+              <p className="text-white/80 text-xs mt-0.5">
+                Mesaj veya dosya yükle
+              </p>
             </div>
-            <div className="bg-white/20 p-2 rounded-lg group-hover:rotate-12 transition-transform">
-              <Plus className="w-6 h-6" />
+          </motion.button>
+
+          {/* Response Assistant Button */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onOpenAssistant}
+            className="bg-gradient-to-br from-[#6B3F3F] to-[#B76E79] text-white rounded-xl p-4 shadow-lg group"
+            id="response-assistant-btn"
+          >
+            <div className="flex flex-col items-start">
+              <div className="bg-white/20 p-2 rounded-lg mb-2 group-hover:-rotate-12 transition-transform">
+                <MessageCircle className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold leading-tight">
+                Yanıt Asistanı 🤝
+              </h3>
+              <p className="text-white/80 text-xs mt-0.5">
+                Zor mesaja en iyi yanıt
+              </p>
             </div>
-          </div>
-        </motion.button>
+          </motion.button>
+        </div>
 
         {/* Widgets Grid - 2 columns on desktop, 1 on mobile */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">

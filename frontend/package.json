@@ -17,9 +17,9 @@
     "export": "next build",
     "electron": "electron .",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "build:backend": "cd ../ && source venv/bin/activate && python backend/build_backend.py",
-    "pre:electron:build": "rm -rf backend_dist && mkdir -p backend_dist && cp -r ../backend/dist/* backend_dist/",
-    "electron:build": "npm run build:backend && npm run pre:electron:build && npm run export && npx electron-builder --mac",
+    "build:resources": "bash ../scripts/setup_portable_python.sh",
+    "pre:electron:build": "npm run build:resources",
+    "electron:build": "npm run pre:electron:build && npm run export && npx electron-builder --mac",
     "build:desktop": "npm run electron:build",
     "build:mac": "npm run export && electron-builder --mac",
     "build:win": "npm run export && electron-builder --win",
@@ -28,6 +28,67 @@
     "dist": "npm run build:desktop",
     "pack": "electron-builder --dir",
     "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.amor.iliski-analiz-ai",
+    "productName": "İlişki Analiz AI",
+    "directories": {
+      "output": "dist"
+    },
+    "extraResources": [
+      {
+        "from": "resources/python",
+        "to": "python",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/backend",
+        "to": "backend",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.lifestyle",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
@@ -66,7 +127,9 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "electron-is-dev": "^3.0.1",
     "electron-log": "^5.4.3",
+    "electron-updater": "^6.6.2",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.26",
     "html2canvas": "^1.4.1",
@@ -85,10 +148,9 @@
     "recharts": "^2.15.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
+    "tree-kill": "^1.2.2",
     "vaul": "^1.1.2",
-    "zod": "^4.3.5",
-    "electron-is-dev": "^3.0.1",
-    "electron-updater": "^6.6.2"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.5",

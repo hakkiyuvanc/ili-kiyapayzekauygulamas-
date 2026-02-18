@@ -53,8 +53,8 @@ class Settings(BaseSettings):
     ]
 
     # ML Settings
-    SPACY_MODEL: str = "tr_core_news_lg"
-    MAX_TEXT_LENGTH: int = 50000
+    SPACY_MODEL: str = "tr_core_news_md"
+    MAX_TEXT_LENGTH: int = 500_000
     MIN_MESSAGE_COUNT: int = 10
 
     # Rate Limiting
@@ -70,13 +70,16 @@ class Settings(BaseSettings):
     LOG_JSON_FORMAT: bool = False  # Enable JSON logging for production
 
     # AI Settings
-    AI_PROVIDER: str = "gemini"  # openai, anthropic, gemini, none
+    AI_PROVIDER: str = "gemini"  # openai, anthropic, gemini, ollama, none
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-3-5-sonnet-20241022"
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-pro"
+    # Ollama — Yerel AI (internet bağlantısı gerekmez)
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3"  # veya "mistral", "llama3.1" vb.
     AI_ENABLED: bool = True  # AI özelliklerini aç/kapat
     AI_MAX_TOKENS_INSIGHTS: int = 1000
     AI_MAX_TOKENS_RECOMMENDATIONS: int = 800
@@ -171,6 +174,7 @@ class Settings(BaseSettings):
                     "❌ AI_PROVIDER is 'gemini' but GEMINI_API_KEY is not set! "
                     "Please set GEMINI_API_KEY in your .env file or set AI_PROVIDER='none'."
                 )
+            # ollama: API key gerekmez, bağlantı hatası runtime'da yakalanacak
 
         # CORS origins validation
         if self.ENVIRONMENT == "production":

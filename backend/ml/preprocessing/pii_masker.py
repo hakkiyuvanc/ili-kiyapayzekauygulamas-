@@ -2,10 +2,15 @@
 
 Bu modül, konuşma metinlerinden kişisel verileri tespit edip anonimleştirir.
 SpaCy NER (Named Entity Recognition) kullanır.
+
+Model yükleme önceliği: tr_core_news_md → tr_core_news_lg → regex fallback
 """
 
+import logging
 import re
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class PIIMasker:
@@ -28,22 +33,32 @@ class PIIMasker:
             "EMAIL": 0,
         }
 
-        # SpaCy modelini yükle
+        # SpaCy modelini yükle (md → lg → regex fallback)
         if self.use_spacy:
             try:
                 import spacy
 
-                # Türkçe model yoksa İngilizce model dene
-                try:
-                    self.nlp = spacy.load("tr_core_news_lg")
-                except OSError:
+                # Önce hafif modeli dene (md ~50MB), sonra büyüğü (lg ~500MB)
+                loaded = False
+                for model_name in ["tr_core_news_md", "tr_core_news_lg"]:
                     try:
-                        self.nlp = spacy.load("tr_core_news_md")
+                        self.nlp = spacy.load(model_name)
+                        logger.info("SpaCy modeli yüklendi: %s", model_name)
+                        loaded = True
+                        break
                     except OSError:
-                        print("⚠️ Türkçe SpaCy modeli bulunamadı, regex-based masking kullanılacak")
-                        self.use_spacy = False
+                        logger.debug("SpaCy modeli bulunamadı: %s", model_name)
+                        continue
+
+                if not loaded:
+                    logger.warning(
+                        "Türkçe SpaCy modeli bulunamadı. "
+                        "Yüklemek için: python -m spacy download tr_core_news_md\n"
+                        "Regex tabanlı PII maskelemeye geçiliyor."
+                    )
+                    self.use_spacy = False
             except ImportError:
-                print("⚠️ SpaCy kurulu değil, regex-based masking kullanılacak")
+                logger.warning("SpaCy kurulu değil, regex-based masking kullanılacak")
                 self.use_spacy = False
 
         # Regex patterns for fallback
@@ -115,9 +130,7 @@ class PIIMasker:
                 local_mapping[masked] = original
 
                 # Metinde değiştir
-                masked_text = (
-                    masked_text[: ent.start_char] + masked + masked_text[ent.end_char :]
-                )
+                masked_text = masked_text[: ent.start_char] + masked + masked_text[ent.end_char :]
 
         return masked_text, local_mapping
 

@@ -73,7 +73,7 @@ import {
   InsightData,
   User,
   V2AnalysisResult,
-  RelationshipAnalysis as V1RelationshipAnalysis
+  RelationshipAnalysis as V1RelationshipAnalysis,
 } from "@/types";
 
 export type { User };
@@ -211,6 +211,31 @@ export const analysisApi = {
       metrics,
       timeframe_months,
       gottman_report,
+    }),
+
+  responseAssistant: (received_message: string, context = "") =>
+    api.post<{
+      status: string;
+      received_message: string;
+      ai_generated: boolean;
+      responses: Array<{
+        tone: string;
+        label: string;
+        emoji: string;
+        description: string;
+        response: string;
+        color: string;
+      }>;
+    }>("/api/analysis/response-assistant", { received_message, context }),
+
+  exportPdf: (analysisId: number) =>
+    api.get(`/api/analysis/history/${analysisId}/pdf`, {
+      responseType: "blob",
+    }),
+
+  exportHtml: (analysisId: number) =>
+    api.get(`/api/analysis/history/${analysisId}/html`, {
+      responseType: "blob",
     }),
 };
 

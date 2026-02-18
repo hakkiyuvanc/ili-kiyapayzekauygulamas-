@@ -1,6 +1,9 @@
 """Analiz Servisi - Business Logic"""
 
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from backend.ml.analyzer import get_analyzer
 
@@ -18,10 +21,10 @@ class AnalysisService:
         privacy_mode: bool = True,
     ) -> dict[str, Any]:
         """
-        Metin analizi yap
+        Metin analizi yap. Büyük metinler için otomatik Map-Reduce özetleme uygulanır.
 
         Args:
-            text: Analiz edilecek metin
+            text: Analiz edilecek metin (WhatsApp export gibi büyük dosyalar desteklenir)
             format_type: Metin formatı
             privacy_mode: PII maskeleme
 
@@ -29,13 +32,33 @@ class AnalysisService:
             Analiz raporu
         """
         try:
+            # Büyük metinler için Map-Reduce ön işleme
+            # ML metrikleri tam metin üzerinde hesaplanır (doğruluk için)
+            # LLM bağlamı ise özetlenmiş metin kullanır (token limiti için)
+            LLM_CONTEXT_LIMIT = 12_000  # ~3000 token
+            if len(text) > LLM_CONTEXT_LIMIT:
+                from app.services.ai_service import get_ai_service
+
+                ai_svc = get_ai_service()
+                summarized_text = ai_svc.summarize_large_text(text)
+                logger.info(
+                    "Büyük metin Map-Reduce ile özetlendi",
+                    extra={"original_chars": len(text), "summary_chars": len(summarized_text)},
+                )
+            else:
+                summarized_text = text
+
             report = self.analyzer.analyze_text(
-                text=text,
+                text=text,  # ML metrikleri için tam metin
                 format_type=format_type,
                 privacy_mode=privacy_mode,
             )
+
+            # LLM'e gidecek özeti rapora ekle (AI servisi kullanacak)
+            report["_summarized_context"] = summarized_text
             return report
         except Exception as e:
+            logger.error("Analiz hatası", extra={"error": str(e)}, exc_info=True)
             return {
                 "status": "error",
                 "error": str(e),
@@ -49,9 +72,9 @@ class AnalysisService:
         except Exception:
             return 0.0
 
-    def validate_text(self, text: str, min_length: int = 10, max_length: int = 50000) -> tuple:
+    def validate_text(self, text: str, min_length: int = 10, max_length: int = 500_000) -> tuple:
         """
-        Metin validasyonu
+        Metin validasyonu. Büyük WhatsApp exportlarını desteklemek için max_length 500k.
 
         Returns:
             (is_valid: bool, error_message: str)
@@ -82,17 +105,17 @@ class AnalysisService:
         user_id: int,
         conversation_text: str,
         analysis_result: dict[str, Any],
-        privacy_mode: bool = True
+        privacy_mode: bool = True,
     ) -> int:
         """Save analysis to local database
-        
+
         Args:
             db: Database session
             user_id: User ID
             conversation_text: Original conversation
             analysis_result: Analysis results
             privacy_mode: Whether to mask data
-            
+
         Returns:
             Analysis ID
         """
@@ -115,14 +138,18 @@ class AnalysisService:
             privacy_mode=privacy_mode,
             text_length=len(conversation_text),
             overall_score=genel_karne.get("overall_score", 0.0),
-            sentiment_score=analysis_result.get("metrics", {}).get("sentiment", {}).get("score", 0.0),
+            sentiment_score=analysis_result.get("metrics", {})
+            .get("sentiment", {})
+            .get("score", 0.0),
             empathy_score=analysis_result.get("metrics", {}).get("empathy", {}).get("score", 0.0),
             conflict_score=analysis_result.get("metrics", {}).get("conflict", {}).get("score", 0.0),
-            we_language_score=analysis_result.get("metrics", {}).get("we_language", {}).get("score", 0.0),
+            we_language_score=analysis_result.get("metrics", {})
+            .get("we_language", {})
+            .get("score", 0.0),
             full_report=analysis_result,
             summary=analysis_result.get("summary", ""),
             message_count=analysis_result.get("metrics", {}).get("total_messages", 0),
-            participant_count=2  # Default for now
+            participant_count=2,  # Default for now
         )
 
         db.add(analysis)
@@ -133,11 +160,11 @@ class AnalysisService:
 
     def load_analysis(self, db, analysis_id: int) -> dict[str, Any] | None:
         """Load analysis from database
-        
+
         Args:
             db: Database session
             analysis_id: Analysis ID
-            
+
         Returns:
             Analysis result or None
         """
@@ -157,24 +184,20 @@ class AnalysisService:
             "we_language_score": analysis.we_language_score,
             "full_report": analysis.full_report,
             "summary": analysis.summary,
-            "privacy_mode": analysis.privacy_mode
+            "privacy_mode": analysis.privacy_mode,
         }
 
     def list_user_analyses(
-        self,
-        db,
-        user_id: int,
-        limit: int = 10,
-        offset: int = 0
+        self, db, user_id: int, limit: int = 10, offset: int = 0
     ) -> list[dict[str, Any]]:
         """List user's analysis history
-        
+
         Args:
             db: Database session
             user_id: User ID
             limit: Max results
             offset: Pagination offset
-            
+
         Returns:
             List of analysis summaries
         """
@@ -195,7 +218,7 @@ class AnalysisService:
                 "created_at": a.created_at.isoformat() if a.created_at else None,
                 "overall_score": a.overall_score,
                 "summary": a.summary[:200] if a.summary else "",
-                "privacy_mode": a.privacy_mode
+                "privacy_mode": a.privacy_mode,
             }
             for a in analyses
         ]

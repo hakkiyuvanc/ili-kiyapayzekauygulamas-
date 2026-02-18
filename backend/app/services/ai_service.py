@@ -1,4 +1,4 @@
-"""AI Service - LLM Entegrasyonu"""
+"""AI Service - LLM Entegrasyonu (OpenAI / Anthropic / Gemini / Ollama)"""
 
 import hashlib
 import json
@@ -9,18 +9,13 @@ from datetime import datetime
 from typing import Any, Optional
 
 import google.generativeai as genai
+import httpx
 from anthropic import Anthropic
 from openai import OpenAI
 from pydantic import ValidationError
 
 from app.core.config import settings
-from app.schemas.ai_responses import (
-    Insight,
-    InsightsResponse,
-    Recommendation,
-    RecommendationsResponse,
-    RelationshipReport,
-)
+from app.schemas.ai_responses import InsightsResponse, RecommendationsResponse
 from app.services.cache_service import cache_service
 from app.services.knowledge_base import format_knowledge_context, get_relevant_knowledge
 
@@ -28,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class AIService:
-    """Yapay zeka servisi - OpenAI/Anthropic/Gemini entegrasyonu"""
+    """Yapay zeka servisi - OpenAI / Anthropic / Gemini / Ollama entegrasyonu"""
 
     PROMPT_VERSION = "v3.0"  # Prompt versioning - Strict JSON with Pydantic
 
@@ -36,9 +31,10 @@ class AIService:
         self.openai_client = None
         self.anthropic_client = None
         self.gemini_client = None
+        self.ollama_base_url = None
         self.provider = settings.AI_PROVIDER
 
-        # API anahtarlarını kontrol et
+        # API anahtarlarını / bağlantıları kontrol et
         if self.provider == "openai":
             api_key = settings.OPENAI_API_KEY
             if api_key:
@@ -52,6 +48,13 @@ class AIService:
             if api_key:
                 genai.configure(api_key=api_key)
                 self.gemini_client = genai
+        elif self.provider == "ollama":
+            # Ollama yerel sunucusu — API key gerekmez
+            self.ollama_base_url = settings.OLLAMA_BASE_URL
+            logger.info(
+                "Ollama provider configured",
+                extra={"base_url": self.ollama_base_url, "model": settings.OLLAMA_MODEL},
+            )
 
         # Structured logging
         if self._is_available():
@@ -450,8 +453,20 @@ Metrikler:
 [{{"category": "Güçlü Yön", "title": "...", "description": "..."}}]
 """
 
-    def _call_llm(self, prompt: str, max_tokens: int) -> str:
-        """LLM çağrısı yap"""
+    def _is_available(self) -> bool:
+        """AI servisi kullanılabilir mi?"""
+        if self.provider == "openai":
+            return self.openai_client is not None
+        elif self.provider == "anthropic":
+            return self.anthropic_client is not None
+        elif self.provider == "gemini":
+            return self.gemini_client is not None
+        elif self.provider == "ollama":
+            return self.ollama_base_url is not None
+        return False
+
+    def _call_llm(self, prompt: str, max_tokens: int, temperature: float = 0.7) -> str:
+        """LLM çağrısı yap — OpenAI / Anthropic / Gemini / Ollama"""
         if self.provider == "openai" and self.openai_client:
             response = self.openai_client.chat.completions.create(
                 model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
@@ -463,7 +478,7 @@ Metrikler:
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=max_tokens,
-                temperature=0.7,
+                temperature=temperature,
             )
             return response.choices[0].message.content.strip()
 
@@ -471,7 +486,7 @@ Metrikler:
             response = self.anthropic_client.messages.create(
                 model=os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022"),
                 max_tokens=max_tokens,
-                temperature=0.7,
+                temperature=temperature,
                 messages=[{"role": "user", "content": prompt}],
             )
             return response.content[0].text.strip()
@@ -482,10 +497,39 @@ Metrikler:
                 prompt,
                 generation_config=genai.GenerationConfig(
                     max_output_tokens=max_tokens,
-                    temperature=0.7,
+                    temperature=temperature,
                 ),
             )
             return response.text.strip()
+
+        elif self.provider == "ollama" and self.ollama_base_url:
+            # Ollama REST API — tamamen yerel, internet bağlantısı gerekmez
+            payload = {
+                "model": settings.OLLAMA_MODEL,
+                "prompt": f"Sen Türkçe konuşan profesyonel bir ilişki terapistisin.\n\n{prompt}",
+                "stream": False,
+                "options": {
+                    "temperature": temperature,
+                    "num_predict": max_tokens,
+                },
+            }
+            try:
+                with httpx.Client(timeout=120.0) as client:
+                    resp = client.post(
+                        f"{self.ollama_base_url}/api/generate",
+                        json=payload,
+                    )
+                    resp.raise_for_status()
+                    data = resp.json()
+                    return data.get("response", "").strip()
+            except httpx.ConnectError:
+                raise Exception(
+                    "Ollama bağlantı hatası. Ollama'nın çalıştığından emin olun: `ollama serve`"
+                )
+            except httpx.TimeoutException:
+                raise Exception(
+                    "Ollama yanıt zaman aşımına uğradı (120s). Model yükleniyor olabilir."
+                )
 
         raise Exception("AI provider yapılandırılmamış")
 
@@ -889,7 +933,7 @@ Please fix the JSON structure and try again."""
         try:
             # Context Management: Prepare conversation (summarize if too long)
             prepared_context = self._prepare_context(conversation_text, max_tokens=3000)
-            
+
             # Build Gottman-based prompt with prepared context
             prompt = self._build_gottman_report_prompt(prepared_context, metrics)
 
@@ -1200,98 +1244,202 @@ KURALLAR:
   ]
 }}"""
 
-    # ==================== Context Management (Stage 1) ====================
+    # ==================== Context Management (Map-Reduce) ====================
+
+    CHUNK_SIZE_CHARS: int = 10_000  # ~2500 tokens per chunk
+    MAX_CONTEXT_CHARS: int = 12_000  # ~3000 tokens - LLM context limit
 
     def _estimate_tokens(self, text: str) -> int:
         """Estimate token count (rough approximation: 1 token ≈ 4 chars)"""
         return len(text) // 4
 
-    def _should_summarize(self, conversation_text: str, max_tokens: int = 3000) -> bool:
-        """Check if conversation needs summarization"""
-        estimated_tokens = self._estimate_tokens(conversation_text)
-        return estimated_tokens > max_tokens
+    def _should_chunk(self, text: str) -> bool:
+        """Check if text exceeds safe LLM context window"""
+        return len(text) > self.MAX_CONTEXT_CHARS
 
-    def _summarize_conversation(self, conversation_text: str, max_summary_tokens: int = 1000) -> str:
-        """Summarize long conversations to fit within token limits
-        
+    def _split_into_chunks(self, text: str, chunk_size: int = None) -> list[str]:
+        """Split text into overlapping chunks at sentence/line boundaries.
+
         Args:
-            conversation_text: Full conversation text
-            max_summary_tokens: Maximum tokens for summary
-            
+            text: Full conversation text
+            chunk_size: Characters per chunk (default: CHUNK_SIZE_CHARS)
+
         Returns:
-            Summarized conversation text
+            List of text chunks
         """
-        if not self._is_available():
-            # Fallback: truncate to first and last parts
-            max_chars = max_summary_tokens * 4
-            if len(conversation_text) <= max_chars:
-                return conversation_text
-            
-            half = max_chars // 2
-            return f"{conversation_text[:half]}\n\n[...özetlendi...]}\n\n{conversation_text[-half:]}"
+        chunk_size = chunk_size or self.CHUNK_SIZE_CHARS
+        if len(text) <= chunk_size:
+            return [text]
+
+        chunks = []
+        # Split at newline boundaries to avoid cutting mid-message
+        lines = text.split("\n")
+        current_chunk: list[str] = []
+        current_len = 0
+
+        for line in lines:
+            line_len = len(line) + 1  # +1 for newline
+            if current_len + line_len > chunk_size and current_chunk:
+                chunks.append("\n".join(current_chunk))
+                # Overlap: keep last 10% of chunk for context continuity
+                overlap_lines = current_chunk[-(max(1, len(current_chunk) // 10)) :]
+                current_chunk = overlap_lines
+                current_len = sum(len(l) + 1 for l in current_chunk)
+            current_chunk.append(line)
+            current_len += line_len
+
+        if current_chunk:
+            chunks.append("\n".join(current_chunk))
+
+        logger.info(
+            "Text split into chunks",
+            extra={"total_chars": len(text), "chunk_count": len(chunks), "chunk_size": chunk_size},
+        )
+        return chunks
+
+    def _summarize_chunk(self, chunk: str, chunk_index: int, total_chunks: int) -> str:
+        """Summarize a single chunk (Map step).
+
+        Args:
+            chunk: Text chunk to summarize
+            chunk_index: 0-based index of this chunk
+            total_chunks: Total number of chunks
+
+        Returns:
+            Summary of the chunk
+        """
+        prompt = f"""Bu bir ilişki konuşmasının {chunk_index + 1}/{total_chunks}. parçasıdır.
+
+Konuşmayı özetle. Önemli duygusal tonları, çatışma noktalarını, olumlu anları ve anahtar ifadeleri koru.
+Max 200 kelime kullan.
+
+KONUŞMA PARÇASI:
+{chunk}
+
+KİSA ÖZET:"""
 
         try:
-            prompt = f"""Aşağıdaki ilişki konuşmasını özetle. Önemli duygusal tonları, çatışma noktalarını ve olumlu anları koru.
-
-KONUŞMA:
-{conversation_text[:12000]}  # Limit input to ~3000 tokens
-
-KISA ÖZET (max 500 kelime):"""
-
-            summary = self._call_llm(
-                prompt=prompt,
-                max_tokens=max_summary_tokens,
-                temperature=0.3  # Lower temperature for factual summarization
-            )
-
-            logger.info(
-                "Conversation summarized",
-                extra={
-                    "original_tokens": self._estimate_tokens(conversation_text),
-                    "summary_tokens": self._estimate_tokens(summary),
-                    "compression_ratio": round(len(summary) / len(conversation_text), 2)
-                }
-            )
-
-            return summary
-
+            return self._call_llm(prompt=prompt, max_tokens=400, temperature=0.3)
         except Exception as e:
-            logger.error(f"Summarization failed: {e}")
-            # Fallback to truncation
-            max_chars = max_summary_tokens * 4
-            return conversation_text[:max_chars]
+            logger.warning("Chunk summarization failed, using truncation", extra={"error": str(e)})
+            return chunk[:2000]  # Fallback: truncate
+
+    def _reduce_summaries(self, summaries: list[str]) -> str:
+        """Combine chunk summaries into a final coherent summary (Reduce step).
+
+        Args:
+            summaries: List of per-chunk summaries
+
+        Returns:
+            Final combined summary
+        """
+        if len(summaries) == 1:
+            return summaries[0]
+
+        combined = "\n\n---\n\n".join([f"Bölüm {i + 1}:\n{s}" for i, s in enumerate(summaries)])
+
+        prompt = f"""Aşağıda bir ilişki konuşmasının {len(summaries)} bölümünün özetleri var.
+Bunları tek, tutarlı bir özete birleştir. Önemli duygusal dinamikleri, çatışma noktalarını ve güçlü yönleri koru.
+Max 400 kelime.
+
+BÖLÜM ÖZETLERi:
+{combined}
+
+FINAL ÖZET:"""
+
+        try:
+            return self._call_llm(prompt=prompt, max_tokens=600, temperature=0.3)
+        except Exception as e:
+            logger.warning("Reduce step failed, concatenating summaries", extra={"error": str(e)})
+            return "\n\n".join(summaries)
+
+    def summarize_large_text(self, conversation_text: str) -> str:
+        """Map-Reduce summarization for large conversation texts.
+
+        Splits text into chunks, summarizes each (Map), then combines (Reduce).
+        Falls back to truncation if AI is unavailable.
+
+        Args:
+            conversation_text: Full conversation text (can be very large)
+
+        Returns:
+            Concise summary suitable for LLM context
+        """
+        if not self._should_chunk(conversation_text):
+            return conversation_text
+
+        logger.info(
+            "Starting Map-Reduce summarization",
+            extra={
+                "total_chars": len(conversation_text),
+                "estimated_tokens": self._estimate_tokens(conversation_text),
+            },
+        )
+
+        if not self._is_available():
+            # Fallback: take first + last portions
+            half = self.MAX_CONTEXT_CHARS // 2
+            return (
+                conversation_text[:half]
+                + "\n\n[... orta kısım özetlendi ...}\n\n"
+                + conversation_text[-half:]
+            )
+
+        # MAP: Summarize each chunk
+        chunks = self._split_into_chunks(conversation_text)
+        summaries = []
+        for i, chunk in enumerate(chunks):
+            logger.info("Summarizing chunk %d/%d", i + 1, len(chunks))
+            summary = self._summarize_chunk(chunk, i, len(chunks))
+            summaries.append(summary)
+
+        # REDUCE: Combine summaries
+        final_summary = self._reduce_summaries(summaries)
+
+        logger.info(
+            "Map-Reduce complete",
+            extra={
+                "original_chars": len(conversation_text),
+                "summary_chars": len(final_summary),
+                "compression_ratio": round(len(final_summary) / len(conversation_text), 3),
+                "chunks_processed": len(chunks),
+            },
+        )
+
+        return final_summary
 
     def _prepare_context(self, conversation_text: str, max_tokens: int = 3000) -> str:
-        """Prepare conversation context with automatic summarization if needed
-        
+        """Prepare conversation context, applying Map-Reduce if text is too large.
+
         Args:
             conversation_text: Full conversation text
-            max_tokens: Maximum tokens allowed
-            
+            max_tokens: Maximum tokens allowed in context
+
         Returns:
             Prepared context (original or summarized)
         """
-        if self._should_summarize(conversation_text, max_tokens):
-            logger.info("Conversation exceeds token limit, summarizing...")
-            return self._summarize_conversation(conversation_text, max_summary_tokens=max_tokens)
-        
-        return conversation_text
+        max_chars = max_tokens * 4
+        if len(conversation_text) <= max_chars:
+            return conversation_text
+
+        logger.info(
+            "Conversation exceeds context limit, applying Map-Reduce summarization",
+            extra={"chars": len(conversation_text), "limit_chars": max_chars},
+        )
+        return self.summarize_large_text(conversation_text)
 
     # ==================== Stage 3: Module Functionality ====================
 
     def tone_shift(
-        self,
-        message: str,
-        target_tone: str = "polite",
-        max_tokens: int = 200
+        self, message: str, target_tone: str = "polite", max_tokens: int = 200
     ) -> dict[str, Any]:
         """Rewrite message in a different tone (Tone Shifter)
-        
+
         Args:
             message: Original message
             target_tone: Target tone (polite, empathetic, assertive, calm)
             max_tokens: Max tokens for response
-            
+
         Returns:
             Dict with rewritten message and explanation
         """
@@ -1300,14 +1448,14 @@ KISA ÖZET (max 500 kelime):"""
                 "original": message,
                 "rewritten": message,
                 "tone": target_tone,
-                "explanation": "AI servisi kullanılamıyor"
+                "explanation": "AI servisi kullanılamıyor",
             }
 
         tone_instructions = {
             "polite": "Kibarca ve saygılı bir şekilde, 'Ben dili' kullanarak",
             "empathetic": "Empatik ve anlayışlı bir şekilde, karşı tarafın duygularını dikkate alarak",
             "assertive": "Net ve kendinden emin ama saygılı bir şekilde",
-            "calm": "Sakin ve duygusal olmayan, yapıcı bir şekilde"
+            "calm": "Sakin ve duygusal olmayan, yapıcı bir şekilde",
         }
 
         instruction = tone_instructions.get(target_tone, tone_instructions["polite"])
@@ -1326,11 +1474,7 @@ KURALLAR:
 YENİDEN YAZILMIŞ MESAJ:"""
 
         try:
-            rewritten = self._call_llm(
-                prompt=prompt,
-                max_tokens=max_tokens,
-                temperature=0.7
-            )
+            rewritten = self._call_llm(prompt=prompt, max_tokens=max_tokens, temperature=0.7)
 
             # Extract just the message (remove any extra explanation)
             rewritten = rewritten.strip().strip('"').strip()
@@ -1339,7 +1483,7 @@ YENİDEN YAZILMIŞ MESAJ:"""
                 "original": message,
                 "rewritten": rewritten,
                 "tone": target_tone,
-                "explanation": f"{target_tone.capitalize()} tonda yeniden yazıldı"
+                "explanation": f"{target_tone.capitalize()} tonda yeniden yazıldı",
             }
 
         except Exception as e:
@@ -1348,20 +1492,18 @@ YENİDEN YAZILMIŞ MESAJ:"""
                 "original": message,
                 "rewritten": message,
                 "tone": target_tone,
-                "explanation": f"Hata: {str(e)}"
+                "explanation": f"Hata: {str(e)}",
             }
 
     def suggest_conflict_action(
-        self,
-        conversation_text: str,
-        max_tokens: int = 300
+        self, conversation_text: str, max_tokens: int = 300
     ) -> dict[str, Any]:
         """Suggest immediate action for conflict resolution
-        
+
         Args:
             conversation_text: Recent conversation showing conflict
             max_tokens: Max tokens for response
-            
+
         Returns:
             Dict with action suggestion
         """
@@ -1370,7 +1512,7 @@ YENİDEN YAZILMIŞ MESAJ:"""
                 "action": "Mola verin",
                 "reason": "Gerginlik yüksek görünüyor",
                 "how": "20 dakika ara verin ve sakinleşin",
-                "priority": "high"
+                "priority": "high",
             }
 
         prompt = f"""Aşağıdaki çatışmalı konuşmaya bakarak ANLİK bir aksiyon önerisi sun.
@@ -1390,14 +1532,11 @@ GÖREV: Tek bir somut aksiyon öner. JSON formatında döndür:
 Sadece JSON döndür, başka açıklama ekleme."""
 
         try:
-            response = self._call_llm(
-                prompt=prompt,
-                max_tokens=max_tokens,
-                temperature=0.5
-            )
+            response = self._call_llm(prompt=prompt, max_tokens=max_tokens, temperature=0.5)
 
             # Parse JSON
             import json
+
             # Clean response
             cleaned = response.strip()
             if cleaned.startswith("```json"):
@@ -1412,7 +1551,7 @@ Sadece JSON döndür, başka açıklama ekleme."""
                 "action": suggestion.get("action", "Mola verin"),
                 "reason": suggestion.get("reason", ""),
                 "how": suggestion.get("how", ""),
-                "priority": suggestion.get("priority", "medium")
+                "priority": suggestion.get("priority", "medium"),
             }
 
         except Exception as e:
@@ -1421,9 +1560,8 @@ Sadece JSON döndür, başka açıklama ekleme."""
                 "action": "Mola Verin",
                 "reason": "Gerginliği azaltmak için",
                 "how": "20 dakika ara verin, sakinleşin ve sonra konuşmaya devam edin",
-                "priority": "high"
+                "priority": "high",
             }
-
 
 
 # Singleton instance
