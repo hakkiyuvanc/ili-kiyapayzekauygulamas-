@@ -1,69 +1,107 @@
-import axios from "axios";
+import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { env } from "./env";
 
 const API_BASE_URL = env.NEXT_PUBLIC_API_URL;
 
+// Analysis endpoints take longer — give them 2 minutes
+const ANALYSIS_TIMEOUT_MS = 120_000;
+const DEFAULT_TIMEOUT_MS = 30_000;
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: DEFAULT_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor — auth token + per-endpoint timeout
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  // Only add valid tokens (skip guest-token)
   if (token && token !== "guest-token") {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Give analysis/upload endpoints more time
+  const url = config.url ?? "";
+  if (url.includes("/analysis/") || url.includes("/upload")) {
+    config.timeout = ANALYSIS_TIMEOUT_MS;
   }
   return config;
 });
 
-// Response interceptor for error handling
+// ─── Auto-retry helper (exponential backoff) ─────────────────────────────────
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 2_000; // doubles each attempt
+
+function shouldRetry(error: AxiosError): boolean {
+  const status = error.response?.status;
+  // Retry on network errors and transient server issues
+  return (
+    !error.response || // network error / timeout
+    status === 429 ||  // rate limit
+    status === 503 ||  // service unavailable
+    status === 502     // bad gateway
+  );
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+// ─── Response interceptor — logging + auto-retry + auth redirect ──────────────
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Check if user is guest
+  async (error: AxiosError) => {
+    const config = error.config as AxiosRequestConfig & { _retryCount?: number };
     const isGuest =
-      typeof window !== "undefined" &&
-      localStorage.getItem("isGuest") === "true";
+      typeof window !== "undefined" && localStorage.getItem("isGuest") === "true";
 
-    // Log detailed error information
+    // Log
     if (error.response) {
-      // Server responded with error status
-      // Don't log 401 errors for guest users (expected)
       if (!(isGuest && error.response.status === 401)) {
         console.error(
-          `[API Error] Status: ${error.response.status} URL: ${error.config?.url}`,
+          `[API Error] Status: ${error.response.status} URL: ${config?.url}`,
           error.response.data,
         );
       }
     } else if (error.request) {
-      // Request was made but no response received (network error)
-      console.error(`[API Network Error] URL: ${error.config?.url}`, {
-        baseURL: error.config?.baseURL,
-        url: error.config?.url,
-        method: error.config?.method,
+      console.error(`[API Network Error] URL: ${config?.url}`, {
+        baseURL: config?.baseURL,
+        url: config?.url,
+        method: config?.method,
         message: error.message,
       });
     } else {
-      // Something else happened
       console.error("[API Error]", error.message);
     }
 
-    // Don't redirect if it's a login attempt that failed (401 is expected for wrong password)
-    const isLoginRequest = error.config?.url?.includes("/auth/login");
+    // Auto-retry for transient failures
+    config._retryCount = config._retryCount ?? 0;
+    if (config._retryCount < MAX_RETRIES && shouldRetry(error)) {
+      config._retryCount += 1;
 
+      // Respect Retry-After header for 429s
+      const retryAfter = error.response?.headers?.["retry-after"];
+      const delay = retryAfter
+        ? parseInt(retryAfter, 10) * 1000
+        : RETRY_DELAY_MS * Math.pow(2, config._retryCount - 1);
+
+      console.info(`[API] Retry ${config._retryCount}/${MAX_RETRIES} in ${delay}ms…`);
+      await sleep(delay);
+      return api(config);
+    }
+
+    // 401 redirect (non-login, non-guest)
+    const isLoginRequest = config?.url?.includes("/auth/login");
     if (error.response?.status === 401 && !isLoginRequest && !isGuest) {
       console.warn("[API] 401 Unauthorized detected. Redirecting to login.");
-      // Clear token and redirect to login
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/auth";
     } else if (error.response?.status === 401 && isGuest) {
-      console.log("[API] 401 for guest user - this is expected, ignoring.");
+      console.log("[API] 401 for guest user - expected, ignoring.");
     }
+
     return Promise.reject(error);
   },
 );

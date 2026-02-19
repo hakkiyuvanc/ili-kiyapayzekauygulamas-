@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, MessageSquare, Loader2 } from 'lucide-react';
+import { Upload, MessageSquare } from 'lucide-react';
 import { analysisApi, type AnalysisResponse, type V2AnalysisResult } from '@/lib/api';
 import AnalysisStepper from '@/components/ui/AnalysisStepper';
+import ErrorToast, { classifyError, type AppError } from '@/components/ErrorToast';
 
 interface AnalysisFormProps {
   onAnalysisComplete: (result: AnalysisResponse | V2AnalysisResult) => void;
@@ -15,7 +16,8 @@ export default function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) 
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<AppError | null>(null);
+  const [retryFn, setRetryFn] = useState<(() => void) | null>(null);
   const [mode, setMode] = useState<'text' | 'file'>('text');
 
   const saveToLocalDb = async (data: any) => {
@@ -32,60 +34,64 @@ export default function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) 
   const handleTextAnalysis = async () => {
     const trimmedText = text.trim();
     if (!trimmedText) {
-      setError('Lütfen analiz edilecek metni girin');
+      setError({ type: 'generic', message: 'Lütfen analiz edilecek metni girin' });
       return;
     }
-
     if (trimmedText.length < 10) {
-      setError('Metin çok kısa (minimum 10 karakter)');
+      setError({ type: 'generic', message: 'Metin çok kısa (minimum 10 karakter)' });
       return;
     }
-
     if (trimmedText.split(/\s+/).filter(w => w.length > 0).length < 3) {
-      setError('Anlamlı bir analiz için en az 3 kelime gerekli');
+      setError({ type: 'generic', message: 'Anlamlı bir analiz için en az 3 kelime gerekli' });
       return;
     }
 
-    setLoading(true);
-    setError('');
-
-    try {
-      // Use V2 Analysis
-      const response = await analysisApi.analyzeV2(text);
-      const result = response.data;
-
-      await saveToLocalDb(result);
-      onAnalysisComplete(result);
-      setText('');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Analiz sırasında bir hata oluştu');
-    } finally {
-      setLoading(false);
-    }
+    const run = async () => {
+      setLoading(true);
+      setError(null);
+      setRetryFn(null);
+      try {
+        const response = await analysisApi.analyzeV2(text);
+        const result = response.data;
+        await saveToLocalDb(result);
+        onAnalysisComplete(result);
+        setText('');
+      } catch (err) {
+        const appErr = classifyError(err);
+        setError(appErr);
+        setRetryFn(() => run);
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
   };
 
   const handleFileAnalysis = async () => {
     if (!file) {
-      setError('Lütfen bir dosya seçin');
+      setError({ type: 'generic', message: 'Lütfen bir dosya seçin' });
       return;
     }
 
-    setLoading(true);
-    setError('');
-
-    try {
-      // Use V2 Analysis for files (Stage 4)
-      const response = await analysisApi.uploadAndAnalyzeV2(file);
-      const result = response.data;
-
-      await saveToLocalDb(result);
-      onAnalysisComplete(result);
-      setFile(null);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Dosya analizi sırasında bir hata oluştu');
-    } finally {
-      setLoading(false);
-    }
+    const run = async () => {
+      setLoading(true);
+      setError(null);
+      setRetryFn(null);
+      try {
+        const response = await analysisApi.uploadAndAnalyzeV2(file!);
+        const result = response.data;
+        await saveToLocalDb(result);
+        onAnalysisComplete(result);
+        setFile(null);
+      } catch (err) {
+        const appErr = classifyError(err);
+        setError(appErr);
+        setRetryFn(() => run);
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,19 +101,22 @@ export default function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) 
       const fileExt = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase();
 
       if (!validExtensions.includes(fileExt)) {
-        setError(`Geçersiz dosya formatı. İzin verilenler: ${validExtensions.join(', ')}`);
+        setError({
+          type: 'generic',
+          message: `Geçersiz dosya formatı. İzin verilenler: ${validExtensions.join(', ')}`,
+        });
         e.target.value = '';
         return;
       }
 
       if (selectedFile.size > 10 * 1024 * 1024) {
-        setError('Dosya boyutu 10MB\'dan küçük olmalıdır');
+        setError({ type: 'generic', message: "Dosya boyutu 10MB'dan küçük olmalıdır" });
         e.target.value = '';
         return;
       }
 
       setFile(selectedFile);
-      setError('');
+      setError(null);
     }
   };
 
@@ -223,11 +232,11 @@ export default function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) 
             )}
 
             {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
+            <ErrorToast
+              error={error}
+              onDismiss={() => setError(null)}
+              onRetry={retryFn ?? undefined}
+            />
           </>
         )}
       </CardContent>
