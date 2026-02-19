@@ -33,22 +33,34 @@ interface OllamaModel {
 }
 
 // ─── Güvenli Key Saklama Yardımcıları ─────────────────────────────────────
-// Electron ortamında: node-keytar (main process IPC üzerinden)
-// Web ortamında: sessionStorage (sayfa kapanınca temizlenir, localStorage değil)
+// Öncelik: Electron Keychain (macOS/Win keytar) > sessionStorage (web fallback)
+// API key'ler hiçbir zaman localStorage'a yazılmaz.
 
-function secureGet(key: string): string {
-    if (typeof window === 'undefined') return '';
-    // Electron: window.electronAPI.secureGet varsa kullan
-    // Fallback: sessionStorage
-    return sessionStorage.getItem(key) || '';
+async function secureGet(account: string): Promise<string> {
+    if (typeof window !== 'undefined' && (window as Window & typeof globalThis & { electronAPI?: { secureStore?: { get: (a: string) => Promise<string | null> } } }).electronAPI?.secureStore) {
+        const val = await (window as Window & typeof globalThis & { electronAPI?: { secureStore?: { get: (a: string) => Promise<string | null> } } }).electronAPI!.secureStore!.get(account);
+        return val ?? '';
+    }
+    // Web fallback: sessionStorage (sekme kapanınca temizlenir)
+    return sessionStorage.getItem(`key_${account}`) ?? '';
 }
 
-function secureSet(key: string, value: string): void {
-    if (typeof window === 'undefined') return;
+async function secureSet(account: string, value: string): Promise<void> {
+    type ElectronWindow = Window & typeof globalThis & { electronAPI?: { secureStore?: { set: (a: string, v: string) => Promise<boolean>; delete: (a: string) => Promise<boolean> } } };
+    const w = window as ElectronWindow;
+    if (typeof window !== 'undefined' && w.electronAPI?.secureStore) {
+        if (value) {
+            await w.electronAPI.secureStore.set(account, value);
+        } else {
+            await w.electronAPI.secureStore.delete(account);
+        }
+        return;
+    }
+    // Web fallback
     if (value) {
-        sessionStorage.setItem(key, value);
+        sessionStorage.setItem(`key_${account}`, value);
     } else {
-        sessionStorage.removeItem(key);
+        sessionStorage.removeItem(`key_${account}`);
     }
 }
 
@@ -126,9 +138,8 @@ export default function SettingsPage() {
         if (selectedProvider === 'ollama') {
             loadOllamaModels();
         }
-        // Kayıtlı key'i sessionStorage'dan geri yükle
-        const saved = secureGet(`api_key_${selectedProvider}`);
-        setApiKey(saved);
+        // Kayıtlı key'i Keychain / sessionStorage'dan geri yükle (async)
+        secureGet(selectedProvider).then((saved) => setApiKey(saved));
     }, [selectedProvider, loadOllamaModels]);
 
     // ─── Profil kaydet ─────────────────────────────────────────────────────
@@ -158,8 +169,8 @@ export default function SettingsPage() {
             const payload: Record<string, string> = { provider: selectedProvider };
             if (apiKey) {
                 payload.api_key = apiKey;
-                // Güvenli kaydet (session bazlı)
-                secureSet(`api_key_${selectedProvider}`, apiKey);
+                // Güvenli kaydet — Electron'da Keychain, web'de sessionStorage
+                await secureSet(selectedProvider, apiKey);
             }
             if (selectedProvider === 'ollama') {
                 payload.ollama_model = selectedOllamaModel;
@@ -437,8 +448,8 @@ export default function SettingsPage() {
                     {aiMessage && (
                         <div
                             className={`flex items-start gap-2 text-sm rounded-xl p-3 ${aiMessage.type === 'success'
-                                    ? 'bg-green-50 text-green-700 border border-green-200'
-                                    : 'bg-red-50 text-red-700 border border-red-200'
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : 'bg-red-50 text-red-700 border border-red-200'
                                 }`}
                         >
                             {aiMessage.type === 'success' ? (

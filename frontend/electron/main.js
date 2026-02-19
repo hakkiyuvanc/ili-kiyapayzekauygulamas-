@@ -7,6 +7,21 @@ const { initSentry, captureError } = require('./sentry');
 const BackendManager = require('./backend-manager');
 const localDb = require('./database');
 
+// keytar — Sistem Keychain entegrasyonu (macOS Keychain, Windows Credential Manager, GNOME Keyring)
+// Opsiyonel: build edilmemişse graceful fallback
+let keytar = null;
+try {
+  keytar = require('keytar');
+  log.info('keytar loaded — secure storage available');
+} catch (e) {
+  log.warn('keytar not available, falling back to in-memory storage:', e.message);
+}
+
+// keytar erişilemiyorsa bellek tabanlı fallback (uygulama yeniden başlayınca temizlenir)
+const inMemoryKeyStore = new Map();
+
+const KEYCHAIN_SERVICE = 'amor-iliski-ai';
+
 // Configure logging
 log.transports.file.level = 'info';
 log.info('App starting...');
@@ -229,4 +244,60 @@ ipcMain.handle('delete-analysis', (event, id) => {
     log.error('IPC delete-analysis error:', error);
     return false;
   }
+});
+
+// ─── Güvenli Key Saklama (keytar / in-memory fallback) ───────────────────────
+
+/**
+ * secure-get: Sistem Keychain'den API key'i al
+ * @param {string} account - Örn: 'openai', 'gemini'
+ * @returns {string|null} Kayıtlı key veya null
+ */
+ipcMain.handle('secure-get', async (event, account) => {
+  if (keytar) {
+    try {
+      return await keytar.getPassword(KEYCHAIN_SERVICE, account);
+    } catch (e) {
+      log.error('keytar.getPassword failed:', e.message);
+    }
+  }
+  return inMemoryKeyStore.get(account) ?? null;
+});
+
+/**
+ * secure-set: API key'i Keychain'e kaydet
+ * @param {string} account - Örn: 'openai'
+ * @param {string} value   - API key değeri
+ */
+ipcMain.handle('secure-set', async (event, account, value) => {
+  if (keytar) {
+    try {
+      await keytar.setPassword(KEYCHAIN_SERVICE, account, value);
+      log.info(`secure-set: key stored for '${account}'`);
+      return true;
+    } catch (e) {
+      log.error('keytar.setPassword failed:', e.message);
+    }
+  }
+  // Fallback: bellek
+  inMemoryKeyStore.set(account, value);
+  return true;
+});
+
+/**
+ * secure-delete: Kayıtlı key'i sil
+ * @param {string} account - Örn: 'openai'
+ */
+ipcMain.handle('secure-delete', async (event, account) => {
+  if (keytar) {
+    try {
+      const deleted = await keytar.deletePassword(KEYCHAIN_SERVICE, account);
+      log.info(`secure-delete: '${account}' deleted=${deleted}`);
+      return deleted;
+    } catch (e) {
+      log.error('keytar.deletePassword failed:', e.message);
+    }
+  }
+  inMemoryKeyStore.delete(account);
+  return true;
 });
