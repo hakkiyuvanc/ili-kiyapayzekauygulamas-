@@ -72,6 +72,74 @@ class AIService:
                 extra={"provider": self.provider, "status": "fallback_mode"},
             )
 
+    def switch_provider(
+        self,
+        provider: str,
+        api_key: str | None = None,
+        ollama_model: str | None = None,
+        ollama_url: str | None = None,
+    ) -> dict:
+        """
+        Çalışma zamanında AI provider'ı değiştir (restart gerekmez).
+
+        Args:
+            provider: 'openai' | 'anthropic' | 'gemini' | 'ollama' | 'none'
+            api_key:  Cloud provider için API key (opsiyonel, boşsa mevcut .env key'i kullanılır)
+            ollama_model: Ollama model adı (örn: 'llama3', 'mistral')
+            ollama_url:   Ollama base URL (örn: 'http://localhost:11434')
+
+        Returns:
+            {'provider': str, 'available': bool, 'message': str}
+        """
+        self.provider = provider
+
+        # Reset tüm client'lar
+        self.openai_client = None
+        self.anthropic_client = None
+        self.gemini_client = None
+        self.ollama_base_url = None
+
+        if provider == "openai":
+            key = api_key or settings.OPENAI_API_KEY
+            if key:
+                self.openai_client = OpenAI(api_key=key)
+                msg = "OpenAI (Cloud) aktif"
+            else:
+                msg = "OpenAI seçildi ancak API key bulunamadı"
+
+        elif provider == "anthropic":
+            key = api_key or settings.ANTHROPIC_API_KEY
+            if key:
+                self.anthropic_client = Anthropic(api_key=key)
+                msg = "Anthropic Claude (Cloud) aktif"
+            else:
+                msg = "Anthropic seçildi ancak API key bulunamadı"
+
+        elif provider == "gemini":
+            key = api_key or settings.GEMINI_API_KEY
+            if key:
+                genai.configure(api_key=key)
+                self.gemini_client = genai
+                msg = "Google Gemini (Cloud) aktif"
+            else:
+                msg = "Gemini seçildi ancak API key bulunamadı"
+
+        elif provider == "ollama":
+            self.ollama_base_url = ollama_url or settings.OLLAMA_BASE_URL
+            if ollama_model:
+                settings.OLLAMA_MODEL = ollama_model
+            msg = f"Ollama (Yerel/Gizli) aktif — {self.ollama_base_url}"
+
+        else:  # "none"
+            msg = "AI devre dışı (fallback modu)"
+
+        available = self._is_available()
+        logger.info(
+            "AI provider switched at runtime",
+            extra={"provider": provider, "available": available},
+        )
+        return {"provider": provider, "available": available, "message": msg}
+
     def generate_insights(
         self, metrics: dict[str, Any], conversation_summary: str, max_tokens: int = 1200
     ) -> list[dict[str, str]]:
