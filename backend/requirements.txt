@@ -29,6 +29,7 @@ httpx>=0.27.0          # HTTP client for Ollama REST API
 
 # NLP
 spacy>=3.7.0
+python-dateutil>=2.9.0  # Flexible date parsing (DD.MM.YYYY, MM/DD/YY, ISO, etc.)
 
 # Rate Limiting
 slowapi>=0.1.9

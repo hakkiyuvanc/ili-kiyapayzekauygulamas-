@@ -1,39 +1,110 @@
-"""Konuşma Verisi Preprocessor - Enhanced Version"""
+"""Konuşma Verisi Preprocessor - Enhanced Version
 
+Desteklenen formatlar:
+  - WhatsApp (Android & iOS)
+  - Telegram (plain text export)
+  - Instagram (plain text)
+  - Basit "Kişi: Mesaj" formatı
+
+Tarih parsing: python-dateutil ile esnek format desteği
+  - 22.01.2024  (Türkiye standart)
+  - 01/22/24    (ABD formatı)
+  - 2024-01-22  (ISO 8601)
+  - 22 Oca 2024 (uzun format)
+"""
+
+import logging
 import re
 from typing import Any
+
+logger = logging.getLogger(__name__)
+
+# python-dateutil — esnek tarih parsing
+try:
+    from dateutil import parser as dateutil_parser
+    from dateutil.parser import ParserError
+
+    _DATEUTIL_AVAILABLE = True
+    logger.info("python-dateutil mevcut — esnek tarih parsing aktif")
+except ImportError:
+    _DATEUTIL_AVAILABLE = False
+    logger.warning(
+        "python-dateutil kurulu değil. "
+        "Yüklemek için: pip install python-dateutil\n"
+        "Regex-based tarih parsing kullanılacak."
+    )
+
+
+def _parse_date_flexible(date_str: str, time_str: str = "") -> str:
+    """
+    Tarih + saat stringini normalize et.
+
+    Türkiye'de gün-önce format yaygın (dayfirst=True).
+    Örn: "22.01.2024" → gün=22, ay=01 (dayfirst=True ile doğru)
+         "01/22/24"   → gün=01 değil, ay=01 (ABD formatı — dateutil otomatik çözer)
+
+    Returns:
+        "YYYY-MM-DD HH:MM" formatında string, veya orijinal string (parse başarısızsa)
+    """
+    if not _DATEUTIL_AVAILABLE:
+        return f"{date_str} {time_str}".strip()
+
+    combined = f"{date_str} {time_str}".strip()
+    try:
+        # dayfirst=True: Türkiye'de "22.01.2024" → 22. gün, 1. ay
+        dt = dateutil_parser.parse(combined, dayfirst=True)
+        return dt.strftime("%Y-%m-%d %H:%M")
+    except (ParserError, ValueError, OverflowError):
+        # Fallback: orijinal string'i döndür
+        logger.debug("Tarih parse edilemedi: %s", combined)
+        return combined
 
 
 class ConversationParser:
     """WhatsApp, Telegram ve Instagram formatlarını parse eder"""
 
     def __init__(self):
-        # WhatsApp format patterns (iOS & Android)
+        # ── WhatsApp Patterns ──────────────────────────────────────────────
+        # Tarih kısmı kasıtlı olarak geniş tutuldu (dateutil parse eder)
         self.whatsapp_patterns = [
             # Android: 01/01/2023, 12:30 - Ahmet: Merhaba
-            re.compile(r"(\d{1,2}/\d{1,2}/\d{2,4}),?\s+(\d{1,2}:\d{2})\s*-\s*([^:]+):\s*(.+)"),
+            # Android TR: 22.01.2024 12:30 - Ahmet: Merhaba
+            re.compile(
+                r"([\d]{1,2}[./\-][\d]{1,2}[./\-][\d]{2,4}),?\s+"
+                r"([\d]{1,2}:[\d]{2}(?::[\d]{2})?(?:\s*[APap][Mm])?)"
+                r"\s*-\s*([^:]+):\s*(.+)"
+            ),
             # iOS: [01/01/2023, 12:30:45] Ahmet: Merhaba
             re.compile(
-                r"\[(\d{1,2}/\d{1,2}/\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?)\]\s*([^:]+):\s*(.+)"
+                r"\[([\d]{1,2}[./\-][\d]{1,2}[./\-][\d]{2,4}),?\s+"
+                r"([\d]{1,2}:[\d]{2}(?::[\d]{2})?)\]\s*([^:]+):\s*(.+)"
+            ),
+            # Android yeni format: 22.01.2024, 12:30 - Ahmet: Merhaba
+            re.compile(
+                r"([\d]{1,2}\.[\d]{1,2}\.[\d]{2,4}),\s+"
+                r"([\d]{1,2}:[\d]{2})\s*-\s*([^:]+):\s*(.+)"
             ),
         ]
 
-        # Telegram format patterns
+        # ── Telegram Patterns ──────────────────────────────────────────────
         self.telegram_patterns = [
-            # Telegram JSON export: "from": "Name", "text": "Message", "date": "2023-01-01T12:30:00"
-            # This will be handled separately in parse_telegram_json
-            # Plain text export: [01.01.23 12:30] Name: Message
-            re.compile(r"\[(\d{2}\.\d{2}\.\d{2})\s+(\d{2}:\d{2})\]\s*([^:]+):\s*(.+)"),
+            # Plain text: [01.01.23 12:30] Name: Message
+            re.compile(
+                r"\[([\d]{2}\.[\d]{2}\.[\d]{2,4})\s+([\d]{2}:[\d]{2})\]\s*([^:]+):\s*(.+)"
+            ),
+            # Telegram Desktop: 01.01.2023 12:30:45, Name: Message
+            re.compile(
+                r"([\d]{1,2}\.[\d]{1,2}\.[\d]{4})\s+([\d]{2}:[\d]{2}:[\d]{2}),\s*([^:]+):\s*(.+)"
+            ),
         ]
 
-        # Instagram format patterns
+        # ── Instagram Patterns ─────────────────────────────────────────────
         self.instagram_patterns = [
-            # Instagram JSON export format (similar to Telegram)
             # Plain text: Name, 01 Jan 2023 12:30:45: Message
             re.compile(r"([^,]+),\s+(\d{1,2}\s+\w+\s+\d{4}\s+\d{2}:\d{2}:\d{2}):\s*(.+)"),
         ]
 
-        # System message exclusion list (case-insensitive)
+        # ── System Message Exclusions ──────────────────────────────────────
         self.system_message_patterns = [
             # WhatsApp
             r"<Media omitted>",
@@ -82,10 +153,13 @@ class ConversationParser:
             r"görüntülü sohbet başlattı",
         ]
 
-        # Compile system message patterns
         self.compiled_system_patterns = [
             re.compile(pattern, re.IGNORECASE) for pattern in self.system_message_patterns
         ]
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Helpers
+    # ──────────────────────────────────────────────────────────────────────
 
     def is_system_message(self, content: str) -> bool:
         """Sistem mesajı olup olmadığını kontrol et"""
@@ -94,9 +168,29 @@ class ConversationParser:
                 return True
         return False
 
+    def _make_message(
+        self,
+        date_str: str,
+        time_str: str,
+        sender: str,
+        content: str,
+        platform: str,
+    ) -> dict[str, Any]:
+        """Normalize edilmiş mesaj dict'i oluştur"""
+        return {
+            "timestamp": _parse_date_flexible(date_str, time_str),
+            "sender": sender.strip(),
+            "content": content.strip(),
+            "platform": platform,
+        }
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Platform parsers
+    # ──────────────────────────────────────────────────────────────────────
+
     def parse_whatsapp_export(self, text: str) -> list[dict[str, Any]]:
         """WhatsApp export dosyasını parse et"""
-        messages = []
+        messages: list[dict[str, Any]] = []
         lines = text.split("\n")
 
         for line in lines:
@@ -104,23 +198,14 @@ class ConversationParser:
             if not line:
                 continue
 
-            # Her pattern'i dene
             for pattern in self.whatsapp_patterns:
                 match = pattern.match(line)
                 if match:
                     date_str, time_str, sender, content = match.groups()
-
-                    # Sistem mesajlarını atla
                     if self.is_system_message(content):
                         continue
-
                     messages.append(
-                        {
-                            "timestamp": f"{date_str} {time_str}",
-                            "sender": sender.strip(),
-                            "content": content.strip(),
-                            "platform": "whatsapp",
-                        }
+                        self._make_message(date_str, time_str, sender, content, "whatsapp")
                     )
                     break
 
@@ -128,7 +213,7 @@ class ConversationParser:
 
     def parse_telegram_export(self, text: str) -> list[dict[str, Any]]:
         """Telegram export dosyasını parse et"""
-        messages = []
+        messages: list[dict[str, Any]] = []
         lines = text.split("\n")
 
         for line in lines:
@@ -136,23 +221,14 @@ class ConversationParser:
             if not line:
                 continue
 
-            # Telegram pattern'lerini dene
             for pattern in self.telegram_patterns:
                 match = pattern.match(line)
                 if match:
                     date_str, time_str, sender, content = match.groups()
-
-                    # Sistem mesajlarını atla
                     if self.is_system_message(content):
                         continue
-
                     messages.append(
-                        {
-                            "timestamp": f"{date_str} {time_str}",
-                            "sender": sender.strip(),
-                            "content": content.strip(),
-                            "platform": "telegram",
-                        }
+                        self._make_message(date_str, time_str, sender, content, "telegram")
                     )
                     break
 
@@ -160,7 +236,7 @@ class ConversationParser:
 
     def parse_instagram_export(self, text: str) -> list[dict[str, Any]]:
         """Instagram export dosyasını parse et"""
-        messages = []
+        messages: list[dict[str, Any]] = []
         lines = text.split("\n")
 
         for line in lines:
@@ -168,19 +244,16 @@ class ConversationParser:
             if not line:
                 continue
 
-            # Instagram pattern'lerini dene
             for pattern in self.instagram_patterns:
                 match = pattern.match(line)
                 if match:
                     sender, timestamp, content = match.groups()
-
-                    # Sistem mesajlarını atla
                     if self.is_system_message(content):
                         continue
-
+                    # Instagram timestamp is already a full string
                     messages.append(
                         {
-                            "timestamp": timestamp.strip(),
+                            "timestamp": _parse_date_flexible(timestamp),
                             "sender": sender.strip(),
                             "content": content.strip(),
                             "platform": "instagram",
@@ -192,15 +265,14 @@ class ConversationParser:
 
     def parse_simple_format(self, text: str) -> list[dict[str, Any]]:
         """Basit format: Her satır bir mesaj (Kişi: Mesaj)"""
-        messages = []
+        messages: list[dict[str, Any]] = []
         lines = text.split("\n")
 
-        for idx, line in enumerate(lines):
+        for line in lines:
             line = line.strip()
             if not line:
                 continue
 
-            # Format: "Kişi: Mesaj" veya sadece mesaj
             if ":" in line:
                 parts = line.split(":", 1)
                 if len(parts) == 2:
@@ -213,7 +285,6 @@ class ConversationParser:
                         }
                     )
             else:
-                # Sender belirtilmemişse önceki mesajın devamı olabilir
                 if messages:
                     messages[-1]["content"] += " " + line
                 else:
@@ -228,29 +299,25 @@ class ConversationParser:
 
         return messages
 
+    # ──────────────────────────────────────────────────────────────────────
+    # Auto-detection & stats
+    # ──────────────────────────────────────────────────────────────────────
+
     def detect_platform(self, text: str) -> str:
         """Platform otomatik tespiti"""
-        # WhatsApp pattern kontrolü
         if any(pattern.search(text) for pattern in self.whatsapp_patterns):
             return "whatsapp"
-
-        # Telegram pattern kontrolü
         if any(pattern.search(text) for pattern in self.telegram_patterns):
             return "telegram"
-
-        # Instagram pattern kontrolü
         if any(pattern.search(text) for pattern in self.instagram_patterns):
             return "instagram"
-
-        # JSON format kontrolü (Telegram/Instagram)
         if text.strip().startswith("{") or text.strip().startswith("["):
             return "json"
-
         return "simple"
 
     def identify_participants(self, messages: list[dict[str, Any]]) -> list[str]:
         """Konuşmaya katılanları tespit et"""
-        participants = set()
+        participants: set[str] = set()
         for msg in messages:
             sender = msg.get("sender")
             if sender:
@@ -261,7 +328,7 @@ class ConversationParser:
         self, messages: list[dict[str, Any]]
     ) -> dict[str, list[dict[str, Any]]]:
         """Mesajları kişilere göre ayır"""
-        by_participant = {}
+        by_participant: dict[str, list[dict[str, Any]]] = {}
         for msg in messages:
             sender = msg.get("sender", "Unknown")
             if sender not in by_participant:
@@ -284,7 +351,7 @@ class ConversationParser:
         participants = self.identify_participants(messages)
         by_participant = self.split_by_participant(messages)
 
-        stats = {
+        stats: dict[str, Any] = {
             "total_messages": len(messages),
             "participant_count": len(participants),
             "participants": participants,
@@ -324,12 +391,10 @@ class ConversationParser:
             text: Ham metin
             format_type: 'auto', 'whatsapp', 'telegram', 'instagram', 'simple'
         """
-        messages = []
+        messages: list[dict[str, Any]] = []
 
         if format_type == "auto":
-            # Otomatik platform tespiti
             detected_platform = self.detect_platform(text)
-
             if detected_platform == "whatsapp":
                 messages = self.parse_whatsapp_export(text)
             elif detected_platform == "telegram":
@@ -347,9 +412,7 @@ class ConversationParser:
         elif format_type == "simple":
             messages = self.parse_simple_format(text)
 
-        # İstatistikler
         stats = self.calculate_conversation_stats(messages)
-
         detected_format = messages[0].get("platform", "simple") if messages else "simple"
 
         return {
@@ -359,4 +422,3 @@ class ConversationParser:
             "format_detected": detected_format,
             "messages_by_participant": self.split_by_participant(messages),
         }
-
